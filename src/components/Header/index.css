@@ -1,0 +1,17 @@
+/* Custom big circular badge */
+.custom-badge {
+  background: #e6f4f2 !important;
+  width: 46px !important;
+  height: 46px !important;
+  border-radius: 50% !important;
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+  padding: 0 !important;
+}
+
+/* Icon inside badge */
+.custom-badge i {
+  font-size: 2px !important;
+  color: #2c665e !important; /* Recommended dark green for visibility */
+}

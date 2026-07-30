@@ -1,0 +1,30 @@
+/* OTP Input Custom Styling */
+.p-inputotp {
+  gap: 12px; /* space between boxes */
+}
+
+.p-inputotp .p-inputotp-input {
+  width: 60px;
+  height: 64px;
+  font-size: 22px;
+  font-weight: 600;
+  border-radius: 12px;
+
+  border: 1.5px solid #c4d7d5;
+  background-color: #f5fcfb;
+  color: #21252c;
+
+  outline: none;
+  box-shadow: none;
+}
+
+/* ✅ Focus state */
+.p-inputotp .p-inputotp-input:focus {
+  border-color: #1ea766;
+  box-shadow: 0 0 0 1px rgba(30, 167, 102, 0.25);
+}
+
+/* ✅ Filled OTP input */
+.p-inputotp .p-inputotp-input:not(:placeholder-shown) {
+  border-color: #9fcfc9;
+}

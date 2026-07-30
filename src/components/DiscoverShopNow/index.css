@@ -1,0 +1,17 @@
+/* space inside dropdown popup */
+.p-dropdown-panel .p-dropdown-items-wrapper {
+  padding: 8px 0;
+}
+
+/* space between menu items */
+.p-dropdown-panel .p-dropdown-item {
+  padding: 10px 14px;
+  margin: 3px 8px;
+  border-radius: 8px;
+}
+
+/* hover effect */
+.p-dropdown-panel .p-dropdown-item:hover {
+  background: #e6f4f2;
+  color: #1ea766;
+}

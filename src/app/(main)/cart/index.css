@@ -1,0 +1,25 @@
+
+/* ✅ Remove focus glow & keep normal border */
+.trending_dropdown.p-dropdown.p-focus {
+  box-shadow: none !important;
+  border: 1px solid #d6dbe5 !important;
+}
+
+/* ✅ Remove outline */
+.trending_dropdown.p-dropdown {
+  outline: none !important;
+}
+
+/* ✅ DROPDOWN LIST BORDER */
+.p-dropdown-panel {
+  border: 1px solid #d6dbe5 !important;
+  box-shadow: none !important;
+  border-radius: 12px; /* optional – matches rounded-xl */
+}
+
+/* ✅ OPTIONAL: item hover clean */
+.p-dropdown-items .p-dropdown-item.p-highlight,
+.p-dropdown-items .p-dropdown-item:hover {
+  background: #f5f7fa !important;
+  color: #000;
+}

@@ -1,0 +1,89 @@
+.custom-swiper-prev,
+.custom-swiper-next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 20;
+  width: 40px;
+  height: 40px;
+  font-size: 4rem;
+  font-weight: normal;
+  /* border-radius: 50%; */
+  /* background: white; */
+  /* border: 1px solid #1ea766; */
+  color: #1ea766;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.custom-swiper-prev:hover,
+.custom-swiper-next:hover {
+  color: #1ea766;
+  /* color: white; */
+}
+
+/* For mobile: bring arrows closer */
+@media (max-width: 768px) {
+  .custom-swiper-prev {
+    left: -15px;
+  }
+  .custom-swiper-next {
+    right: -15px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .custom-swiper-prev {
+    left: -5px;
+  }
+  .custom-swiper-next {
+    right: -5px;
+  }
+}
+
+/* Default: MD, SM, XS → Arrows OUTSIDE */
+.custom-swiper-prev {
+  left: -60px;
+}
+
+.custom-swiper-next {
+  right: -60px;
+}
+
+/* ✅ Remove focus glow & keep normal border */
+.trending_dropdown.p-dropdown.p-focus {
+  box-shadow: none !important;
+  border: 1px solid #d6dbe5 !important;
+}
+
+/* ✅ Remove outline */
+.trending_dropdown.p-dropdown {
+  outline: none !important;
+}
+
+/* ✅ DROPDOWN LIST BORDER */
+.p-dropdown-panel {
+  border: 1px solid #d6dbe5 !important;
+  box-shadow: none !important;
+  border-radius: 12px; /* optional – matches rounded-xl */
+}
+
+/* ✅ OPTIONAL: item hover clean */
+.p-dropdown-items .p-dropdown-item.p-highlight,
+.p-dropdown-items .p-dropdown-item:hover {
+  background: #f5f7fa !important;
+  color: #000;
+}
+
+/* Filled stars */
+.p-rating .p-rating-item.p-rating-item-active .p-rating-icon {
+  color: #5ea087 !important; /* Tailwind green-500 */
+}
+
+/* Hover stars (optional) */
+.p-rating .p-rating-item:not(.p-disabled):hover .p-rating-icon {
+  color: #5ea087 !important;
+}

@@ -1,0 +1,45 @@
+.p-breadcrumb .p-menuitem {
+  margin-right: 5px;
+  padding-bottom: 2px;
+  /* font-size: 14px; */
+}
+
+.p-breadcrumb .p-menuitem-separator {
+  color: green;
+  margin: 0 10px;
+}
+
+/* 📱 Mobile / Tablet */
+@media (max-width: 768px) {
+  .p-breadcrumb {
+    padding: 4px 6px;
+  }
+
+  .p-breadcrumb .p-menuitem {
+    margin-right: 2px;
+    padding-bottom: 0;
+    font-size: 12px;
+  }
+
+  .p-breadcrumb .p-menuitem a {
+    font-size: 12px;
+  }
+
+  .p-breadcrumb .p-menuitem-separator {
+    margin: 0 4px;
+    font-size: 10px;
+  }
+}
+
+/* 📱 Very small screens */
+@media (max-width: 480px) {
+
+  .p-breadcrumb .p-menuitem,
+  .p-breadcrumb .p-menuitem a {
+    font-size: 11px;
+  }
+
+  .p-breadcrumb .p-menuitem-separator {
+    margin: 0 3px;
+  }
+}

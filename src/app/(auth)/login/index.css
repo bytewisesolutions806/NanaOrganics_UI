@@ -1,0 +1,17 @@
+/* Custom green checkbox */
+.custom-remember-checkbox .p-checkbox-box {
+  border: 2px solid #16a34a !important; /* green-600 */
+}
+
+.custom-remember-checkbox.p-highlight .p-checkbox-box {
+  background: #16a34a !important; /* fill green */
+  border-color: #16a34a !important;
+}
+
+.custom-remember-checkbox .p-checkbox-box.p-focus {
+  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.3) !important; /* green focus ring */
+}
+
+.custom-remember-checkbox.p-highlight .p-checkbox-icon {
+  color: white !important; /* white check icon */
+}

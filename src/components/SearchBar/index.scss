@@ -1,0 +1,44 @@
+/* DEFAULT — Desktop */
+.search-input .p-inputtext {
+  border-radius: 10px;
+  border: 1px solid #cfe2e0;
+  padding-left: 2.2rem;
+  font-size: 0.9rem;
+  height: 46px;
+  width: 52.5rem; /* desktop width */
+  max-width: 100%; /* safety — never overflow */
+}
+
+/* Icon */
+.search-input .pi {
+  color: #2c665e;
+  font-size: 1rem;
+  left: 1rem;
+}
+
+.search-input .p-inputtext:enabled:focus {
+  box-shadow: none;
+}
+
+/* Tablet & Mobile */
+@media (max-width: 1024px) {
+  .search-input .p-inputtext {
+    width: 100% !important; /* fill available space */
+    height: 40px;
+    font-size: 0.84rem;
+  }
+}
+
+/* Small Phones */
+@media (max-width: 480px) {
+  .search-input .p-inputtext {
+    width: 100% !important;
+    height: 36px;
+    font-size: 0.75rem;
+    padding-left: 1.9rem;
+  }
+
+  .search-input .pi {
+    font-size: 0.85rem;
+  }
+}

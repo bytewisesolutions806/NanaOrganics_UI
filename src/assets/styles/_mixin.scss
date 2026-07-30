@@ -1,0 +1,34 @@
+$font: "sans-serif";
+
+$banner-font: "Plus Jakarta Sans", sans-serif;
+$banner-bg: #e6f4f2;
+$banner-text: #212c29;
+$banner-height: 50px;
+$banner-font-size: 16px;
+$banner-color: #e6f4f2;
+
+@mixin top-banner {
+  width: 100%;
+  height: 50px;
+  background: $banner-bg;
+  // color: $banner-color;
+  color: $banner-text;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: $banner-font;
+  font-size: 16px; // text-base
+  font-weight: 500; // font-normal
+}
+
+@mixin app-header {
+  width: 100%;
+  height: 7rem;
+  display: flex;
+  margin: 2px;
+}
+
+@mixin search_bar {
+  padding-top: 1.25rem;
+  margin-left: 6rem;
+}

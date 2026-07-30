@@ -1,0 +1,27 @@
+/* Green PrimeReact Checkbox */
+.custom-checkbox .p-checkbox-box {
+  border: 2px solid #16a34a !important; /* Tailwind green-600 */
+  border-radius: 4px;
+}
+
+.custom-checkbox.p-highlight .p-checkbox-box {
+  background: #16a34a !important;
+  border-color: #16a34a !important;
+}
+
+.custom-checkbox .p-checkbox-box.p-focus {
+  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.3) !important; /* green focus glow */
+}
+
+.custom-checkbox.p-highlight .p-checkbox-icon {
+  color: white !important; /* Checkmark color */
+}
+/* Align PrimeReact checkbox perfectly center */
+.custom-checkbox .p-checkbox-box {
+  width: 16px !important;
+  height: 16px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px; /* adjust 0–3px until perfect */
+}

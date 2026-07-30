@@ -1,0 +1,27 @@
+/* space inside dropdown popup */
+.p-dropdown-panel .p-dropdown-items-wrapper {
+  padding: 8px 0;
+}
+
+/* space between menu items */
+.p-dropdown-panel .p-dropdown-item {
+  padding: 10px 14px;
+  margin: 3px 8px;
+  border-radius: 8px;
+}
+
+/* hover effect */
+.p-dropdown-panel .p-dropdown-item:hover {
+  background: #e6f4f2;
+  color: #1ea766;
+}
+
+/* Filled stars */
+.p-rating .p-rating-item.p-rating-item-active .p-rating-icon {
+  color: #22c55e !important; /* Tailwind green-500 */
+}
+
+/* Hover stars (optional) */
+.p-rating .p-rating-item:not(.p-disabled):hover .p-rating-icon {
+  color: #22c55e !important;
+}

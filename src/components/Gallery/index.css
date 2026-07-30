@@ -1,0 +1,31 @@
+/* Center indicators at bottom */
+.p-galleria .p-galleria-indicators {
+  position: absolute;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 10;
+}
+
+/* Each dot */
+.p-galleria .p-galleria-indicator button {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background-color: rgba(255, 255, 255, 0.4);
+  border: none;
+  padding: 0;
+}
+
+/* Active dot */
+.p-galleria .p-galleria-indicator.p-highlight button {
+  background-color: #ffffff;
+}
+
+@media (max-width: 640px) {
+  .p-galleria .p-galleria-indicators {
+    display: none;
+  }
+}
