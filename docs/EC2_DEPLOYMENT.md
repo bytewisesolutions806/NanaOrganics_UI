@@ -2,6 +2,18 @@
 
 This guide deploys the Next.js storefront as a production Docker container on a single Ubuntu EC2 instance. The container listens on port `3001`; Nginx listens publicly on ports `80` and `443` and proxies requests to it.
 
+## Nana Organics production values
+
+The current deployment target is:
+
+- Application directory: `/opt/nanaorganics/storefront`
+- Storefront: `https://nanaorganics.co`
+- Vendure Shop API: `https://devapi.nanaorganics.co/shop-api`
+- Container: `nana-ui`
+- Loopback port: `127.0.0.1:3001`
+
+The apex domain is already proxied by Cloudflare. No DNS change is needed when it points to the same EC2 origin as the API and admin hosts. Confirm the origin before cutover; Cloudflare's public IPs do not reveal it.
+
 ## Architecture
 
 ```text
@@ -58,25 +70,25 @@ See [Install Docker Engine on Ubuntu](https://docs.docker.com/engine/install/ubu
 
 ## 2. Copy the application to EC2
 
-Clone the repository or transfer a release archive, then enter the project directory:
+Clone the repository or transfer a release archive into a storefront subdirectory, then enter it. Keeping it below the existing `/opt/nanaorganics` directory avoids modifying the deployed Vendure backend and admin files.
 
 ```bash
-git clone <YOUR_REPOSITORY_URL> nana-ui
-cd nana-ui
+sudo mkdir -p /opt/nanaorganics/storefront
+sudo chown "$USER":"$USER" /opt/nanaorganics/storefront
+git clone <YOUR_REPOSITORY_URL> /opt/nanaorganics/storefront
+cd /opt/nanaorganics/storefront
 ```
 
 Do not commit `.env.local`, `.env.production`, private keys, or credentials.
 
 ## 3. Create the production configuration
 
-Create `.env.production` on the EC2 instance:
+Create `.env.production` on the EC2 instance. This repository includes the correct public values in `.env.production.example`:
 
-```dotenv
-NEXT_PUBLIC_API_BASE_URL=https://api.example.com
-NEXT_PUBLIC_USE_MOCK_API=false
-NEXT_PUBLIC_VENDURE_SHOP_API_URL=https://api.example.com/shop-api
-NEXT_PUBLIC_VENDURE_CHANNEL_TOKEN=
-ALLOW_LOCAL_IMAGE_IP=false
+```bash
+cd /opt/nanaorganics/storefront
+cp .env.production.example .env.production
+chmod 600 .env.production
 ```
 
 Replace the example URLs with the production API URLs. Values beginning with `NEXT_PUBLIC_` are visible in browser JavaScript and must not contain secrets. Next.js embeds them during `next build`, so changing this file requires rebuilding the image.
@@ -85,35 +97,21 @@ The channel token is optional. Leave it empty if the Vendure channel does not re
 
 ## 4. Build the image
 
-Load the configuration into the current shell and pass the public values as build arguments:
+Build with the production Compose file:
 
 ```bash
-set -a
-source .env.production
-set +a
-
-sudo docker build \
-  --build-arg NEXT_PUBLIC_API_BASE_URL \
-  --build-arg NEXT_PUBLIC_USE_MOCK_API \
-  --build-arg NEXT_PUBLIC_VENDURE_SHOP_API_URL \
-  --build-arg NEXT_PUBLIC_VENDURE_CHANNEL_TOKEN \
-  --build-arg ALLOW_LOCAL_IMAGE_IP \
-  --tag nana-ui:latest \
-  .
+cd /opt/nanaorganics/storefront
+sudo docker compose --env-file .env.production -f compose.production.yml build
 ```
 
 `NEXT_PUBLIC_VENDURE_SHOP_API_URL` is required. The Docker build stops with a clear error if it is missing.
 
 ## 5. Start the container
 
-Bind the app only to EC2's loopback interface so it can be reached by Nginx but not directly from the internet:
+Start the container. Compose binds it only to EC2's loopback interface so it can be reached by Nginx but not directly from the internet:
 
 ```bash
-sudo docker run -d \
-  --name nana-ui \
-  --restart unless-stopped \
-  --publish 127.0.0.1:3001:3001 \
-  nana-ui:latest
+sudo docker compose --env-file .env.production -f compose.production.yml up -d
 ```
 
 Check its status and health:
@@ -133,31 +131,29 @@ Install Nginx:
 sudo apt-get install -y nginx
 ```
 
-Create `/etc/nginx/sites-available/nana-ui` with this configuration, replacing `shop.example.com`:
+First locate the existing apex virtual host. Do not create a duplicate `server_name`, and do not edit the `devapi` or `devadmin` virtual hosts:
+
+```bash
+sudo nginx -T 2>&1 | grep -n "server_name.*nanaorganics.co"
+```
+
+In the existing `nanaorganics.co` HTTPS server block, replace the placeholder site's `location /` with:
 
 ```nginx
-server {
-    listen 80;
-    listen [::]:80;
-    server_name shop.example.com;
-
-    location / {
-        proxy_pass http://127.0.0.1:3001;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_buffering off;
-    }
+location / {
+    proxy_pass http://127.0.0.1:3001;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_buffering off;
 }
 ```
 
-Enable the site and validate the configuration:
+Validate and reload Nginx:
 
 ```bash
-sudo ln -s /etc/nginx/sites-available/nana-ui /etc/nginx/sites-enabled/nana-ui
-sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t
 sudo systemctl reload nginx
 ```
@@ -166,38 +162,20 @@ Next.js recommends using a reverse proxy in front of a self-hosted server. See t
 
 ## 7. Enable HTTPS
 
-Point the domain's DNS `A` record to the EC2 Elastic IP. After DNS resolves, obtain a TLS certificate with your preferred certificate automation, such as Certbot, and configure Nginx to redirect HTTP to HTTPS.
+The public domain currently serves HTTPS through Cloudflare. Keep Cloudflare SSL/TLS mode on **Full (strict)** and retain the existing valid origin certificate. If the apex domain is moved to a different EC2 origin, update its `A` record and install a valid origin certificate before cutover.
 
 Do not place the production site behind plain HTTP: login/session data and customer activity must be protected in transit.
 
 ## Deploy an update
 
-Pull the new source, rebuild, replace the old container, and retain the previous image briefly for rollback:
+Pull the new source, retain the previous image briefly for rollback, then rebuild and replace the container:
 
 ```bash
 git pull --ff-only
 
-set -a
-source .env.production
-set +a
-
 sudo docker tag nana-ui:latest nana-ui:previous
-sudo docker build \
-  --build-arg NEXT_PUBLIC_API_BASE_URL \
-  --build-arg NEXT_PUBLIC_USE_MOCK_API \
-  --build-arg NEXT_PUBLIC_VENDURE_SHOP_API_URL \
-  --build-arg NEXT_PUBLIC_VENDURE_CHANNEL_TOKEN \
-  --build-arg ALLOW_LOCAL_IMAGE_IP \
-  --tag nana-ui:latest \
-  .
-
-sudo docker stop nana-ui
-sudo docker rm nana-ui
-sudo docker run -d \
-  --name nana-ui \
-  --restart unless-stopped \
-  --publish 127.0.0.1:3001:3001 \
-  nana-ui:latest
+sudo docker compose --env-file .env.production -f compose.production.yml build
+sudo docker compose --env-file .env.production -f compose.production.yml up -d
 ```
 
 Confirm the container becomes healthy before considering the release complete.

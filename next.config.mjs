@@ -29,6 +29,16 @@ const nextConfig = {
         hostname: "devadmin.nanaorganics.co",
         pathname: "/static/**",
       },
+      {
+        protocol: "https",
+        hostname: "devapi.nanaorganics.co",
+        pathname: "/assets/**",
+      },
+      {
+        protocol: "https",
+        hostname: "devapi.nanaorganics.co",
+        pathname: "/static/**",
+      },
       // Medusa file module / admin static uploads (local dev)
       {
         protocol: "http",

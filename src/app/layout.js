@@ -1,5 +1,10 @@
-import { Playfair_Display } from "next/font/google";
 import "@fontsource/plus-jakarta-sans";
+import "@fontsource/playfair-display/400.css";
+import "@fontsource/playfair-display/500.css";
+import "@fontsource/playfair-display/600.css";
+import "@fontsource/playfair-display/700.css";
+import "@fontsource/playfair-display/800.css";
+import "@fontsource/playfair-display/900.css";
 import "primereact/resources/themes/lara-light-teal/theme.css";
 import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";
@@ -8,13 +13,6 @@ import "../assets/styles/globals.css";
 import AuthHydration from "@/components/Authhydration";
 import AppToastProvider from "@/components/AppToastProvider";
 import CartToastListener from "@/components/CartToastListener";
-
-const playfair = Playfair_Display({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800", "900"],
-  variable: "--font-playfair",
-  display: "swap",
-});
 
 export const metadata = {
   title: "Nana Organics",
@@ -26,7 +24,7 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={playfair.variable}>
+    <html lang="en" style={{ "--font-playfair": '"Playfair Display"' }}>
       <body>
         <AppToastProvider>
           {/* ✅ HYDRATE AUTH STORE */}
