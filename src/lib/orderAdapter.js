@@ -2,7 +2,9 @@
  * Map Medusa /user/orders API payloads to UI models used by OrderCard & order detail pages.
  */
 
-const PLACEHOLDER_IMAGE = "/AppLogo.svg";
+import { DEFAULT_IMAGE } from '@/lib/defaultImage';
+
+const PLACEHOLDER_IMAGE = DEFAULT_IMAGE;
 
 const MONEY_KEYS = ["value", "amount", "minor_amount", "numeric", "val"];
 

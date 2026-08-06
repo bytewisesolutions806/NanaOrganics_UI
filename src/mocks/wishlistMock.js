@@ -1,3 +1,5 @@
+import { DEFAULT_IMAGE } from '@/lib/defaultImage';
+
 export const wishlistMock = [
   {
     id: 'wish_1',
@@ -6,7 +8,7 @@ export const wishlistMock = [
     price: 12.49,
     originalPrice: 15.0,
     discount: 15,
-    image: '/AppLogo.png',
+    image: DEFAULT_IMAGE,
   },
   {
     id: 'wish_2',
@@ -15,7 +17,7 @@ export const wishlistMock = [
     price: 10.49,
     originalPrice: 13.0,
     discount: 15,
-    image: '/AppLogo.png',
+    image: DEFAULT_IMAGE,
   },
   {
     id: 'wish_3',
@@ -24,7 +26,7 @@ export const wishlistMock = [
     price: 18.99,
     originalPrice: 22.0,
     discount: 14,
-    image: '/AppLogo.png',
+    image: DEFAULT_IMAGE,
   },
   {
     id: 'wish_4',
@@ -33,7 +35,7 @@ export const wishlistMock = [
     price: 6.49,
     originalPrice: 8.0,
     discount: 19,
-    image: '/AppLogo.png',
+    image: DEFAULT_IMAGE,
   },
   {
     id: 'wish_5',
@@ -42,7 +44,7 @@ export const wishlistMock = [
     price: 9.49,
     originalPrice: 12.0,
     discount: 21,
-    image: '/AppLogo.png',
+    image: DEFAULT_IMAGE,
   },
   {
     id: 'wish_6',
@@ -51,6 +53,6 @@ export const wishlistMock = [
     price: 10.99,
     originalPrice: 14.0,
     discount: 21,
-    image: '/AppLogo.png',
+    image: DEFAULT_IMAGE,
   },
 ];

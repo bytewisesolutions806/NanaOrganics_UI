@@ -1,5 +1,6 @@
 import { getHomepageProductSections } from '@/graphql/queries/homepage';
 import { getRecentlyViewedProductSlugs } from '@/lib/recentlyViewedProducts';
+import { DEFAULT_IMAGE } from '@/lib/defaultImage';
 
 const money = (value) => Number(value || 0) / 100;
 const isRootCollection = (collection) =>
@@ -48,7 +49,7 @@ function mapProduct(product, section) {
     title: product.name,
     handle: product.slug,
     description: '',
-    thumbnail: product.featuredAsset?.preview || product.featuredAsset?.source || '/AppLogo.svg',
+    thumbnail: product.featuredAsset?.preview || product.featuredAsset?.source || DEFAULT_IMAGE,
     rating: 0,
     reviews_count: 0,
     variants,

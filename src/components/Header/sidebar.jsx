@@ -7,6 +7,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import menuItems from '@/constants/menuItems/index';
 import profileMenu from '@/constants/menuItems/profileMenu';
 import useAuthStore from '@/store/AuthStore';
+import { DEFAULT_IMAGE } from '@/lib/defaultImage';
 
 export default function Sidebar({
   sidebarOpen,
@@ -52,9 +53,12 @@ export default function Sidebar({
           {isAuthenticated ? (
             <div className="flex items-center gap-3 border-b pb-4">
               <img
-                src={customer?.profile_photo_url || '/AppLogo.png'}
+                src={customer?.profile_photo_url || DEFAULT_IMAGE}
                 alt="Profile photo"
                 className="w-10 h-10 rounded-full object-cover"
+                onError={(event) => {
+                  event.currentTarget.src = DEFAULT_IMAGE;
+                }}
               />
               <span className="font-semibold">{customer?.first_name}</span>
             </div>

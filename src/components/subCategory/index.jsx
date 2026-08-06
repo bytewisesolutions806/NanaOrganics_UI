@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Card } from "primereact/card";
 import { CategorySkeleton } from "../Category/CategorySkeleton";
+import { DEFAULT_IMAGE } from '@/lib/defaultImage';
 
 const SubCategorySection = ({
   categoryHandle,
@@ -70,7 +71,7 @@ const SubCategorySection = ({
                       src={
                         item.featuredAsset?.preview?.replace(/\\/g, "/") ??
                         item.image ??
-                        "/AppLogo.svg"
+                        DEFAULT_IMAGE
                       }
                       alt={item.name}
                       fill

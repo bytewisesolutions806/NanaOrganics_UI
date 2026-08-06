@@ -2,6 +2,7 @@ import {
   getCollectionBySlug,
   searchCollectionProducts,
 } from "@/graphql/queries/collections";
+import { DEFAULT_IMAGE } from '@/lib/defaultImage';
 
 const HIDDEN_FACET_CODES = new Set(["seeded-collection-membership"]);
 
@@ -19,7 +20,7 @@ function toProductCards(items = []) {
     const thumbnail =
       item.productAsset?.preview ||
       item.productVariantAsset?.preview ||
-      "/AppLogo.svg";
+      DEFAULT_IMAGE;
 
     return {
       id: item.productId,

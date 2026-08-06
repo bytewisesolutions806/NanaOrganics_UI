@@ -1,3 +1,5 @@
+import { DEFAULT_IMAGE } from '@/lib/defaultImage';
+
 export const ordersMock = [
   {
     id: 'ord_1',
@@ -5,7 +7,7 @@ export const ordersMock = [
     weight: '500g',
     price: 12.49,
     status: 'delivered',
-    image: '/AppLogo.png',
+    image: DEFAULT_IMAGE,
     confirmedDate: 'Dec 04',
     deliveredDate: 'Dec 07',
 
@@ -43,7 +45,7 @@ export const ordersMock = [
     weight: '250g',
     price: 8.99,
     status: 'delivered',
-    image: '/AppLogo.png',
+    image: DEFAULT_IMAGE,
     confirmedDate: 'Dec 02',
     deliveredDate: 'Dec 05',
 
@@ -81,7 +83,7 @@ export const ordersMock = [
     weight: '500ml',
     price: 9.49,
     status: 'on_the_way',
-    image: '/AppLogo.png',
+    image: DEFAULT_IMAGE,
     confirmedDate: 'Dec 07',
     expectedDelivery: 'Dec 10',
 
@@ -113,7 +115,7 @@ export const ordersMock = [
     weight: '500ml',
     price: 10.99,
     status: 'on_the_way',
-    image: '/AppLogo.png',
+    image: DEFAULT_IMAGE,
     confirmedDate: 'Dec 08',
     expectedDelivery: 'Dec 11',
 
@@ -145,7 +147,7 @@ export const ordersMock = [
     weight: '50g',
     price: 6.99,
     status: 'cancelled',
-    image: '/AppLogo.png',
+    image: DEFAULT_IMAGE,
     confirmedDate: 'Nov 28',
     cancelDate: 'Nov 30',
 
@@ -171,7 +173,7 @@ export const ordersMock = [
     weight: '250g',
     price: 3.99,
     status: 'returned',
-    image: '/AppLogo.png',
+    image: DEFAULT_IMAGE,
     confirmedDate: 'Nov 24',
     deliveredDate: 'Nov 25',
     returnDate: 'Nov 27',

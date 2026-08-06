@@ -4,14 +4,11 @@ import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { User } from 'lucide-react';
 import ProfileAvatarUpload from './ProfileAvatarUpload';
-import {
-  fetchProfileApi,
-  updateProfileApi,
-  uploadProfilePhotoApi,
-} from '@/service/ProfileService';
+import { fetchProfileApi, updateProfileApi, uploadProfilePhotoApi } from '@/service/ProfileService';
 import useAuthStore from '@/store/AuthStore';
+import { DEFAULT_IMAGE } from '@/lib/defaultImage';
 
-const FALLBACK_AVATAR = '/AppLogo.png';
+const FALLBACK_AVATAR = DEFAULT_IMAGE;
 const MAX_PROFILE_PHOTO_BYTES = 5 * 1024 * 1024;
 
 function authCustomer(customer) {
@@ -181,8 +178,16 @@ export default function PersonalInfoSection() {
         <p className="font-medium">Personal Information</p>
       </div>
 
-      {loadError && <p className="text-sm text-red-600 mb-4" role="alert">{loadError}</p>}
-      {saveMessage && <p className="text-sm text-green-700 mb-4" role="status">{saveMessage}</p>}
+      {loadError && (
+        <p className="text-sm text-red-600 mb-4" role="alert">
+          {loadError}
+        </p>
+      )}
+      {saveMessage && (
+        <p className="text-sm text-green-700 mb-4" role="status">
+          {saveMessage}
+        </p>
+      )}
 
       <ProfileAvatarUpload
         image={image}
@@ -199,7 +204,9 @@ export default function PersonalInfoSection() {
             {...register('first_name', { required: 'First name is required' })}
             className="w-full border border-[#CFE3DF] rounded-lg px-3 py-2 bg-[#F7F7F7] disabled:text-gray-600"
           />
-          {editMode && errors.first_name && <p className="text-xs text-red-500">{errors.first_name.message}</p>}
+          {editMode && errors.first_name && (
+            <p className="text-xs text-red-500">{errors.first_name.message}</p>
+          )}
         </div>
 
         <div>
@@ -209,7 +216,9 @@ export default function PersonalInfoSection() {
             {...register('last_name', { required: 'Last name is required' })}
             className="w-full border border-[#CFE3DF] rounded-lg px-3 py-2 bg-[#F7F7F7] disabled:text-gray-600"
           />
-          {editMode && errors.last_name && <p className="text-xs text-red-500">{errors.last_name.message}</p>}
+          {editMode && errors.last_name && (
+            <p className="text-xs text-red-500">{errors.last_name.message}</p>
+          )}
         </div>
 
         <div>
@@ -228,14 +237,21 @@ export default function PersonalInfoSection() {
             disabled={!editMode || saving}
             {...register('phone', {
               maxLength: { value: 30, message: 'Phone number is too long' },
-              validate: (value) => !value || String(value).trim().length >= 8 || 'Enter a valid phone number',
+              validate: (value) =>
+                !value || String(value).trim().length >= 8 || 'Enter a valid phone number',
             })}
             className="w-full border border-[#CFE3DF] rounded-lg px-3 py-2 bg-[#F7F7F7] disabled:text-gray-600"
           />
-          {editMode && errors.phone && <p className="text-xs text-red-500">{errors.phone.message}</p>}
+          {editMode && errors.phone && (
+            <p className="text-xs text-red-500">{errors.phone.message}</p>
+          )}
         </div>
 
-        {saveError && <p className="text-sm text-red-600" role="alert">{saveError}</p>}
+        {saveError && (
+          <p className="text-sm text-red-600" role="alert">
+            {saveError}
+          </p>
+        )}
 
         {!editMode ? (
           <button
@@ -251,10 +267,19 @@ export default function PersonalInfoSection() {
           </button>
         ) : (
           <div className="flex gap-4 pt-2">
-            <button type="button" onClick={handleCancel} disabled={saving} className="border border-[#698B81] px-5 py-2 rounded-lg disabled:opacity-50">
+            <button
+              type="button"
+              onClick={handleCancel}
+              disabled={saving}
+              className="border border-[#698B81] px-5 py-2 rounded-lg disabled:opacity-50"
+            >
               Cancel
             </button>
-            <button type="submit" disabled={saving} className="bg-[#2C665E] text-white px-5 py-2 rounded-lg disabled:opacity-50">
+            <button
+              type="submit"
+              disabled={saving}
+              className="bg-[#2C665E] text-white px-5 py-2 rounded-lg disabled:opacity-50"
+            >
               {saving ? 'Saving…' : 'Save →'}
             </button>
           </div>

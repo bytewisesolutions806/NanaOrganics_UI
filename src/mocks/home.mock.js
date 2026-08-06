@@ -1,3 +1,5 @@
+import { DEFAULT_IMAGE } from '@/lib/defaultImage';
+
 const homeMockData = {
   success: true,
   data: {
@@ -205,7 +207,7 @@ const homeMockData = {
         id: 'pcol_01KBX5496BAXYRYR5G8PWYZPEX',
         title: 'Trending Now',
         handle: 'trending-now',
-        image: '/images/collections/placeholder.jpg',
+        image: DEFAULT_IMAGE,
         description: 'Explore our collection',
         products: [
           {
@@ -1101,7 +1103,7 @@ const homeMockData = {
         id: 'pcol_01KBX54WYZF2GXGF2C06DJFPE6',
         title: 'New Arrivals',
         handle: 'new-arrivals',
-        image: '/images/collections/placeholder.jpg',
+        image: DEFAULT_IMAGE,
         description: 'Explore our collection',
         products: [],
       },
@@ -1109,7 +1111,7 @@ const homeMockData = {
         id: 'pcol_01KBX55PPYXCGCE3JCZ71946SH',
         title: 'Featured Collections',
         handle: 'featured-collections',
-        image: '/images/collections/placeholder.jpg',
+        image: DEFAULT_IMAGE,
         description: 'Explore our collection',
         products: [
           {
@@ -1348,7 +1350,7 @@ const homeMockData = {
         id: 'pcol_01KCM1QAEVMJ2Z9DZ7AJQYGAM4',
         title: 'Discover & Shop Now',
         handle: 'discover-shopnow',
-        image: '/images/collections/placeholder.jpg',
+        image: DEFAULT_IMAGE,
         description: 'Explore our collection',
         products: [],
       },
@@ -1356,7 +1358,7 @@ const homeMockData = {
         id: 'pcol_01KGQMWDFC2NW2PZ25ZR79XN98',
         title: 'Deals',
         handle: 'deals',
-        image: '/images/collections/placeholder.jpg',
+        image: DEFAULT_IMAGE,
         description: 'Explore our collection',
         products: [
           {

@@ -10,6 +10,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import ReusableButton from '@/components/ReUsableButton';
 import WishlistButton from '@/components/WishlistButton';
+import { DEFAULT_IMAGE } from '@/lib/defaultImage';
 
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -175,7 +176,7 @@ function ProductCard({ item }) {
           />
 
           <Image
-            src={item.thumbnail || '/AppLogo.svg'}
+            src={item.thumbnail || DEFAULT_IMAGE}
             alt={item.title || 'Product image'}
             width={300}
             height={200}

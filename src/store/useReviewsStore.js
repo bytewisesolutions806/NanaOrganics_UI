@@ -1,12 +1,13 @@
 import { create } from "zustand";
 import { reviewsMock } from "@/mocks/reviewsMock";
+import { DEFAULT_IMAGE } from '@/lib/defaultImage';
 import {
   fetchUserReviewsApi,
   patchUserReviewApi,
   deleteUserReviewApi,
 } from "@/service/ReviewsService";
 
-const useMockApi = () => process.env.NEXT_PUBLIC_USE_MOCK_API === "true";
+const isMockApiEnabled = () => process.env.NEXT_PUBLIC_USE_MOCK_API === "true";
 
 /** Mock-only: so deletes persist while paginating */
 const mockDeletedReviewIds = new Set();
@@ -17,7 +18,7 @@ function mockToApiShape(m) {
     product_id: "mock_product",
     product_title: m.productName,
     product_handle: "",
-    product_thumbnail: m.image || "/AppLogo.svg",
+    product_thumbnail: DEFAULT_IMAGE,
     rating: m.rating,
     title: null,
     content: m.review || "",
@@ -26,7 +27,7 @@ function mockToApiShape(m) {
     helpful_count: 0,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
-    images: Array.isArray(m.images) ? m.images : [],
+    images: Array.isArray(m.images) ? m.images.map(() => DEFAULT_IMAGE) : [],
   };
 }
 
@@ -59,7 +60,7 @@ const useReviewsStore = create((set, get) => ({
     });
 
     try {
-      if (useMockApi()) {
+      if (isMockApiEnabled()) {
         await new Promise((r) => setTimeout(r, 300));
         const mapped = reviewsMock
           .filter((m) => !mockDeletedReviewIds.has(m.id))
@@ -123,7 +124,7 @@ const useReviewsStore = create((set, get) => ({
   updateReview: async (reviewId, productId, payload) => {
     set({ actionLoading: true, actionError: null });
     try {
-      if (useMockApi()) {
+      if (isMockApiEnabled()) {
         await new Promise((r) => setTimeout(r, 250));
         set((state) => ({
           reviews: state.reviews.map((rev) =>
@@ -173,7 +174,7 @@ const useReviewsStore = create((set, get) => ({
     try {
       const { page, pageSize, total } = get();
 
-      if (useMockApi()) {
+      if (isMockApiEnabled()) {
         await new Promise((r) => setTimeout(r, 250));
         mockDeletedReviewIds.add(reviewId);
         const newTotal = Math.max(

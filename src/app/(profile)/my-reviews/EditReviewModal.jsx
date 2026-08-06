@@ -1,19 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import { Camera } from 'lucide-react';
+import { Camera, X } from 'lucide-react';
 import useReviewsStore from '@/store/useReviewsStore';
 import RatingStars from '@/components/StarRating';
-
-function readFileAsDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve(r.result);
-    r.onerror = reject;
-    r.readAsDataURL(file);
-  });
-}
 
 export default function EditReviewModal() {
   const {
@@ -25,66 +16,94 @@ export default function EditReviewModal() {
     actionError,
   } = useReviewsStore();
 
-  const [rating, setRating] = useState(0);
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [images, setImages] = useState([]);
+  if (!editModal || !selectedReview) return null;
+
+  return (
+    <EditReviewForm
+      key={selectedReview.id}
+      selectedReview={selectedReview}
+      closeEditModal={closeEditModal}
+      updateReview={updateReview}
+      actionLoading={actionLoading}
+      actionError={actionError}
+    />
+  );
+}
+
+function EditReviewForm({
+  selectedReview,
+  closeEditModal,
+  updateReview,
+  actionLoading,
+  actionError,
+}) {
+  const [rating, setRating] = useState(selectedReview.rating || 0);
+  const [title, setTitle] = useState(selectedReview.title || '');
+  const [content, setContent] = useState(selectedReview.content || '');
+  const [existingImages, setExistingImages] = useState(
+    Array.isArray(selectedReview.image_assets) ? selectedReview.image_assets : [],
+  );
+  const legacyImages = Array.isArray(selectedReview.legacy_image_urls)
+    ? selectedReview.legacy_image_urls
+    : [];
+  const [newImages, setNewImages] = useState([]);
   const [imageError, setImageError] = useState('');
+  const previewUrls = useRef(new Set());
 
-  useEffect(() => {
-    if (selectedReview) {
-      setRating(selectedReview.rating || 0);
-      setTitle(selectedReview.title || '');
-      setContent(selectedReview.content || '');
-      setImages(
-        Array.isArray(selectedReview.images) ? [...selectedReview.images] : []
-      );
-      setImageError('');
-    }
-  }, [selectedReview]);
+  const clearNewPreviews = () => {
+    previewUrls.current.forEach((url) => URL.revokeObjectURL(url));
+    previewUrls.current.clear();
+  };
 
-  if (!editModal) return null;
+  useEffect(() => () => clearNewPreviews(), []);
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
+  const imageCount = existingImages.length + legacyImages.length + newImages.length;
+
+  const handleImageUpload = (event) => {
+    const files = Array.from(event.target.files || []);
+    event.target.value = '';
+    if (!files.length) return;
     setImageError('');
-    if (!file.type.startsWith('image/')) {
-      setImageError('Please choose an image file.');
+    if (files.some((file) => !file.type.startsWith('image/'))) {
+      setImageError('Please choose image files only.');
       return;
     }
-    if (file.size > 2.5 * 1024 * 1024) {
-      setImageError('Image must be under 2.5 MB.');
+    if (files.some((file) => file.size > 2.5 * 1024 * 1024)) {
+      setImageError('Each image must be 2.5 MB or smaller.');
       return;
     }
-    if (images.length >= 4) {
+    if (imageCount + files.length > 4) {
       setImageError('You can add up to 4 images.');
       return;
     }
-    try {
-      const dataUrl = await readFileAsDataUrl(file);
-      if (typeof dataUrl === 'string' && dataUrl.startsWith('data:image/')) {
-        setImages((prev) => [...prev, dataUrl].slice(0, 4));
-      }
-    } catch {
-      setImageError('Could not read that image.');
-    }
+    const additions = files.map((file) => {
+      const preview = URL.createObjectURL(file);
+      previewUrls.current.add(preview);
+      return { file, preview };
+    });
+    setNewImages((current) => [...current, ...additions]);
   };
 
-  const removeImageAt = (index) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
+  const removeExistingImage = (id) => {
+    setExistingImages((current) => current.filter((image) => image.id !== id));
+    setImageError('');
+  };
+
+  const removeNewImage = (preview) => {
+    URL.revokeObjectURL(preview);
+    previewUrls.current.delete(preview);
+    setNewImages((current) => current.filter((image) => image.preview !== preview));
     setImageError('');
   };
 
   const handleSave = async () => {
-    if (!selectedReview?.id || !selectedReview?.product_id) return;
-    if (!content.trim()) return;
+    if (!selectedReview?.id || !selectedReview?.product_id || !content.trim()) return;
     await updateReview(selectedReview.id, selectedReview.product_id, {
       rating,
       title: title.trim() || null,
       content: content.trim(),
-      images,
+      retained_image_ids: existingImages.map((image) => image.id),
+      image_files: newImages.map((image) => image.file),
     });
   };
 
@@ -114,7 +133,7 @@ export default function EditReviewModal() {
         <input
           type="text"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(event) => setTitle(event.target.value)}
           className="w-full border border-[#CFE3DF] rounded-lg p-2 text-sm mb-4"
           placeholder="Short summary"
         />
@@ -122,52 +141,48 @@ export default function EditReviewModal() {
         <label className="text-sm text-gray-600 block mb-1">Review</label>
         <textarea
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={(event) => setContent(event.target.value)}
           className="w-full border border-[#CFE3DF] rounded-lg p-3 text-sm"
           rows={4}
         />
 
         <div className="mt-6">
-          <label className="text-sm text-gray-600 block mb-2">Photos</label>
+          <label className="text-sm text-gray-600 block mb-2">
+            Photos <span className="text-gray-400">({imageCount}/4)</span>
+          </label>
 
-          {images.length > 0 ? (
+          {imageCount > 0 ? (
             <div className="flex flex-wrap gap-2 mb-3">
-              {images.map((src, index) => (
-                <div
-                  key={`${index}-${src.slice(0, 24)}`}
-                  className="relative w-[60px] h-[60px] rounded-md overflow-hidden border border-[#CFE3DF] shrink-0"
-                >
-                  <Image
-                    src={src}
-                    alt=""
-                    width={60}
-                    height={60}
-                    className="object-cover w-full h-full"
-                    unoptimized
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeImageAt(index)}
-                    className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-black/60 text-white text-xs leading-5 hover:bg-black/80"
-                    aria-label="Remove image"
-                  >
-                    ×
-                  </button>
-                </div>
+              {existingImages.map((image) => (
+                <PhotoPreview key={image.id} src={image.url} onRemove={() => removeExistingImage(image.id)} />
+              ))}
+              {legacyImages.map((src, index) => (
+                <PhotoPreview key={`legacy-${index}`} src={src} />
+              ))}
+              {newImages.map(({ file, preview }) => (
+                <PhotoPreview
+                  key={preview}
+                  src={preview}
+                  alt={file.name}
+                  onRemove={() => removeNewImage(preview)}
+                />
               ))}
             </div>
           ) : null}
 
-          <label className="w-[60px] h-[60px] border border-[#CFE3DF] rounded-xl flex items-center justify-center cursor-pointer hover:bg-gray-50">
-            <Camera size={20} className="text-[#2C665E]" />
-            <input
-              type="file"
-              hidden
-              accept="image/*"
-              onChange={handleImageUpload}
-              disabled={images.length >= 4 || actionLoading}
-            />
-          </label>
+          {imageCount < 4 ? (
+            <label className="w-[60px] h-[60px] border border-dashed border-[#8CBAB3] rounded-xl flex items-center justify-center cursor-pointer hover:bg-[#F1F8F7]">
+              <Camera size={20} className="text-[#2C665E]" />
+              <input
+                type="file"
+                hidden
+                multiple
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={handleImageUpload}
+                disabled={actionLoading}
+              />
+            </label>
+          ) : null}
 
           {imageError ? (
             <p className="text-sm text-red-600 mt-2" role="alert">
@@ -185,7 +200,6 @@ export default function EditReviewModal() {
           >
             Cancel
           </button>
-
           <button
             type="button"
             onClick={handleSave}
@@ -196,6 +210,24 @@ export default function EditReviewModal() {
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function PhotoPreview({ src, alt = '', onRemove }) {
+  return (
+    <div className="relative w-[60px] h-[60px] rounded-md overflow-hidden border border-[#CFE3DF] shrink-0">
+      <Image src={src} alt={alt} fill sizes="60px" className="object-cover" unoptimized />
+      {onRemove ? (
+        <button
+          type="button"
+          onClick={onRemove}
+          className="absolute top-0.5 right-0.5 flex w-5 h-5 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
+          aria-label={alt ? `Remove ${alt}` : 'Remove image'}
+        >
+          <X size={12} />
+        </button>
+      ) : null}
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import RatingStars from '@/components/StarRating';
 import useReviewsStore from '@/store/useReviewsStore';
+import { DEFAULT_IMAGE } from '@/lib/defaultImage';
 
 function formatReviewDate(iso) {
   if (!iso) return '';
@@ -34,7 +35,7 @@ function statusBadge(status) {
 
 export default function ReviewCard({ review }) {
   const { openEditModal, openDeleteModal } = useReviewsStore();
-  const thumb = review.product_thumbnail || '/AppLogo.svg';
+  const thumb = review.product_thumbnail || DEFAULT_IMAGE;
   const ext = typeof thumb === 'string' && thumb.startsWith('http');
 
   return (

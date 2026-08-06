@@ -1,5 +1,6 @@
 import { shopApiRequest } from '@/lib/graphql/client';
 import { normalizeOrderFromApi } from '@/lib/orderAdapter';
+import { DEFAULT_IMAGE } from '@/lib/defaultImage';
 
 const ORDER_FIELDS = `
   fragment CustomerOrderFields on Order {
@@ -279,7 +280,7 @@ function toUiOrder(order, returnRequest) {
       thumbnail:
         line.featuredAsset?.preview ||
         line.productVariant?.product?.featuredAsset?.preview ||
-        '/AppLogo.svg',
+        DEFAULT_IMAGE,
     })),
   };
   const normalized = normalizeOrderFromApi(legacy);

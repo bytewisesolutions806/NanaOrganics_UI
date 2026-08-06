@@ -7,6 +7,7 @@ import { Card } from 'primereact/card';
 import { useRouter } from 'next/navigation';
 import { useEffect, useId, useState } from 'react';
 import { getAllCollections } from '@/graphql/queries/collections';
+import { DEFAULT_IMAGE } from '@/lib/defaultImage';
 
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -62,7 +63,7 @@ export default function ShopByCategory() {
           {/* Image */}
           <div className="relative w-[160px] h-[170px]">
             <Image
-              src={item.featuredAsset?.preview?.replace(/\\/g, '/') || '/AppLogo.svg'}
+              src={item.featuredAsset?.preview?.replace(/\\/g, '/') || DEFAULT_IMAGE}
               alt={item.name}
               fill
               sizes="(max-width: 760px) 130px, 150px"

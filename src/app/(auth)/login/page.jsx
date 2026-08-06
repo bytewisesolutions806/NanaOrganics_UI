@@ -8,6 +8,7 @@ import loginPageImage02 from "@/assets/images/LoginPage/loginPageTruck.png";
 import loginPageImage03 from "@/assets/images/LoginPage/loginPageStar.png";
 import loginPageImage from "@/assets/images/LoginTree.png";
 import { loginUser } from "@/service/AuthService";
+import { fetchProfileApi } from "@/service/ProfileService";
 import useAuthStore from "@/store/AuthStore";
 import useCartStore from "@/store/useCartStore";
 import Link from "next/link";
@@ -19,6 +20,7 @@ function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const login = useAuthStore((state) => state.login);
+  const setCustomer = useAuthStore((state) => state.setCustomer);
   const setPendingVerification = useAuthStore(
     (state) => state.setPendingVerification
   );
@@ -82,6 +84,19 @@ function LoginContent() {
         identifier: res.user.identifier,
         email: res.user.identifier,
       });
+
+      // Authentication returns a Vendure User, not the related Customer
+      // profile. Load it before navigating so the global header immediately
+      // receives the customer's name and resolved profile-photo URL.
+      try {
+        const profileResponse = await fetchProfileApi();
+        if (profileResponse?.success && profileResponse.data?.customer) {
+          setCustomer(profileResponse.data.customer);
+        }
+      } catch (profileError) {
+        // A profile refresh must not invalidate an otherwise successful login.
+        console.warn("Could not refresh the customer profile after login", profileError);
+      }
 
       // The new Vendure session can recover the customer's existing active
       // order even when logout cleared the browser's local cart identifier.

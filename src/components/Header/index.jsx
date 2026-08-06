@@ -16,10 +16,41 @@ import useWishlistStore from '@/store/useWishlistStore';
 import HeaderSearch from '../HeaderSearch';
 import profileMenu from '@/constants/menuItems/profileMenu';
 import Sidebar from './sidebar';
+import { DEFAULT_IMAGE } from '@/lib/defaultImage';
+import { fetchProfileApi } from '@/service/ProfileService';
 
 const Header = () => {
-  const { customer, isAuthenticated, hasHydrated, cartId: authCartId } = useAuthStore();
+  const { customer, isAuthenticated, hasHydrated, cartId: authCartId, setCustomer } = useAuthStore();
+  const profileSyncCustomerId = useRef(null);
   const storeCartId = useCartStore((state) => state.cartId);
+
+  useEffect(() => {
+    if (!hasHydrated || !isAuthenticated || !customer?.id) {
+      profileSyncCustomerId.current = null;
+      return;
+    }
+
+    const hasProfileFields =
+      Object.prototype.hasOwnProperty.call(customer, 'first_name') &&
+      Object.prototype.hasOwnProperty.call(customer, 'profile_photo_url');
+    if (hasProfileFields || profileSyncCustomerId.current === customer.id) return;
+
+    profileSyncCustomerId.current = customer.id;
+    let cancelled = false;
+    fetchProfileApi()
+      .then((response) => {
+        if (!cancelled && response?.success && response.data?.customer) {
+          setCustomer(response.data.customer);
+        }
+      })
+      .catch((error) => {
+        console.warn('Could not refresh the customer profile for the header', error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [customer, hasHydrated, isAuthenticated, setCustomer]);
 
   const fetchCart = useCartStore((state) => state.fetchCart);
   const wishlistTotal = useWishlistStore((state) => state.wishlistTotal);
@@ -29,8 +60,7 @@ const Header = () => {
   // Refetch when auth cart id, cart-store id, or sessionStorage cart_id is available
   // (add-to-cart only updated the cart store + sessionStorage before; auth cartId could stay null)
   useEffect(() => {
-    const fromStorage =
-      typeof window !== 'undefined' ? sessionStorage.getItem('cart_id') : null;
+    const fromStorage = typeof window !== 'undefined' ? sessionStorage.getItem('cart_id') : null;
     const id = storeCartId || authCartId || fromStorage;
     if (!hasHydrated) return;
     if (isAuthenticated || id) {
@@ -69,7 +99,7 @@ const Header = () => {
     id: category.id,
     name: category.name,
     handle: category.handle,
-    image: category.image || '/AppLogo.svg',
+    image: category.image || DEFAULT_IMAGE,
   }));
   const logout = useAuthStore((state) => state.logout);
   const resetCart = useCartStore((state) => state.resetCart);
@@ -186,7 +216,7 @@ const Header = () => {
                                           className="flex items-center gap-2 p-2 border border-[#E4ECEA] rounded-lg hover:border-[#1EA766] hover:bg-[#F8FDFC] transition-colors"
                                         >
                                           <img
-                                            src={entry.image || '/AppLogo.svg'}
+                                            src={entry.image || DEFAULT_IMAGE}
                                             alt={entry.name}
                                             className="w-8 h-8 rounded-md object-cover border border-[#E4ECEA] shrink-0"
                                           />
@@ -270,9 +300,12 @@ const Header = () => {
                         className="flex items-center gap-3 bg-[#E6F4F2] px-3 py-1 rounded-xl cursor-pointer"
                       >
                         <img
-                          src={customer?.profile_photo_url || '/AppLogo.png'}
+                          src={customer?.profile_photo_url || DEFAULT_IMAGE}
                           alt="profile"
                           className="w-9 h-9 rounded-full object-cover border"
+                          onError={(event) => {
+                            event.currentTarget.src = DEFAULT_IMAGE;
+                          }}
                         />
 
                         <span className="font-medium text-gray-700">{customer?.first_name}</span>

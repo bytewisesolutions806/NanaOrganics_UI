@@ -1,8 +1,12 @@
-import { shopApiRequest } from '@/lib/graphql/client';
+import { clearShopApiCache, shopApiRequest } from '@/lib/graphql/client';
+import { resolveAssetUrl } from '@/lib/assetUrl';
+import { DEFAULT_IMAGE } from '@/lib/defaultImage';
 
 const REVIEW_FIELDS = `
   id createdAt updatedAt productId productName productSlug productPreview
-  orderId orderCode rating title content images status verifiedPurchase moderationNote
+  orderId orderCode rating title content
+  images { id name mimeType fileSize source preview }
+  legacyImages status verifiedPurchase moderationNote
 `;
 
 const MY_REVIEWS = `
@@ -15,16 +19,16 @@ const MY_REVIEWS = `
 `;
 
 const SUBMIT_REVIEW = `
-  mutation SubmitProductReview($input: SubmitCustomerProductReviewInput!) {
-    submitProductReview(input: $input) {
+  mutation SubmitProductReview($input: SubmitCustomerProductReviewInput!, $images: [Upload!]) {
+    submitProductReview(input: $input, images: $images) {
       success errorCode message review { ${REVIEW_FIELDS} }
     }
   }
 `;
 
 const UPDATE_REVIEW = `
-  mutation UpdateMyProductReview($input: UpdateCustomerProductReviewInput!) {
-    updateMyProductReview(input: $input) {
+  mutation UpdateMyProductReview($input: UpdateCustomerProductReviewInput!, $images: [Upload!]) {
+    updateMyProductReview(input: $input, images: $images) {
       success errorCode message review { ${REVIEW_FIELDS} }
     }
   }
@@ -38,18 +42,26 @@ const DELETE_REVIEW = `
 
 function mapReview(review) {
   if (!review) return null;
+  const imageAssets = (review.images || []).map((asset) => ({
+    ...asset,
+    id: String(asset.id),
+    url: resolveAssetUrl(asset.preview || asset.source),
+  }));
+  const legacyImages = (review.legacyImages || []).map((url) => resolveAssetUrl(url));
   return {
     id: String(review.id),
     product_id: String(review.productId),
     product_title: review.productName,
     product_handle: review.productSlug,
-    product_thumbnail: review.productPreview || '/AppLogo.svg',
+    product_thumbnail: review.productPreview || DEFAULT_IMAGE,
     order_id: String(review.orderId),
     order_code: review.orderCode,
     rating: review.rating,
     title: review.title,
     content: review.content,
-    images: review.images || [],
+    image_assets: imageAssets,
+    legacy_image_urls: legacyImages,
+    images: [...imageAssets.map((asset) => asset.url), ...legacyImages].filter(Boolean),
     status: String(review.status || 'PENDING').toLowerCase(),
     is_verified_purchase: review.verifiedPurchase,
     moderation_note: review.moderationNote,
@@ -78,30 +90,70 @@ export const fetchUserReviewsApi = async ({ limit = 20, offset = 0 } = {}) => {
   };
 };
 
+async function reviewUploadRequest(query, variables, files) {
+  const endpoint = process.env.NEXT_PUBLIC_VENDURE_SHOP_API_URL;
+  if (!endpoint) throw new Error('Vendure Shop API URL is not configured.');
+
+  const form = new FormData();
+  form.append('operations', JSON.stringify({
+    query,
+    variables: { ...variables, images: files.map(() => null) },
+  }));
+  form.append('map', JSON.stringify(Object.fromEntries(
+    files.map((_, index) => [String(index), [`variables.images.${index}`]]),
+  )));
+  files.forEach((file, index) => form.append(String(index), file, file.name));
+
+  const token = sessionStorage.getItem('accessToken');
+  const channelToken = process.env.NEXT_PUBLIC_VENDURE_CHANNEL_TOKEN;
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(channelToken ? { 'vendure-token': channelToken } : {}),
+    },
+    body: form,
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok || payload?.errors?.length) {
+    throw new Error(payload?.errors?.[0]?.message || 'Could not upload review images.');
+  }
+  clearShopApiCache();
+  return payload?.data;
+}
+
+async function mutateReview(query, variables, files) {
+  return files.length
+    ? reviewUploadRequest(query, variables, files)
+    : shopApiRequest(query, { ...variables, images: [] });
+}
+
 export const submitUserReviewApi = async (body) => {
-  const data = await shopApiRequest(SUBMIT_REVIEW, {
+  const files = Array.isArray(body.image_files) ? body.image_files : [];
+  const data = await mutateReview(SUBMIT_REVIEW, {
     input: {
       productId: body.product_id,
       orderId: body.order_id,
       rating: Number(body.rating),
       title: body.title || null,
       content: body.content,
-      images: body.images || [],
     },
-  });
+  }, files);
   return result(data, 'submitProductReview');
 };
 
 export const patchUserReviewApi = async (reviewId, body) => {
-  const data = await shopApiRequest(UPDATE_REVIEW, {
+  const files = Array.isArray(body.image_files) ? body.image_files : [];
+  const data = await mutateReview(UPDATE_REVIEW, {
     input: {
       id: reviewId,
       rating: Number(body.rating),
       title: body.title || null,
       content: body.content,
-      images: body.images || [],
+      retainedImageIds: body.retained_image_ids || [],
     },
-  });
+  }, files);
   return result(data, 'updateMyProductReview');
 };
 

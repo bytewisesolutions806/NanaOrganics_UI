@@ -1,4 +1,6 @@
-export const reviewsMock = [
+import { DEFAULT_IMAGE } from '@/lib/defaultImage';
+
+const reviewFixtures = [
   {
     id: 'rev1',
     productName: 'Organic Raw Honey',
@@ -333,3 +335,9 @@ export const reviewsMock = [
     image: '/AppLogo.png',
   },
 ];
+
+export const reviewsMock = reviewFixtures.map((review) => ({
+  ...review,
+  image: DEFAULT_IMAGE,
+  images: Array.isArray(review.images) ? review.images.map(() => DEFAULT_IMAGE) : [],
+}));

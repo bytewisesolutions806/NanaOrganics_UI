@@ -1,4 +1,5 @@
 import { shopApiRequest } from "@/lib/graphql/client";
+import { DEFAULT_IMAGE } from '@/lib/defaultImage';
 
 const CART_ORDER_FRAGMENT = `
   fragment CartOrder on Order {
@@ -391,7 +392,7 @@ function mapOrder(order) {
           thumbnail:
             line.featuredAsset?.preview ||
             line.productVariant.product.featuredAsset?.preview ||
-            "/AppLogo.svg",
+            DEFAULT_IMAGE,
         },
       };
     }),

@@ -1,4 +1,5 @@
 import { getCollectionBySlug, getProductDetails } from "@/graphql/queries/collections";
+import { DEFAULT_IMAGE } from '@/lib/defaultImage';
 
 const money = (value) => Number(value || 0) / 100;
 const isRoot = (item) =>
@@ -17,7 +18,7 @@ function toProductDetail(product) {
   const { parent, child } = collectionPath(product);
   const assets = product.assets || [];
   const thumbnail =
-    product.featuredAsset?.preview || assets[0]?.preview || "/AppLogo.svg";
+    product.featuredAsset?.preview || assets[0]?.preview || DEFAULT_IMAGE;
   const brand = product.facetValues?.find((value) => value.facet?.code === "organic-brand");
   const tags = (product.facetValues || [])
     .filter((value) => value.facet?.code !== "seeded-collection-membership")

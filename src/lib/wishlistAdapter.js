@@ -1,3 +1,5 @@
+import { DEFAULT_IMAGE } from '@/lib/defaultImage';
+
 /** Maps one Shop API WishlistItem into the profile wishlist view model. */
 export function mapWishlistApiRow(row) {
   const product = row?.product;
@@ -25,6 +27,6 @@ export function mapWishlistApiRow(row) {
     price: Number(displayVariant?.priceWithTax || 0) / 100,
     currency: displayVariant?.currencyCode || 'INR',
     variant_id: displayVariant?.id ? String(displayVariant.id) : null,
-    image: product.preview || displayVariant?.preview || '/AppLogo.svg',
+    image: product.preview || displayVariant?.preview || DEFAULT_IMAGE,
   };
 }

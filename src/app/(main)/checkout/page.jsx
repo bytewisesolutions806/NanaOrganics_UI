@@ -59,7 +59,15 @@ export default function CheckoutPage() {
   const [selectedSavedId, setSelectedSavedId] = useState("");
   const shippingPrefillDoneRef = useRef(false);
 
-  const { items, pricing, totalQuantity, fetchCart, loading, currency_code } = useCartStore();
+  const {
+    items,
+    pricing,
+    totalQuantity,
+    fetchCart,
+    setCartFromApi,
+    loading,
+    currency_code,
+  } = useCartStore();
   const currencySymbol = currency_code?.toLowerCase?.() === "eur" ? "€" : "$";
   const resetCart = useCartStore((s) => s.resetCart);
   const [mounted, setMounted] = useState(false);
@@ -207,6 +215,36 @@ export default function CheckoutPage() {
     return shippingRes.data?.shipping_options || [];
   };
 
+  /**
+   * Selecting a method is what makes Vendure apply shipping promotions.
+   * Replace the quoted amount with the recalculated order shipping total so
+   * the checkout never displays a stale pre-promotion price.
+   */
+  const selectShippingMethodAndSync = async (options, optionId) => {
+    const addRes = await addShippingMethodApi({ option_id: optionId });
+    const updatedCart = addRes?.data?.cart;
+    if (!addRes?.success || !updatedCart) {
+      throw new Error(addRes?.message || "Failed to add shipping method");
+    }
+
+    setCartFromApi(updatedCart);
+    const shippingWithTax = Number(updatedCart.pricing?.shipping || 0);
+    const shippingWithoutTax = Number(
+      updatedCart.pricing?.shipping_excluding_tax ?? shippingWithTax,
+    );
+
+    return options.map((option) =>
+      option.id === optionId
+        ? {
+            ...option,
+            amount: shippingWithTax,
+            amount_without_tax: shippingWithoutTax,
+            tax: Math.max(0, shippingWithTax - shippingWithoutTax),
+          }
+        : option,
+    );
+  };
+
   const handleGetShippingOptions = async () => {
     if (!validateAddress()) return;
     const cartId = sessionStorage.getItem("cart_id");
@@ -217,9 +255,13 @@ export default function CheckoutPage() {
     setPaymentError(null);
 
     try {
-      const options = await persistAddressAndLoadShippingOptions(cartId);
+      let options = await persistAddressAndLoadShippingOptions(cartId);
+      const defaultShippingId = options[0]?.id ?? null;
+      if (defaultShippingId) {
+        options = await selectShippingMethodAndSync(options, defaultShippingId);
+      }
       setShippingOptions(options);
-      setSelectedShipping(options[0]?.id ?? null);
+      setSelectedShipping(defaultShippingId);
       setShippingRatesLoaded(true);
       if (options.length === 0) {
         setErrors((prev) => ({
@@ -336,14 +378,8 @@ export default function CheckoutPage() {
           : options[0].id;
       setSelectedShipping(nextSelectedShipping);
 
-      const addRes = await addShippingMethodApi({
-        cart_id: cartId,
-        option_id: nextSelectedShipping,
-      });
-
-      if (!addRes?.success) {
-        throw new Error(addRes?.message || "Failed to add shipping method");
-      }
+      options = await selectShippingMethodAndSync(options, nextSelectedShipping);
+      setShippingOptions(options);
 
       const paymentRes = await initPaymentApi(cartId);
 

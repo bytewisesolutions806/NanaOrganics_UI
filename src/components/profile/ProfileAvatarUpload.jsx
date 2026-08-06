@@ -1,18 +1,15 @@
 'use client';
 
-export default function ProfileAvatarUpload({
-  image,
-  editMode,
-  uploading,
-  onFileSelected,
-}) {
+import { DEFAULT_IMAGE } from '@/lib/defaultImage';
+
+export default function ProfileAvatarUpload({ image, editMode, uploading, onFileSelected }) {
   return (
     <div className="flex items-center gap-4 mb-6">
       <div className="w-[70px] h-[70px] rounded-full overflow-hidden border border-[#CFE3DF] bg-white">
         {/* The asset URL may point directly at an environment-specific S3/CDN host. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={image || '/AppLogo.png'}
+          src={image || DEFAULT_IMAGE}
           alt="Profile photo"
           className="h-full w-full object-cover"
         />

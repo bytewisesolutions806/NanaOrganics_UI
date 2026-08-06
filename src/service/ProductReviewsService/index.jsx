@@ -1,11 +1,14 @@
 import { shopApiRequest } from '@/lib/graphql/client';
+import { resolveAssetUrl } from '@/lib/assetUrl';
 
 const PRODUCT_REVIEWS = `
   query ProductReviews($productId: ID!, $skip: Int!, $take: Int!) {
     productReviews(productId: $productId, skip: $skip, take: $take) {
       totalItems
       items {
-        id createdAt customerName rating title content images verifiedPurchase
+        id createdAt customerName rating title content
+        images { id source preview }
+        legacyImages verifiedPurchase
       }
     }
   }
@@ -19,7 +22,10 @@ export async function fetchProductReviews({ productId, limit = 5, offset = 0, ra
     rating: review.rating,
     title: review.title,
     content: review.content,
-    images: review.images || [],
+    images: [
+      ...(review.images || []).map((asset) => resolveAssetUrl(asset.preview || asset.source)),
+      ...(review.legacyImages || []).map(resolveAssetUrl),
+    ].filter(Boolean),
     created_at: review.createdAt,
     is_verified_purchase: review.verifiedPurchase,
   }));

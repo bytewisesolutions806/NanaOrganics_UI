@@ -8,6 +8,7 @@ import OrderUpdatesModal from '../components/OrderUpdatesModal';
 import { loadOrderReviewLookup } from '@/lib/userReviewedProducts';
 import { downloadMockInvoice } from '@/utils/downloadMockInvoice';
 import { fetchUserReturnsApi } from '@/service/ReturnsService';
+import { DEFAULT_IMAGE } from '@/lib/defaultImage';
 
 export default function OrderDetailsPage() {
   const router = useRouter();
@@ -302,7 +303,7 @@ export default function OrderDetailsPage() {
                 <div key={item.id} className="flex gap-4 py-4 first:pt-0 last:pb-0">
                   <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-gray-50">
                     <Image
-                      src={item.thumbnail || '/AppLogo.svg'}
+                      src={item.thumbnail || DEFAULT_IMAGE}
                       alt={item.title || 'Product'}
                       width={80}
                       height={80}

@@ -8,6 +8,7 @@ import {
   getProductDetails,
   searchHeaderProducts,
 } from '@/graphql/queries/collections';
+import { DEFAULT_IMAGE } from '@/lib/defaultImage';
 
 const MIN_SEARCH_LENGTH = 2;
 
@@ -15,7 +16,7 @@ const isRootCollection = (item) =>
   item?.slug === '__root_collection__' || item?.name === '__root_collection__';
 
 function productImage(product) {
-  return product.productAsset?.preview || product.productVariantAsset?.preview || '/AppLogo.svg';
+  return product.productAsset?.preview || product.productVariantAsset?.preview || DEFAULT_IMAGE;
 }
 
 function priceValues(price) {

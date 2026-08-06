@@ -1,22 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import useOrdersStore from '@/store/useOrdersStore';
 import { submitUserReviewApi } from '@/service/ReviewsService';
 import { loadOrderReviewLookup } from '@/lib/userReviewedProducts';
 import Image from 'next/image';
-import { Star, Camera } from 'lucide-react';
+import { Star, Camera, X } from 'lucide-react';
 import Breadcrumb from '@/components/ui/BreadCrumb';
-
-function readFileAsDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve(r.result);
-    r.onerror = reject;
-    r.readAsDataURL(file);
-  });
-}
+import { DEFAULT_IMAGE } from '@/lib/defaultImage';
 
 export default function ReviewPage() {
   const { orderId } = useParams();
@@ -28,8 +20,8 @@ export default function ReviewPage() {
   const [hover, setHover] = useState(0);
   const [title, setTitle] = useState('');
   const [review, setReview] = useState('');
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
+  const [selectedImages, setSelectedImages] = useState([]);
+  const previewUrls = useRef(new Set());
   const [submitting, setSubmitting] = useState(false);
   const [loadError, setLoadError] = useState(null);
   const [formError, setFormError] = useState(null);
@@ -55,35 +47,45 @@ export default function ReviewPage() {
     loadOrderReviewLookup().then(({ orderIds }) => setReviewedOrderIds(orderIds));
   }, [orderId]);
 
-  useEffect(() => {
-    return () => {
-      if (imagePreview) {
-        URL.revokeObjectURL(imagePreview);
-      }
-    };
-  }, [imagePreview]);
+  useEffect(() => () => {
+    previewUrls.current.forEach((url) => URL.revokeObjectURL(url));
+    previewUrls.current.clear();
+  }, []);
 
   const order = orders.find((o) => o.id === orderId);
   const line = order?.items?.[0];
   const productId = line?.product_id;
 
   const handleImageUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) {
+    const files = Array.from(e.target.files || []);
+    e.target.value = '';
+    if (!files.length) return;
+    if (files.some((file) => !file.type.startsWith('image/'))) {
       setFormError('Please choose an image file.');
       return;
     }
-    if (file.size > 2.5 * 1024 * 1024) {
-      setFormError('Image must be under 2.5 MB.');
+    if (files.some((file) => file.size > 2.5 * 1024 * 1024)) {
+      setFormError('Each image must be 2.5 MB or smaller.');
+      return;
+    }
+    if (selectedImages.length + files.length > 4) {
+      setFormError('You can upload up to 4 images.');
       return;
     }
     setFormError(null);
-    if (imagePreview) {
-      URL.revokeObjectURL(imagePreview);
-    }
-    setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
+    const additions = files.map((file) => {
+      const preview = URL.createObjectURL(file);
+      previewUrls.current.add(preview);
+      return { file, preview };
+    });
+    setSelectedImages((current) => [...current, ...additions]);
+  };
+
+  const removeImage = (preview) => {
+    URL.revokeObjectURL(preview);
+    previewUrls.current.delete(preview);
+    setSelectedImages((current) => current.filter((item) => item.preview !== preview));
+    setFormError(null);
   };
 
   if (loadError) {
@@ -123,7 +125,7 @@ export default function ReviewPage() {
   const thumb =
     line?.thumbnail && (line.thumbnail.startsWith('http') || line.thumbnail.startsWith('/'))
       ? line.thumbnail
-      : '/AppLogo.svg';
+      : DEFAULT_IMAGE;
 
   const alreadyReviewed = orderId && reviewedOrderIds.has(String(orderId));
 
@@ -140,14 +142,6 @@ export default function ReviewPage() {
 
     setSubmitting(true);
     try {
-      let images = [];
-      if (imageFile) {
-        const dataUrl = await readFileAsDataUrl(imageFile);
-        if (typeof dataUrl === 'string' && dataUrl.startsWith('data:image/')) {
-          images = [dataUrl];
-        }
-      }
-
       const res = await submitUserReviewApi({
         product_id: productId,
         order_id: String(orderId),
@@ -155,7 +149,7 @@ export default function ReviewPage() {
         title: title.trim() || undefined,
         content: review.trim(),
         is_verified_purchase: true,
-        ...(images.length ? { images } : {}),
+        image_files: selectedImages.map((item) => item.file),
       });
 
       if (!res?.success) {
@@ -276,18 +270,55 @@ export default function ReviewPage() {
         </div>
 
         <div className="mt-6">
-          <label className="text-sm text-gray-600 block mb-2">Upload Image</label>
-
-          <label className="w-[60px] h-[60px] border border-[#CFE3DF] rounded-xl flex items-center justify-center cursor-pointer hover:bg-gray-50">
-            <Camera size={20} className="text-[#2C665E]" />
-
-            <input type="file" hidden accept="image/*" onChange={handleImageUpload} />
+          <label className="text-sm text-gray-600 block mb-2">
+            Upload images <span className="text-gray-400">(up to 4)</span>
           </label>
 
-          {imagePreview ? (
-            <div className="mt-3">
-              <Image src={imagePreview} alt="preview" width={80} height={80} className="rounded-lg" />
-            </div>
+          <div className="flex flex-wrap gap-3">
+            {selectedImages.map(({ file, preview }) => (
+              <div
+                key={preview}
+                className="relative w-[72px] h-[72px] rounded-xl overflow-hidden border border-[#CFE3DF]"
+              >
+                <Image
+                  src={preview}
+                  alt={`Review image ${file.name}`}
+                  fill
+                  sizes="72px"
+                  className="object-cover"
+                  unoptimized
+                />
+                <button
+                  type="button"
+                  onClick={() => removeImage(preview)}
+                  className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/65 text-white hover:bg-black/80"
+                  aria-label={`Remove ${file.name}`}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ))}
+
+            {selectedImages.length < 4 ? (
+              <label className="w-[72px] h-[72px] border border-dashed border-[#8CBAB3] rounded-xl flex flex-col gap-1 items-center justify-center cursor-pointer hover:bg-[#F1F8F7]">
+                <Camera size={20} className="text-[#2C665E]" />
+                <span className="text-[11px] text-[#2C665E]">Add photo</span>
+                <input
+                  type="file"
+                  hidden
+                  multiple
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  onChange={handleImageUpload}
+                  disabled={submitting}
+                />
+              </label>
+            ) : null}
+          </div>
+
+          {selectedImages.length ? (
+            <p className="mt-2 text-xs text-gray-500">
+              {selectedImages.length} of 4 images selected
+            </p>
           ) : null}
         </div>
 
