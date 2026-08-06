@@ -6,10 +6,10 @@ import { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Button } from 'primereact/button';
-import { Dropdown } from 'primereact/dropdown';
 import { LockKeyhole } from 'lucide-react';
 import useCartStore from '@/store/useCartStore';
 import useAuthStore from '@/store/AuthStore';
+import { getProductById } from '@/service/Product';
 import './index.css';
 
 export default function CartPage() {
@@ -54,6 +54,7 @@ export default function CartPage() {
   }, [fetchCart, hasHydrated, isAuthenticated]);
 
   const [couponCode, setCouponCode] = useState('');
+  const [openingItemId, setOpeningItemId] = useState(null);
 
   const handleApplyCoupon = async () => {
     const normalizedCode = couponCode.trim().toUpperCase();
@@ -134,6 +135,31 @@ export default function CartPage() {
     await updateCart({ item_id: item.id, quantity: newQty });
   };
 
+  const handleOpenProduct = async (item) => {
+    if (openingItemId) return;
+    setOpeningItemId(item.id);
+
+    try {
+      let path = item.product?.shop_path;
+      if (!path?.category || !path?.subcategory) {
+        const response = await getProductById(item.product?.slug);
+        path = response?.data?.product?.shop_path;
+      }
+      if (!path?.category || !path?.subcategory || !item.product?.slug) {
+        throw new Error('This product does not have a storefront category.');
+      }
+      router.push(`/shop/${path.category}/${path.subcategory}/${item.product.slug}`);
+    } catch (error) {
+      toast.current?.show({
+        severity: 'error',
+        summary: 'Product unavailable',
+        detail: error?.message || 'Could not open this product.',
+        life: 3000,
+      });
+      setOpeningItemId(null);
+    }
+  };
+
   /* ================= UI ================= */
   return (
     <div className="max-w-7xl mx-auto px-4 py-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -176,35 +202,44 @@ export default function CartPage() {
               </button>
 
               {/* IMAGE */}
-              <div className="relative w-[100px] h-[100px] shrink-0">
+              <button
+                type="button"
+                onClick={() => handleOpenProduct(item)}
+                disabled={Boolean(openingItemId)}
+                aria-label={`Open ${item.title}`}
+                className="relative w-[100px] h-[100px] shrink-0 rounded-xl disabled:cursor-wait disabled:opacity-70"
+              >
                 <Image
                   src={item.product.thumbnail}
                   alt={item.title}
                   fill
                   className="rounded-xl object-cover"
                 />
-              </div>
+              </button>
 
               {/* CONTENT */}
               <div className="flex-1 w-full">
-                <h3 className="text-sm font-medium text-gray-800">{item.title}</h3>
+                <button
+                  type="button"
+                  onClick={() => handleOpenProduct(item)}
+                  disabled={Boolean(openingItemId)}
+                  className="text-left disabled:cursor-wait disabled:opacity-70"
+                >
+                  <h3 className="text-sm font-semibold text-gray-800 hover:text-[#1EA766] hover:underline">
+                    {item.title}
+                  </h3>
+                </button>
+
+                {item.variant_title && (
+                  <p className="mt-1 text-sm text-gray-500">
+                    Variant:{' '}
+                    <span className="font-medium text-[#2C665E]">
+                      {item.variant_title}
+                    </span>
+                  </p>
+                )}
 
                 <div className="mt-3 flex flex-wrap items-center gap-4">
-                  {/* VARIANT */}
-                  {/* {item.variant_title && (
-                    <Dropdown
-                      value={item.variant_title}
-                      options={[
-                        {
-                          label: `${item.variant_title} g`,
-                          value: item.variant_title,
-                        },
-                      ]}
-                      disabled
-                      className="w-28 text-sm"
-                    />
-                  )} */}
-
                   <div className="hidden sm:block h-6 w-px bg-[#E6F4F2]" />
 
                   {/* QUANTITY */}

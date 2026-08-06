@@ -1,8 +1,8 @@
 "use client";
 
 import {
+  CardElement,
   Elements,
-  PaymentElement,
   useElements,
   useStripe,
 } from "@stripe/react-stripe-js";
@@ -20,39 +20,64 @@ const appearance = {
   },
 };
 
+const cardElementOptions = {
+  disableLink: true,
+  hidePostalCode: true,
+  style: {
+    base: {
+      color: "#1f2937",
+      fontFamily: '"Plus Jakarta Sans", system-ui, sans-serif',
+      fontSize: "16px",
+      fontSmoothing: "antialiased",
+      "::placeholder": { color: "#9ca3af" },
+    },
+    invalid: {
+      color: "#dc2626",
+      iconColor: "#dc2626",
+    },
+  },
+};
+
 function StripeCheckoutForm({
   onSuccess,
   onError,
   totalAmount,
   currencySymbol,
+  clientSecret,
   orderCode,
   customerEmail,
 }) {
   const stripe = useStripe();
   const elements = useElements();
   const [processing, setProcessing] = useState(false);
+  const [cardComplete, setCardComplete] = useState(false);
+  const [cardError, setCardError] = useState("");
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!stripe || !elements || processing) return;
 
+    const card = elements.getElement(CardElement);
+    if (!card || !cardComplete) {
+      setCardError("Enter complete and valid card details.");
+      return;
+    }
+
     setProcessing(true);
+    setCardError("");
     onError?.(null);
 
-    const returnUrl = new URL("/checkout/stripe-return", window.location.origin);
-    returnUrl.searchParams.set("order_code", orderCode);
     sessionStorage.setItem("stripe_order_code", orderCode);
 
-    const { error, paymentIntent } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        return_url: returnUrl.toString(),
-        payment_method_data: customerEmail
-          ? { billing_details: { email: customerEmail } }
-          : undefined,
+    const { error, paymentIntent } = await stripe.confirmCardPayment(
+      clientSecret,
+      {
+        payment_method: {
+          card,
+          billing_details: customerEmail ? { email: customerEmail } : undefined,
+        },
       },
-      redirect: "if_required",
-    });
+    );
 
     if (error) {
       onError?.(error.message || "Stripe could not process the payment.");
@@ -70,25 +95,36 @@ function StripeCheckoutForm({
       return;
     }
 
-    onError?.("The payment was not completed. Please try another payment method.");
+    onError?.("The card payment was not completed. Please check the card details and try again.");
     setProcessing(false);
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="rounded-xl border border-[#E6F4F2] bg-white p-5">
-        <PaymentElement
-          options={{
-            layout: "tabs",
-            defaultValues: customerEmail
-              ? { billingDetails: { email: customerEmail } }
-              : undefined,
-          }}
-        />
+        <label className="mb-3 block text-sm font-semibold text-gray-800">
+          Card details
+        </label>
+        <div className={`rounded-xl border bg-white px-4 py-4 transition ${
+          cardError ? "border-red-400" : "border-gray-300 focus-within:border-[#1EA766]"
+        }`}>
+          <CardElement
+            options={cardElementOptions}
+            onChange={(event) => {
+              setCardComplete(event.complete);
+              setCardError(event.error?.message || "");
+            }}
+          />
+        </div>
+        {cardError && (
+          <p className="mt-2 text-sm text-red-600" role="alert">
+            {cardError}
+          </p>
+        )}
       </div>
       <button
         type="submit"
-        disabled={!stripe || !elements || processing}
+        disabled={!stripe || !elements || !cardComplete || processing}
         className="w-full rounded-xl bg-[#1EA766] py-4 font-semibold text-white transition hover:bg-[#178a54] disabled:cursor-not-allowed disabled:bg-gray-400"
       >
         {processing
@@ -134,6 +170,7 @@ export default function StripePayment({
         onError={onError}
         totalAmount={totalAmount}
         currencySymbol={currencySymbol}
+        clientSecret={clientSecret}
         orderCode={orderCode}
         customerEmail={customerEmail}
       />

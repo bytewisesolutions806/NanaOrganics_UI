@@ -47,7 +47,7 @@ function mapProduct(product, section) {
     productId: product.id,
     title: product.name,
     handle: product.slug,
-    description: product.description || '',
+    description: '',
     thumbnail: product.featuredAsset?.preview || product.featuredAsset?.source || '/AppLogo.svg',
     rating: 0,
     reviews_count: 0,
@@ -75,7 +75,7 @@ function mapSection(section) {
 
 export const getHomeData = async () => {
   const sections = await getHomepageProductSections({
-    take: 12,
+    take: 8,
     recentlyViewedSlugs: getRecentlyViewedProductSlugs(),
   });
 

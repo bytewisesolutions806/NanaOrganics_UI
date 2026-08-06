@@ -904,11 +904,11 @@ export default function CheckoutPage() {
                             </span>
                             <span>
                               <span className="block font-semibold text-gray-900">
-                                {isStripe ? "Pay securely online" : method.name}
+                                {isStripe ? "Pay by Card" : method.name}
                               </span>
                               <span className="mt-1 block text-sm text-gray-600">
                                 {isStripe
-                                  ? "Card and other payment options powered by Stripe."
+                                  ? "Secure card payment powered by Stripe."
                                   : method.description ||
                                     `Pay ${currencySymbol}${finalTotal.toFixed(2)} when your order is delivered.`}
                               </span>

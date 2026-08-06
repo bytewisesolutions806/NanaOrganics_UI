@@ -22,11 +22,6 @@ export default function Sidebar({
   const router = useRouter();
   const pathname = usePathname();
 
-  const user = {
-    name: 'Stephen',
-    image: 'https://i.pravatar.cc/150?img=12',
-  };
-
   // lock body scroll
   useEffect(() => {
     document.body.style.overflow = sidebarOpen ? 'hidden' : 'auto';
@@ -57,7 +52,8 @@ export default function Sidebar({
           {isAuthenticated ? (
             <div className="flex items-center gap-3 border-b pb-4">
               <img
-                src={customer?.avatar || user.image}
+                src={customer?.profile_photo_url || '/AppLogo.png'}
+                alt="Profile photo"
                 className="w-10 h-10 rounded-full object-cover"
               />
               <span className="font-semibold">{customer?.first_name}</span>

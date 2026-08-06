@@ -65,10 +65,25 @@ const CART_ORDER_FRAGMENT = `
         id
         name
         sku
+        options {
+          id
+          name
+          code
+        }
         product {
           id
           name
           slug
+          collections {
+            id
+            name
+            slug
+            breadcrumbs {
+              id
+              name
+              slug
+            }
+          }
           featuredAsset {
             preview
           }
@@ -330,26 +345,56 @@ function mapOrder(order) {
     currency_code: order.currencyCode,
     item_count: order.lines.length,
     total_quantity: order.totalQuantity,
-    items: order.lines.map((line) => ({
-      id: line.id,
-      variant_id: line.productVariant.id,
-      title: line.productVariant.product.name,
-      variant_title: line.productVariant.name,
-      sku: line.productVariant.sku,
-      quantity: line.quantity,
-      unit_price: money(line.unitPriceWithTax),
-      total_price: money(line.linePriceWithTax),
-      final_price: money(line.discountedLinePriceWithTax),
-      discount_amount: Math.max(0, money(line.linePriceWithTax - line.discountedLinePriceWithTax)),
-      product: {
-        id: line.productVariant.product.id,
-        slug: line.productVariant.product.slug,
-        thumbnail:
-          line.featuredAsset?.preview ||
-          line.productVariant.product.featuredAsset?.preview ||
-          "/AppLogo.svg",
-      },
-    })),
+    items: order.lines.map((line) => {
+      const storefrontCollections = (line.productVariant.product.collections || [])
+        .filter(
+          (collection) =>
+            collection.slug !== "__root_collection__" &&
+            !collection.slug?.startsWith("homepage-"),
+        )
+        .sort(
+          (left, right) =>
+            (right.breadcrumbs?.length || 0) - (left.breadcrumbs?.length || 0),
+        );
+      const collection = storefrontCollections[0];
+      const breadcrumbs = (collection?.breadcrumbs || []).filter(
+        (entry) => entry.slug !== "__root_collection__",
+      );
+      const category = breadcrumbs[0] || collection;
+      const subcategory = breadcrumbs.at(-1) || collection;
+      const optionLabel = (line.productVariant.options || [])
+        .map((option) => option.name)
+        .filter(Boolean)
+        .join(" / ");
+
+      return {
+        id: line.id,
+        variant_id: line.productVariant.id,
+        title: line.productVariant.product.name,
+        variant_title: optionLabel || line.productVariant.name,
+        sku: line.productVariant.sku,
+        quantity: line.quantity,
+        unit_price: money(line.unitPriceWithTax),
+        total_price: money(line.linePriceWithTax),
+        final_price: money(line.discountedLinePriceWithTax),
+        discount_amount: Math.max(
+          0,
+          money(line.linePriceWithTax - line.discountedLinePriceWithTax),
+        ),
+        product: {
+          id: line.productVariant.product.id,
+          slug: line.productVariant.product.slug,
+          shop_path:
+            category?.slug && subcategory?.slug
+              ? { category: category.slug, subcategory: subcategory.slug }
+              : null,
+          thumbnail:
+            line.featuredAsset?.preview ||
+            line.productVariant.product.featuredAsset?.preview ||
+            "/AppLogo.svg",
+        },
+      };
+    }),
     pricing: {
       subtotal,
       subtotal_excluding_tax: subtotalExcludingTax,

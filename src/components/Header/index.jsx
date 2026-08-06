@@ -94,11 +94,6 @@ const Header = () => {
   const handleToggle = () => {
     setOpen(!open);
   };
-  const user = {
-    name: 'Stephen',
-    image: 'https://i.pravatar.cc/150?img=12',
-  };
-
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
@@ -275,7 +270,7 @@ const Header = () => {
                         className="flex items-center gap-3 bg-[#E6F4F2] px-3 py-1 rounded-xl cursor-pointer"
                       >
                         <img
-                          src={user.image}
+                          src={customer?.profile_photo_url || '/AppLogo.png'}
                           alt="profile"
                           className="w-9 h-9 rounded-full object-cover border"
                         />

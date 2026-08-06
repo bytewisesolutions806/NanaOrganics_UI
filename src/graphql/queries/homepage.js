@@ -8,16 +8,13 @@ export const GET_HOMEPAGE_PRODUCT_SECTIONS = gql`
       title
       description
       productVariants {
-        id
         product {
           id
           name
           slug
-          description
           featuredAsset {
             id
             preview
-            source
           }
           collections {
             id
@@ -32,18 +29,10 @@ export const GET_HOMEPAGE_PRODUCT_SECTIONS = gql`
           variants {
             id
             name
-            sku
-            price
             priceWithTax
-            currencyCode
             stockLevel
             customFields {
               isPopular
-            }
-            featuredAsset {
-              id
-              preview
-              source
             }
             options {
               id
@@ -57,7 +46,7 @@ export const GET_HOMEPAGE_PRODUCT_SECTIONS = gql`
   }
 `;
 
-export async function getHomepageProductSections({ take = 12, recentlyViewedSlugs = [] } = {}) {
+export async function getHomepageProductSections({ take = 8, recentlyViewedSlugs = [] } = {}) {
   const data = await shopApiRequest(GET_HOMEPAGE_PRODUCT_SECTIONS, {
     input: { take, recentlyViewedSlugs },
   });
