@@ -2,11 +2,28 @@
 
 import useOrdersFilterStore from '@/store/useOrdersFilterStore';
 
-export default function MyOrdersFilter({ filterOpen, setFilterOpen, filters }) {
+export default function MyOrdersFilter({
+  filterOpen,
+  setFilterOpen,
+  filters,
+  onFiltersChanged,
+}) {
   const { selectedFilters, toggleFilter, clearFilters } =
     useOrdersFilterStore();
+  const activeFilterCount =
+    selectedFilters.status.length + selectedFilters.orderTime.length;
 
   if (!filters) return null;
+
+  const handleToggle = (type, value) => {
+    toggleFilter(type, value);
+    onFiltersChanged?.();
+  };
+
+  const handleClear = () => {
+    clearFilters();
+    onFiltersChanged?.();
+  };
 
   const renderStatus = () => (
     <div className="space-y-3 text-sm">
@@ -16,11 +33,12 @@ export default function MyOrdersFilter({ filterOpen, setFilterOpen, filters }) {
         const checked = selectedFilters.status?.includes(value);
 
         return (
-          <label key={value} className="flex gap-2 cursor-pointer">
+          <label key={value} className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
               checked={checked}
-              onChange={() => toggleFilter('status', value)}
+              onChange={() => handleToggle('status', value)}
+              className="h-4 w-4 accent-[#2C665E]"
             />
             {label}
           </label>
@@ -37,11 +55,12 @@ export default function MyOrdersFilter({ filterOpen, setFilterOpen, filters }) {
         const checked = selectedFilters.orderTime?.includes(value);
 
         return (
-          <label key={value} className="flex gap-2 cursor-pointer">
+          <label key={value} className="flex items-center gap-2 cursor-pointer">
             <input
               type="checkbox"
               checked={checked}
-              onChange={() => toggleFilter('orderTime', value)}
+              onChange={() => handleToggle('orderTime', value)}
+              className="h-4 w-4 accent-[#2C665E]"
             />
             {label}
           </label>
@@ -52,7 +71,10 @@ export default function MyOrdersFilter({ filterOpen, setFilterOpen, filters }) {
 
   return (
     <>
-      <div className="hidden lg:block lg:col-span-3 bg-[#E6EFEF] rounded-xl p-6">
+      <aside
+        aria-label="Order filters"
+        className="hidden lg:block lg:col-span-3 bg-[#E6EFEF] rounded-xl p-6 h-fit min-h-[300px]"
+      >
         <h3 className="font-semibold mb-4">Status</h3>
         {renderStatus()}
 
@@ -61,12 +83,13 @@ export default function MyOrdersFilter({ filterOpen, setFilterOpen, filters }) {
 
         <button
           type="button"
-          onClick={() => clearFilters()}
-          className="mt-4 text-sm text-[#2C665E] underline"
+          onClick={handleClear}
+          disabled={activeFilterCount === 0}
+          className="mt-4 text-sm text-[#2C665E] underline disabled:cursor-not-allowed disabled:opacity-40"
         >
           Clear filters
         </button>
-      </div>
+      </aside>
 
       {filterOpen && (
         <>
@@ -84,6 +107,7 @@ export default function MyOrdersFilter({ filterOpen, setFilterOpen, filters }) {
                 type="button"
                 onClick={() => setFilterOpen(false)}
                 className="text-gray-500 text-xl"
+                aria-label="Close filters"
               >
                 ✕
               </button>
@@ -101,10 +125,19 @@ export default function MyOrdersFilter({ filterOpen, setFilterOpen, filters }) {
 
             <button
               type="button"
-              onClick={() => clearFilters()}
-              className="mt-6 text-sm text-[#2C665E] underline"
+          onClick={handleClear}
+              disabled={activeFilterCount === 0}
+              className="mt-6 text-sm text-[#2C665E] underline disabled:cursor-not-allowed disabled:opacity-40"
             >
               Clear filters
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setFilterOpen(false)}
+              className="mt-6 w-full rounded-xl bg-[#2C665E] px-4 py-3 text-sm font-semibold text-white"
+            >
+              Apply filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
             </button>
           </div>
         </>

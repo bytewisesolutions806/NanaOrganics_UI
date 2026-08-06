@@ -18,6 +18,8 @@ export default function MyOrdersPage() {
   const [reviewedOrderIds, setReviewedOrderIds] = useState(() => new Set());
   const [legacyReviewedProductIds, setLegacyReviewedProductIds] = useState(() => new Set());
   const { filters, fetchFilters, selectedFilters } = useOrdersFilterStore();
+  const activeFilterCount =
+    selectedFilters.status.length + selectedFilters.orderTime.length;
 
   const { orders, fetchOrders, refreshOrders, loading, error } = useOrdersStore();
 
@@ -78,20 +80,12 @@ export default function MyOrdersPage() {
 
   const totalPages = Math.max(1, Math.ceil(filteredOrders.length / PAGE_SIZE) || 1);
 
-  useEffect(() => {
-    setPage(1);
-  }, [selectedFilters.status, selectedFilters.orderTime]);
-
-  useEffect(() => {
-    if (page > totalPages) {
-      setPage(totalPages);
-    }
-  }, [page, totalPages]);
+  const currentPage = Math.min(page, totalPages);
 
   const pagedOrders = useMemo(() => {
-    const start = (page - 1) * PAGE_SIZE;
+    const start = (currentPage - 1) * PAGE_SIZE;
     return filteredOrders.slice(start, start + PAGE_SIZE);
-  }, [filteredOrders, page]);
+  }, [filteredOrders, currentPage]);
 
   return (
     <>
@@ -115,7 +109,7 @@ export default function MyOrdersPage() {
               onClick={() => setFilterOpen(true)}
               className="lg:hidden px-3 py-2 bg-[#2C665E] text-white rounded-lg text-sm"
             >
-              Filters
+              Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ''}
             </button>
           </div>
 
@@ -151,7 +145,7 @@ export default function MyOrdersPage() {
 
             {!loading && filteredOrders.length > 0 && (
               <OrdersPagination
-                page={page}
+                page={currentPage}
                 pageSize={PAGE_SIZE}
                 totalItems={filteredOrders.length}
                 onPageChange={setPage}
@@ -161,7 +155,12 @@ export default function MyOrdersPage() {
         </div>
 
         {filters && (
-          <MyOrdersFilter filterOpen={filterOpen} setFilterOpen={setFilterOpen} filters={filters} />
+          <MyOrdersFilter
+            filterOpen={filterOpen}
+            setFilterOpen={setFilterOpen}
+            filters={filters}
+            onFiltersChanged={() => setPage(1)}
+          />
         )}
       </div>
     </>

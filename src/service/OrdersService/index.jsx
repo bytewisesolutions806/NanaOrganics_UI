@@ -79,6 +79,9 @@ const CUSTOMER_ORDERS = `
         items { ...CustomerOrderFields }
       }
     }
+    myReturnRequests(skip: 0, take: 100) {
+      items { orderId status updatedAt }
+    }
   }
 `;
 
@@ -86,6 +89,9 @@ const CUSTOMER_ORDER = `
   ${ORDER_FIELDS}
   query CustomerOrder($id: ID!) {
     order(id: $id) { ...CustomerOrderFields }
+    myReturnRequests(skip: 0, take: 100) {
+      items { orderId status updatedAt }
+    }
   }
 `;
 
@@ -179,8 +185,9 @@ function buildOrderUpdates(order) {
   return updates;
 }
 
-function uiStatusFor(order) {
+function uiStatusFor(order, returnRequest) {
   const fulfillmentStates = (order.fulfillments || []).map((item) => item.state);
+  if (returnRequest && ['RECEIVED', 'REFUNDED'].includes(returnRequest.status)) return 'returned';
   if (order.state === 'Cancelled' || fulfillmentStates.includes('Cancelled')) return 'cancelled';
   if (order.state === 'Delivered' || fulfillmentStates.includes('Delivered')) return 'delivered';
   if (
@@ -190,7 +197,7 @@ function uiStatusFor(order) {
   return 'confirmed';
 }
 
-function toUiOrder(order) {
+function toUiOrder(order, returnRequest) {
   if (!order) return null;
   const cancelled = /cancel/i.test(order.state);
   const discountTotal = (order.discounts || []).reduce(
@@ -242,6 +249,13 @@ function toUiOrder(order) {
     payment_method: order.payments?.[0]?.method || 'cash-on-delivery',
     payment_status: order.payments?.[0]?.state || 'Authorized',
     vendure_state: order.state,
+    metadata: returnRequest
+      ? {
+          returned: ['RECEIVED', 'REFUNDED'].includes(returnRequest.status),
+          return_status: returnRequest.status,
+          returned_at: returnRequest.updatedAt,
+        }
+      : undefined,
     fulfillments: (order.fulfillments || []).map((fulfillment) => ({
       id: fulfillment.id,
       status: fulfillment.state,
@@ -270,7 +284,18 @@ function toUiOrder(order) {
   };
   const normalized = normalizeOrderFromApi(legacy);
   const updates = buildOrderUpdates(order);
-  const uiStatus = uiStatusFor(order);
+  const uiStatus = uiStatusFor(order, returnRequest);
+  if (uiStatus === 'returned' && !updates.some((item) => item.status === 'Returned')) {
+    updates.push({
+      id: `return-${order.id}`,
+      status: 'Returned',
+      description: 'Your returned order has been received.',
+      date: formatUpdateDate(returnRequest.updatedAt),
+      createdAt: returnRequest.updatedAt,
+      type: 'ORDER_RETURNED',
+      completed: true,
+    });
+  }
   const tracking = (order.fulfillments || []).find((item) => item.trackingCode) ||
     order.fulfillments?.[0] || null;
   return {
@@ -296,15 +321,31 @@ function toUiOrder(order) {
   };
 }
 
+function returnedRequestsByOrder(items = []) {
+  const result = new Map();
+  for (const request of items) {
+    if (!['RECEIVED', 'REFUNDED'].includes(request.status)) continue;
+    const key = String(request.orderId);
+    const current = result.get(key);
+    if (!current || new Date(request.updatedAt) > new Date(current.updatedAt)) {
+      result.set(key, request);
+    }
+  }
+  return result;
+}
+
 export const fetchUserOrdersApi = async ({ take = 100, skip = 0 } = {}) => {
   const data = await shopApiRequest(CUSTOMER_ORDERS, {
     options: { take, skip, sort: { orderPlacedAt: 'DESC' } },
   });
   const result = data.activeCustomer?.orders;
+  const returns = returnedRequestsByOrder(data.myReturnRequests?.items);
   return {
     success: true,
     data: {
-      orders: (result?.items || []).map(toUiOrder),
+      orders: (result?.items || []).map((order) =>
+        toUiOrder(order, returns.get(String(order.id))),
+      ),
       pagination: { total: result?.totalItems || 0 },
     },
   };
@@ -312,5 +353,9 @@ export const fetchUserOrdersApi = async ({ take = 100, skip = 0 } = {}) => {
 
 export const fetchUserOrderByIdApi = async (orderId) => {
   const data = await shopApiRequest(CUSTOMER_ORDER, { id: orderId });
-  return { success: true, data: { order: toUiOrder(data.order) } };
+  const returns = returnedRequestsByOrder(data.myReturnRequests?.items);
+  return {
+    success: true,
+    data: { order: toUiOrder(data.order, returns.get(String(orderId))) },
+  };
 };
