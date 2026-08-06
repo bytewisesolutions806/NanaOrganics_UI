@@ -1,65 +1,142 @@
 "use client";
 
+import {
+  Elements,
+  PaymentElement,
+  useElements,
+  useStripe,
+} from "@stripe/react-stripe-js";
 import { useState } from "react";
+import { stripePromise, stripePublishableKey } from "@/lib/stripe";
 
-export default function StripePayment({
+const appearance = {
+  theme: "stripe",
+  variables: {
+    colorPrimary: "#1EA766",
+    colorText: "#1f2937",
+    colorDanger: "#dc2626",
+    borderRadius: "12px",
+    fontFamily: '"Plus Jakarta Sans", system-ui, sans-serif',
+  },
+};
+
+function StripeCheckoutForm({
   onSuccess,
   onError,
   totalAmount,
-  currencySymbol = "$",
+  currencySymbol,
+  orderCode,
+  customerEmail,
 }) {
+  const stripe = useStripe();
+  const elements = useElements();
   const [processing, setProcessing] = useState(false);
-  const [cardholder, setCardholder] = useState("Demo Customer");
-  const [cardNumber, setCardNumber] = useState("4242 4242 4242 4242");
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!cardholder.trim() || !cardNumber.trim()) {
-      onError?.("Complete the demo payment fields.");
+    if (!stripe || !elements || processing) return;
+
+    setProcessing(true);
+    onError?.(null);
+
+    const returnUrl = new URL("/checkout/stripe-return", window.location.origin);
+    returnUrl.searchParams.set("order_code", orderCode);
+    sessionStorage.setItem("stripe_order_code", orderCode);
+
+    const { error, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        return_url: returnUrl.toString(),
+        payment_method_data: customerEmail
+          ? { billing_details: { email: customerEmail } }
+          : undefined,
+      },
+      redirect: "if_required",
+    });
+
+    if (error) {
+      onError?.(error.message || "Stripe could not process the payment.");
+      setProcessing(false);
       return;
     }
-    setProcessing(true);
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    onSuccess?.({ id: `mock_payment_${Date.now()}`, status: "succeeded" });
+
+    if (
+      paymentIntent &&
+      ["succeeded", "processing", "requires_capture"].includes(
+        paymentIntent.status,
+      )
+    ) {
+      await onSuccess?.(paymentIntent);
+      return;
+    }
+
+    onError?.("The payment was not completed. Please try another payment method.");
+    setProcessing(false);
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="bg-white border border-[#E6F4F2] rounded-xl p-5 space-y-4">
-        <p className="text-sm font-semibold text-gray-800">Demo payment details</p>
-        <label className="block text-sm text-gray-600">
-          Cardholder name
-          <input
-            value={cardholder}
-            onChange={(event) => setCardholder(event.target.value)}
-            className="mt-1 w-full rounded-xl border border-[#C6D8D7] px-4 py-3"
-          />
-        </label>
-        <label className="block text-sm text-gray-600">
-          Card number
-          <input
-            value={cardNumber}
-            onChange={(event) => setCardNumber(event.target.value)}
-            className="mt-1 w-full rounded-xl border border-[#C6D8D7] px-4 py-3"
-          />
-        </label>
-        <div className="grid grid-cols-2 gap-4">
-          <input value="12/30" readOnly className="rounded-xl border border-[#C6D8D7] px-4 py-3" />
-          <input value="123" readOnly className="rounded-xl border border-[#C6D8D7] px-4 py-3" />
-        </div>
+      <div className="rounded-xl border border-[#E6F4F2] bg-white p-5">
+        <PaymentElement
+          options={{
+            layout: "tabs",
+            defaultValues: customerEmail
+              ? { billingDetails: { email: customerEmail } }
+              : undefined,
+          }}
+        />
       </div>
       <button
         type="submit"
-        disabled={processing}
-        className="w-full rounded-xl bg-[#1EA766] py-4 font-semibold text-white disabled:bg-gray-400"
+        disabled={!stripe || !elements || processing}
+        className="w-full rounded-xl bg-[#1EA766] py-4 font-semibold text-white transition hover:bg-[#178a54] disabled:cursor-not-allowed disabled:bg-gray-400"
       >
         {processing
-          ? "Placing demo order..."
+          ? "Processing secure payment..."
           : `Pay ${currencySymbol}${totalAmount} & Place Order`}
       </button>
-      <p className="text-center text-xs text-gray-400">
-        Demo checkout only. No payment information is transmitted.
+      <p className="text-center text-xs text-gray-500">
+        Your payment details are encrypted and handled securely by Stripe.
       </p>
     </form>
+  );
+}
+
+export default function StripePayment({
+  clientSecret,
+  orderCode,
+  onSuccess,
+  onError,
+  totalAmount,
+  currencySymbol = "$",
+  customerEmail = "",
+}) {
+  if (!stripePublishableKey || !stripePromise) {
+    return (
+      <div className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        Stripe is not configured in this storefront. Set
+        {" "}
+        <code className="font-semibold">NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code>
+        {" "}
+        and restart the UI.
+      </div>
+    );
+  }
+
+  return (
+    <Elements
+      stripe={stripePromise}
+      options={{ clientSecret, appearance }}
+      key={clientSecret}
+    >
+      <StripeCheckoutForm
+        onSuccess={onSuccess}
+        onError={onError}
+        totalAmount={totalAmount}
+        currencySymbol={currencySymbol}
+        orderCode={orderCode}
+        customerEmail={customerEmail}
+      />
+    </Elements>
   );
 }

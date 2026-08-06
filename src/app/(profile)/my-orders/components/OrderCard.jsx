@@ -98,9 +98,18 @@ export default function OrderCard({ order, reviewedOrderIds, legacyReviewedProdu
           {/* Mobile Status */}
           <p className={`text-sm lg:hidden ${status.color}`}>{status.label}</p>
 
+          <p className="mt-1 text-xs text-gray-500 lg:hidden">
+            Subtotal {order.subtotalDisplay} · Shipping {order.shippingDisplay} · Tax{" "}
+            {order.taxDisplay}
+          </p>
+
           <div className="hidden lg:block">
             <p className="text-sm text-gray-500 mt-1">Price:</p>
             <p className="font-semibold text-lg">{priceText}</p>
+            <p className="mt-1 text-xs text-gray-500">
+              Subtotal {order.subtotalDisplay} · Shipping {order.shippingDisplay} · Tax{" "}
+              {order.taxDisplay}
+            </p>
           </div>
 
           {showReviewCta ? (

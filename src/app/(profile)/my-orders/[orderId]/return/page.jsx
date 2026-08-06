@@ -313,9 +313,20 @@ export default function ReturnOrderPage() {
                 <span>{order.taxDisplay ?? '—'}</span>
               </div>
 
-              {order.discountDisplay &&
-                order.discountDisplay !== '$0.00' &&
-                order.discountDisplay !== '€0.00' && (
+              {order.taxLines?.map((tax, index) => (
+                <div
+                  key={`${tax.description || 'tax'}-${tax.rate}-${index}`}
+                  className="flex justify-between gap-3 pl-3 text-xs text-gray-500"
+                >
+                  <span>
+                    {tax.description || 'Tax'}{tax.rate != null ? ` (${tax.rate}%)` : ''}
+                    {tax.baseDisplay ? ` on ${tax.baseDisplay}` : ''}
+                  </span>
+                  <span>{tax.amountDisplay}</span>
+                </div>
+              ))}
+
+              {Number(order.discount_total || 0) > 0 && (
                   <div className="flex justify-between text-green-700">
                     <span>Discount</span>
                     <span>- {order.discountDisplay}</span>

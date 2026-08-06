@@ -9,12 +9,16 @@ import {
   fetchShippingOptionsApi,
   addShippingMethodApi,
   initPaymentApi,
+  createStripePaymentIntentApi,
+  ensureActiveOrderAddingItemsApi,
+  waitForStripeOrderApi,
   placeOrderApi,
 } from "@/service/CartService";
 import { SHIPPING_COUNTRY_OPTIONS } from "@/constants/shippingCountries";
 import { fetchAddressesApi } from "@/service/AddressService";
 import { apiAddressToCheckout, pickDefaultAddress } from "@/lib/addressAdapter";
 import useOrdersStore from "@/store/useOrdersStore";
+import StripePayment from "@/components/StripePayment";
 
 /** Match cart page — amounts from API are major units in this project */
 
@@ -25,6 +29,10 @@ export default function CheckoutPage() {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [clientSecret, setClientSecret] = useState(null);
+  const [paymentMethods, setPaymentMethods] = useState([]);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
+  const [stripeOrder, setStripeOrder] = useState(null);
+  const [initializingStripe, setInitializingStripe] = useState(false);
   const [paymentError, setPaymentError] = useState(null);
   const [placingOrder, setPlacingOrder] = useState(false);
 
@@ -51,10 +59,8 @@ export default function CheckoutPage() {
   const [selectedSavedId, setSelectedSavedId] = useState("");
   const shippingPrefillDoneRef = useRef(false);
 
-  const { items, pricing, totalQuantity, fetchCart, loading, currency_code } =
-    useCartStore();
-  const currencySymbol =
-    currency_code?.toLowerCase?.() === "eur" ? "€" : "$";
+  const { items, pricing, totalQuantity, fetchCart, loading, currency_code } = useCartStore();
+  const currencySymbol = currency_code?.toLowerCase?.() === "eur" ? "€" : "$";
   const resetCart = useCartStore((s) => s.resetCart);
   const [mounted, setMounted] = useState(false);
 
@@ -153,6 +159,24 @@ export default function CheckoutPage() {
     setSelectedShipping(null);
   };
 
+  const startManualAddress = () => {
+    setSelectedSavedId("");
+    setAddress((previous) => ({
+      firstName: "",
+      lastName: "",
+      email: previous.email,
+      phone: "",
+      street: "",
+      city: "",
+      state: "",
+      zip: "",
+      country: previous.country || "in",
+    }));
+    setShippingRatesLoaded(false);
+    setShippingOptions([]);
+    setSelectedShipping(null);
+  };
+
   /** Save the active order address, then load eligible Vendure shipping methods. */
   const persistAddressAndLoadShippingOptions = async (cartId) => {
     const payload = {
@@ -176,9 +200,7 @@ export default function CheckoutPage() {
     const shippingRes = await fetchShippingOptionsApi(cartId);
     if (!shippingRes?.success) {
       throw new Error(
-        shippingRes?.message ||
-          shippingRes?.error ||
-          "Failed to load shipping options"
+        shippingRes?.message || shippingRes?.error || "Failed to load shipping options"
       );
     }
 
@@ -241,8 +263,7 @@ export default function CheckoutPage() {
   const validateAddress = () => {
     const newErrors = {};
 
-    if (!address.firstName.trim())
-      newErrors.firstName = "First name is required";
+    if (!address.firstName.trim()) newErrors.firstName = "First name is required";
     if (!address.lastName.trim()) newErrors.lastName = "Last name is required";
 
     if (!address.email.trim()) {
@@ -257,8 +278,7 @@ export default function CheckoutPage() {
       newErrors.phone = "Enter a valid phone number";
     }
 
-    if (!address.street.trim())
-      newErrors.street = "Street address is required";
+    if (!address.street.trim()) newErrors.street = "Street address is required";
     if (!address.city.trim()) newErrors.city = "City is required";
     if (!address.state.trim()) newErrors.state = "State is required";
 
@@ -327,95 +347,170 @@ export default function CheckoutPage() {
 
       const paymentRes = await initPaymentApi(cartId);
 
-      if (!paymentRes?.success || !paymentRes?.data?.client_secret) {
+      if (!paymentRes?.success || !paymentRes?.data?.payment_methods?.length) {
         throw new Error(
           paymentRes?.message ||
             paymentRes?.error ||
-            "Failed to initialize payment. Please try again."
+            "No payment method is available. Please try again."
         );
       }
 
-      setClientSecret(paymentRes.data.client_secret);
+      setPaymentMethods(paymentRes.data.payment_methods);
+      setSelectedPaymentMethod(null);
+      setClientSecret(null);
+      setStripeOrder(null);
       setStep(2);
     } catch (error) {
       console.error("Checkout error:", error);
-      setPaymentError(
-        error?.response?.data?.message ||
-          error?.message ||
-          "Something went wrong"
-      );
+      setPaymentError(error?.response?.data?.message || error?.message || "Something went wrong");
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handlePaymentSuccess = async () => {
-      const cartId = sessionStorage.getItem("cart_id");
-      if (!cartId) return;
+  const handleSelectPaymentMethod = async (methodCode) => {
+    setSelectedPaymentMethod(methodCode);
+    setPaymentError(null);
 
-      setPlacingOrder(true);
-      setPaymentError(null);
+    if (methodCode !== "stripe" || clientSecret) return;
+
+    setInitializingStripe(true);
+    try {
+      const paymentRes = await createStripePaymentIntentApi();
+      if (!paymentRes?.success || !paymentRes?.data?.client_secret) {
+        throw new Error(paymentRes?.message || "Stripe could not initialize the payment.");
+      }
+      setClientSecret(paymentRes.data.client_secret);
+      setStripeOrder(paymentRes.data.order);
+      sessionStorage.setItem("stripe_order_code", paymentRes.data.order?.display_id || "");
+    } catch (error) {
+      setSelectedPaymentMethod(null);
+      setPaymentError(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Stripe could not initialize the payment."
+      );
+    } finally {
+      setInitializingStripe(false);
+    }
+  };
+
+  const handleEditAddress = async () => {
+    setPaymentError(null);
+    try {
+      await ensureActiveOrderAddingItemsApi();
+      setClientSecret(null);
+      setSelectedPaymentMethod(null);
+      setStripeOrder(null);
+      setStep(1);
+    } catch (error) {
+      setPaymentError(error?.message || "This order can no longer return to address editing.");
+    }
+  };
+
+  const handleStripePaymentSuccess = async () => {
+    const orderCode = stripeOrder?.display_id;
+    if (!orderCode) {
+      setPaymentError(
+        "The Stripe payment completed, but the order reference is missing. Please contact support before retrying."
+      );
+      return;
+    }
+
+    setPlacingOrder(true);
+    setPaymentError(null);
+
+    try {
+      const result = await waitForStripeOrderApi(orderCode);
+      const order = result.order;
 
       try {
-        // Re-apply checkout details immediately before the state transition.
-        // This also repairs older active carts created before the Vendure checkout integration.
-        const latestOptions = await persistAddressAndLoadShippingOptions(cartId);
-        const shippingId =
-          selectedShipping && latestOptions.some((option) => option.id === selectedShipping)
-            ? selectedShipping
-            : latestOptions[0]?.id;
-        if (!shippingId) {
-          throw new Error("No eligible shipping method is available for this order.");
-        }
-        await addShippingMethodApi({ cart_id: cartId, option_id: shippingId });
-
-        const orderRes = await placeOrderApi({
-          shippingMethodId: shippingId,
-          address: {
-            fullName: `${address.firstName.trim()} ${address.lastName.trim()}`.trim(),
-            streetLine1: address.street.trim(),
-            city: address.city.trim(),
-            province: address.state.trim(),
-            postalCode: address.zip.trim(),
-            countryCode: (address.country || "us").toUpperCase(),
-            phoneNumber: address.phone.trim(),
-          },
-        });
-
-        if (!orderRes?.success) {
-          throw new Error(orderRes?.message || "Failed to place order");
-        }
-
-        const order = orderRes.data?.order;
-
-        // Make the newly placed order available immediately when the customer
-        // opens My Orders. A failure here must not invalidate a completed order.
-        try {
-          await useOrdersStore.getState().fetchOrders();
-        } catch (refreshError) {
-          console.warn("Could not refresh My Orders after checkout", refreshError);
-        }
-
-        resetCart();
-
-        const params = new URLSearchParams();
-        if (order?.id) params.set("order_id", order.id);
-        if (order?.display_id != null)
-          params.set("display_id", String(order.display_id));
-        if (order?.total != null) params.set("total", String(order.total));
-        if (order?.currency_code)
-          params.set("currency", order.currency_code);
-
-        router.push(`/checkout/success?${params.toString()}`);
-      } catch (error) {
-        console.error("Place order error:", error);
-        setPaymentError(
-          error?.response?.data?.message ||
-            error?.message ||
-            "The order could not be placed. No online payment was collected. Please try again."
-        );
-        setPlacingOrder(false);
+        await useOrdersStore.getState().fetchOrders();
+      } catch (refreshError) {
+        console.warn("Could not refresh My Orders after Stripe payment", refreshError);
       }
+
+      resetCart();
+      sessionStorage.removeItem("stripe_order_code");
+
+      const params = new URLSearchParams({
+        payment_method: "stripe",
+        payment_status: result.settled ? "settled" : "processing",
+      });
+      params.set("display_id", order?.code || orderCode);
+      if (order?.id || stripeOrder?.id) params.set("order_id", order?.id || stripeOrder.id);
+      if (order?.pricing?.total != null || stripeOrder?.total != null)
+        params.set("total", String(order?.pricing?.total ?? stripeOrder.total));
+      if (order?.currency_code || stripeOrder?.currency_code)
+        params.set("currency", order?.currency_code || stripeOrder.currency_code);
+
+      router.push(`/checkout/success?${params.toString()}`);
+    } catch (error) {
+      setPaymentError(
+        error?.response?.data?.message ||
+          error?.message ||
+          "Your payment may have completed, but order confirmation is delayed. Please check My Orders before retrying."
+      );
+      setPlacingOrder(false);
+    }
+  };
+
+  const handlePaymentSuccess = async () => {
+    const cartId = sessionStorage.getItem("cart_id");
+    if (!cartId) return;
+
+    setPlacingOrder(true);
+    setPaymentError(null);
+
+    try {
+      // Re-apply checkout details immediately before the state transition.
+      // This also repairs older active carts created before the Vendure checkout integration.
+      const latestOptions = await persistAddressAndLoadShippingOptions(cartId);
+      const shippingId =
+        selectedShipping && latestOptions.some((option) => option.id === selectedShipping)
+          ? selectedShipping
+          : latestOptions[0]?.id;
+      if (!shippingId) {
+        throw new Error("No eligible shipping method is available for this order.");
+      }
+      await addShippingMethodApi({ cart_id: cartId, option_id: shippingId });
+
+      const orderRes = await placeOrderApi();
+
+      if (!orderRes?.success) {
+        throw new Error(orderRes?.message || "Failed to place order");
+      }
+
+      const order = orderRes.data?.order;
+
+      // Make the newly placed order available immediately when the customer
+      // opens My Orders. A failure here must not invalidate a completed order.
+      try {
+        await useOrdersStore.getState().fetchOrders();
+      } catch (refreshError) {
+        console.warn("Could not refresh My Orders after checkout", refreshError);
+      }
+
+      resetCart();
+
+      const params = new URLSearchParams();
+      params.set("payment_method", "cash-on-delivery");
+      params.set("payment_status", "confirmed");
+      if (order?.id) params.set("order_id", order.id);
+      if (order?.display_id != null) params.set("display_id", String(order.display_id));
+      if (order?.total != null) params.set("total", String(order.total));
+      if (order?.currency_code) params.set("currency", order.currency_code);
+
+      router.push(`/checkout/success?${params.toString()}`);
+    } catch (error) {
+      console.error("Place order error:", error);
+      setPaymentError(
+        error?.response?.data?.message ||
+          error?.message ||
+          "The order could not be placed. No online payment was collected. Please try again."
+      );
+      setPlacingOrder(false);
+    }
   };
 
   const handlePaymentError = (message) => {
@@ -439,10 +534,7 @@ export default function CheckoutPage() {
   }
 
   if (!items || items.length === 0) {
-    const cartId =
-      typeof window !== "undefined"
-        ? sessionStorage.getItem("cart_id")
-        : null;
+    const cartId = typeof window !== "undefined" ? sessionStorage.getItem("cart_id") : null;
     if (!cartId) {
       return (
         <div className="max-w-5xl mx-auto py-24 text-center">
@@ -459,18 +551,27 @@ export default function CheckoutPage() {
 
   if (!pricing) return null;
 
-  const selectedOption = shippingOptions.find(
-    (o) => o.id === selectedShipping
-  );
-  const shippingCost = selectedOption
-    ? (selectedOption.amount ||
-        selectedOption.calculated_price?.calculated_amount ||
-        0) / 100
+  const selectedOption = shippingOptions.find((o) => o.id === selectedShipping);
+  const shippingCost = selectedOption ? Number(selectedOption.amount || 0) : 0;
+  const shippingBeforeTax = selectedOption
+    ? Number(selectedOption.amount_without_tax ?? selectedOption.amount ?? 0)
     : 0;
-  const itemPriceTotal = pricing.subtotal || 0;
-  const couponDiscount = pricing.coupon_discount_amount || 0;
-  const cartTotal = pricing.total || 0;
-  const finalTotal = cartTotal + shippingCost;
+  const shippingTax = Math.max(0, shippingCost - shippingBeforeTax);
+  const netSubtotalBeforeTax = Number(
+    pricing.subtotal_excluding_tax ?? pricing.subtotal ?? 0
+  );
+  const discountBeforeTax = Number(
+    pricing.discount_total_excluding_tax ?? pricing.discount_total ?? 0
+  );
+  const itemPriceTotal = Number(
+    pricing.subtotal_before_discounts ?? netSubtotalBeforeTax + discountBeforeTax
+  );
+  const productTax = Math.max(
+    0,
+    Number(pricing.subtotal || 0) - netSubtotalBeforeTax
+  );
+  const taxTotal = productTax + shippingTax;
+  const finalTotal = itemPriceTotal + shippingBeforeTax + taxTotal - discountBeforeTax;
 
   return (
     <>
@@ -495,12 +596,7 @@ export default function CheckoutPage() {
             onClick={() => step > 1 && setStep(1)}
           />
           <div className="h-px flex-1 bg-gray-200" />
-          <StepBadge
-            number={2}
-            label="Payment"
-            active={step === 2}
-            done={false}
-          />
+          <StepBadge number={2} label="Payment" active={step === 2} done={false} />
         </div>
       </div>
 
@@ -515,36 +611,62 @@ export default function CheckoutPage() {
               )}
 
               {savedAddresses.length > 0 && (
-                <div className="mb-6 flex flex-col gap-1 md:col-span-2">
-                  <label className="text-sm font-medium text-gray-700">
+                <fieldset className="mb-6 md:col-span-2">
+                  <legend className="text-sm font-medium text-gray-700 mb-2">
                     Use a saved address
-                  </label>
-                  <select
-                    value={selectedSavedId}
-                    onChange={(e) => applySavedAddressById(e.target.value)}
-                    className="w-full max-w-md px-4 py-3 border border-[#C6D8D7] rounded-xl text-sm bg-white"
-                  >
-                    <option value="">Type a new address (manual)</option>
-                    {savedAddresses.map((a) => {
-                      const label = [a.first_name, a.last_name]
+                  </legend>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-3xl">
+                    <button
+                      type="button"
+                      onClick={startManualAddress}
+                      className={`text-left px-4 py-3 rounded-xl border text-sm transition ${
+                        selectedSavedId === ""
+                          ? "border-[#1EA766] bg-[#F0FBF6] ring-1 ring-[#1EA766]"
+                          : "border-[#C6D8D7] bg-white hover:border-[#6C8F85]"
+                      }`}
+                    >
+                      <span className="font-medium block">Use a new address</span>
+                      <span className="text-xs text-gray-500">Enter address manually</span>
+                    </button>
+                    {savedAddresses.map((savedAddress) => {
+                      const label = [savedAddress.first_name, savedAddress.last_name]
                         .filter(Boolean)
                         .join(" ")
                         .trim();
-                      const city = a.city || "";
+                      const locality = [
+                        savedAddress.address_1,
+                        savedAddress.city,
+                        savedAddress.postal_code,
+                      ]
+                        .filter(Boolean)
+                        .join(", ");
+                      const isDefault = savedAddress.is_default || savedAddress.isDefault;
                       return (
-                        <option key={a.id} value={a.id}>
-                          {label || "Saved address"}
-                          {city ? ` — ${city}` : ""}
-                          {a.is_default || a.isDefault ? " (default)" : ""}
-                        </option>
+                        <button
+                          type="button"
+                          key={savedAddress.id}
+                          onClick={() => applySavedAddressById(savedAddress.id)}
+                          className={`text-left px-4 py-3 rounded-xl border text-sm transition ${
+                            selectedSavedId === savedAddress.id
+                              ? "border-[#1EA766] bg-[#F0FBF6] ring-1 ring-[#1EA766]"
+                              : "border-[#C6D8D7] bg-white hover:border-[#6C8F85]"
+                          }`}
+                        >
+                          <span className="font-medium block">
+                            {label || "Saved address"}
+                            {isDefault ? " (default)" : ""}
+                          </span>
+                          <span className="text-xs text-gray-500 block mt-0.5">
+                            {locality || "Saved delivery address"}
+                          </span>
+                        </button>
                       );
                     })}
-                  </select>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Choosing an address fills the form below. You still need to load shipping options
-                    before payment.
+                  </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Select an address, then load the available shipping options.
                   </p>
-                </div>
+                </fieldset>
               )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -618,12 +740,8 @@ export default function CheckoutPage() {
               <h3 className="mt-8 mb-4 font-medium">Shipping method</h3>
 
               <p className="text-sm text-gray-600 mb-4">
-                Vendure calculates shipping after your address is saved. Fill the form
-                above, then click{" "}
-                <span className="font-semibold text-[#2C665E]">
-                  Get shipping options
-                </span>
-                .
+                Vendure calculates shipping after your address is saved. Fill the form above, then
+                click <span className="font-semibold text-[#2C665E]">Get shipping options</span>.
               </p>
 
               <button
@@ -650,12 +768,9 @@ export default function CheckoutPage() {
               {shippingOptions.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-sm">
                   {shippingOptions.map((opt) => {
-                    const amount =
-                      opt.amount ||
-                      opt.calculated_price?.calculated_amount ||
-                      0;
+                    const amount = opt.amount || opt.calculated_price?.calculated_amount || 0;
                     const priceLabel =
-                      amount === 0 ? "FREE" : `${currencySymbol} ${(amount / 100).toFixed(2)}`;
+                      amount === 0 ? "FREE" : `${currencySymbol} ${amount.toFixed(2)}`;
 
                     return (
                       <ShippingRadio
@@ -671,9 +786,7 @@ export default function CheckoutPage() {
                   })}
                 </div>
               ) : shippingRatesLoaded ? (
-                <p className="text-sm text-gray-500 py-2">
-                  No methods returned for this address.
-                </p>
+                <p className="text-sm text-gray-500 py-2">No methods returned for this address.</p>
               ) : (
                 <p className="text-sm text-gray-400 py-2 italic">
                   Options appear here after you load them.
@@ -681,9 +794,7 @@ export default function CheckoutPage() {
               )}
 
               {errors.shipping && (
-                <span className="text-xs text-red-500 mt-2 block">
-                  {errors.shipping}
-                </span>
+                <span className="text-xs text-red-500 mt-2 block">{errors.shipping}</span>
               )}
 
               {paymentError && (
@@ -730,10 +841,7 @@ export default function CheckoutPage() {
                 <h2 className="text-xl font-semibold">Payment Method</h2>
                 <button
                   type="button"
-                  onClick={() => {
-                    setClientSecret(null);
-                    setStep(1);
-                  }}
+                  onClick={handleEditAddress}
                   className="text-sm text-[#2C665E] hover:underline"
                 >
                   ← Edit Address
@@ -754,21 +862,15 @@ export default function CheckoutPage() {
                 </p>
                 <p className="mt-1 text-[#2C665E] font-medium">
                   {selectedOption?.name || "Shipping"} —{" "}
-                  {shippingCost === 0
-                    ? "FREE"
-                    : `${currencySymbol}${shippingCost.toFixed(2)}`}
+                  {shippingCost === 0 ? "FREE" : `${currencySymbol}${shippingCost.toFixed(2)}`}
                 </p>
               </div>
 
               {placingOrder && (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <SpinnerLarge className="h-10 w-10 text-[#1EA766] mb-4" />
-                  <p className="text-lg font-semibold text-gray-800">
-                    Creating your order...
-                  </p>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Please don&apos;t close this page.
-                  </p>
+                  <p className="text-lg font-semibold text-gray-800">Creating your order...</p>
+                  <p className="text-sm text-gray-500 mt-1">Please don&apos;t close this page.</p>
                 </div>
               )}
 
@@ -779,26 +881,82 @@ export default function CheckoutPage() {
               )}
 
               {!placingOrder && (
-                <div className="rounded-2xl border-2 border-[#1EA766] bg-[#F1F8F7] p-5">
-                  <div className="flex items-start gap-3">
-                    <span className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full border-2 border-[#1EA766]">
-                      <span className="h-3 w-3 rounded-full bg-[#1EA766]" />
-                    </span>
-                    <div>
-                      <p className="font-semibold text-gray-900">Cash on Delivery</p>
-                      <p className="mt-1 text-sm text-gray-600">
-                        Pay {currencySymbol}{finalTotal.toFixed(2)} in cash when your order is delivered.
-                      </p>
-                    </div>
+                <div className="space-y-4">
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {paymentMethods.map((method) => {
+                      const selected = selectedPaymentMethod === method.code;
+                      const isStripe = method.code === "stripe";
+                      return (
+                        <button
+                          key={method.id || method.code}
+                          type="button"
+                          onClick={() => handleSelectPaymentMethod(method.code)}
+                          disabled={initializingStripe}
+                          className={`rounded-2xl border-2 p-5 text-left transition ${
+                            selected
+                              ? "border-[#1EA766] bg-[#F1F8F7]"
+                              : "border-gray-200 bg-white hover:border-[#C6D8D7]"
+                          } disabled:cursor-wait disabled:opacity-70`}
+                        >
+                          <span className="flex items-start gap-3">
+                            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 border-[#1EA766]">
+                              {selected && <span className="h-3 w-3 rounded-full bg-[#1EA766]" />}
+                            </span>
+                            <span>
+                              <span className="block font-semibold text-gray-900">
+                                {isStripe ? "Pay securely online" : method.name}
+                              </span>
+                              <span className="mt-1 block text-sm text-gray-600">
+                                {isStripe
+                                  ? "Card and other payment options powered by Stripe."
+                                  : method.description ||
+                                    `Pay ${currencySymbol}${finalTotal.toFixed(2)} when your order is delivered.`}
+                              </span>
+                            </span>
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
-                  <button
-                    type="button"
-                    onClick={handlePaymentSuccess}
-                    disabled={!clientSecret || placingOrder}
-                    className="mt-5 w-full rounded-xl bg-[#1EA766] px-5 py-3 font-semibold text-white transition hover:bg-[#178a54] disabled:cursor-not-allowed disabled:bg-gray-300"
-                  >
-                    Place Cash on Delivery Order
-                  </button>
+
+                  {initializingStripe && (
+                    <div className="flex items-center justify-center gap-3 rounded-xl bg-[#F1F8F7] px-4 py-6 text-sm font-medium text-[#2C665E]">
+                      <SpinnerLarge />
+                      Opening secure Stripe payment...
+                    </div>
+                  )}
+
+                  {selectedPaymentMethod === "stripe" &&
+                    clientSecret &&
+                    stripeOrder?.display_id &&
+                    !initializingStripe && (
+                      <StripePayment
+                        clientSecret={clientSecret}
+                        orderCode={stripeOrder.display_id}
+                        customerEmail={address.email}
+                        totalAmount={finalTotal.toFixed(2)}
+                        currencySymbol={currencySymbol}
+                        onSuccess={handleStripePaymentSuccess}
+                        onError={handlePaymentError}
+                      />
+                    )}
+
+                  {selectedPaymentMethod === "cash-on-delivery" && (
+                    <div className="rounded-2xl border border-[#E6F4F2] bg-[#F1F8F7] p-5">
+                      <p className="text-sm text-gray-700">
+                        Pay {currencySymbol}
+                        {finalTotal.toFixed(2)} in cash when your order is delivered.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handlePaymentSuccess}
+                        disabled={placingOrder}
+                        className="mt-5 w-full rounded-xl bg-[#1EA766] px-5 py-3 font-semibold text-white transition hover:bg-[#178a54] disabled:cursor-not-allowed disabled:bg-gray-300"
+                      >
+                        Place Cash on Delivery Order
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </>
@@ -810,10 +968,7 @@ export default function CheckoutPage() {
 
           <div className="space-y-4">
             {items.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-start gap-3 bg-white p-3 rounded-xl"
-              >
+              <div key={item.id} className="flex items-start gap-3 bg-white p-3 rounded-xl">
                 {item.product?.thumbnail ? (
                   <Image
                     src={item.product.thumbnail}
@@ -829,17 +984,12 @@ export default function CheckoutPage() {
                 )}
 
                 <div className="flex flex-col flex-1">
-                  <p className="text-sm font-medium text-gray-800">
-                    {item.title}
-                  </p>
+                  <p className="text-sm font-medium text-gray-800">{item.title}</p>
                   <p className="text-xs text-gray-500 mt-1">
                     {item.variant_title} | Qty: {item.quantity}
                   </p>
                   <p className="text-sm font-semibold mt-2">
-                    {currencySymbol}{" "}
-                    {item.final_price != null
-                      ? item.final_price.toFixed(2)
-                      : "—"}
+                    {currencySymbol} {item.final_price != null ? item.final_price.toFixed(2) : "—"}
                   </p>
                 </div>
               </div>
@@ -848,38 +998,33 @@ export default function CheckoutPage() {
 
           <div className="mt-6 space-y-2 text-sm">
             <Row
-              label={`Sub Total (${totalQuantity} items)`}
+              label={`Subtotal (${totalQuantity} items)`}
               value={`${currencySymbol} ${itemPriceTotal.toFixed(2)}`}
             />
             <Row
               label="Shipping"
               value={
-                shippingCost === 0
+                shippingBeforeTax === 0
                   ? "FREE"
-                  : `${currencySymbol} ${shippingCost.toFixed(2)}`
+                  : `${currencySymbol} ${shippingBeforeTax.toFixed(2)}`
               }
             />
-            {couponDiscount > 0 && (
+            <Row label="Tax" value={`${currencySymbol} ${taxTotal.toFixed(2)}`} />
+            {discountBeforeTax > 0 && (
               <Row
-                label="Coupon Discount"
-                value={`- ${currencySymbol} ${couponDiscount.toFixed(2)}`}
-              />
-            )}
-            {pricing.product_discount > 0 && (
-              <Row
-                label="Product Discount"
-                value={`- ${currencySymbol} ${pricing.product_discount.toFixed(2)}`}
+                label={
+                  pricing.coupon_code
+                    ? `Coupon (${pricing.coupon_code})`
+                    : "Discount"
+                }
+                value={`- ${currencySymbol} ${discountBeforeTax.toFixed(2)}`}
               />
             )}
           </div>
 
           <hr className="my-4" />
 
-          <Row
-            label="Total"
-            value={`${currencySymbol} ${finalTotal.toFixed(2)}`}
-            bold
-          />
+          <Row label="Total" value={`${currencySymbol} ${finalTotal.toFixed(2)}`} bold />
         </aside>
       </div>
     </>
@@ -901,18 +1046,8 @@ function StepBadge({ number, label, active, done, onClick }) {
         }`}
     >
       {done ? (
-        <svg
-          className="h-4 w-4"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M5 13l4 4L19 7"
-          />
+        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
         </svg>
       ) : (
         <span>{number}</span>
@@ -958,14 +1093,7 @@ function CountrySelect({ label, value, onChange, error }) {
   );
 }
 
-function ShippingRadio({
-  label,
-  description,
-  price,
-  value,
-  selected,
-  onChange,
-}) {
+function ShippingRadio({ label, description, price, value, selected, onChange }) {
   const checked = selected === value;
 
   return (
@@ -976,23 +1104,14 @@ function ShippingRadio({
           : "border-gray-200 bg-white hover:border-[#C6D8D7]"
       }`}
     >
-      <input
-        type="radio"
-        checked={checked}
-        onChange={() => onChange(value)}
-        className="sr-only"
-      />
+      <input type="radio" checked={checked} onChange={() => onChange(value)} className="sr-only" />
       <span className="w-5 h-5 mt-0.5 rounded-full border-2 border-[#2C665E] flex items-center justify-center flex-shrink-0">
         {checked && <span className="w-3 h-3 rounded-full bg-[#2C665E]" />}
       </span>
       <span className="flex flex-col">
         <span className="text-sm font-medium text-gray-800">{label}</span>
-        {description && (
-          <span className="text-xs text-gray-500 mt-0.5">{description}</span>
-        )}
-        <span className="text-sm text-[#1EA766] font-semibold mt-1">
-          {price}
-        </span>
+        {description && <span className="text-xs text-gray-500 mt-0.5">{description}</span>}
+        <span className="text-sm text-[#1EA766] font-semibold mt-1">{price}</span>
       </span>
     </label>
   );
@@ -1000,9 +1119,7 @@ function ShippingRadio({
 
 function Row({ label, value, bold }) {
   return (
-    <div
-      className={`flex justify-between ${bold ? "font-semibold text-lg" : ""}`}
-    >
+    <div className={`flex justify-between ${bold ? "font-semibold text-lg" : ""}`}>
       <span>{label}</span>
       <span>{value}</span>
     </div>
@@ -1011,19 +1128,8 @@ function Row({ label, value, bold }) {
 
 function SpinnerLarge({ className = "h-5 w-5" }) {
   return (
-    <svg
-      className={`animate-spin ${className}`}
-      viewBox="0 0 24 24"
-      fill="none"
-    >
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="4"
-      />
+    <svg className={`animate-spin ${className}`} viewBox="0 0 24 24" fill="none">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
       <path
         className="opacity-75"
         fill="currentColor"

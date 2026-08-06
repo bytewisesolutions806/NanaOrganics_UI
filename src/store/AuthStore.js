@@ -22,14 +22,24 @@ const useAuthStore = create((set) => ({
 
   // ✅ SAVE FORGOT PASSWORD INFO
   setPendingPasswordReset: (data) =>
-    set({
-      pendingPasswordReset: data,
+    set(() => {
+      if (typeof window !== "undefined") {
+        if (data) {
+          sessionStorage.setItem("pendingPasswordReset", JSON.stringify(data));
+        } else {
+          sessionStorage.removeItem("pendingPasswordReset");
+        }
+      }
+      return { pendingPasswordReset: data };
     }),
 
   // ✅ CLEAR RESET STATE
   clearPendingPasswordReset: () =>
-    set({
-      pendingPasswordReset: null,
+    set(() => {
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem("pendingPasswordReset");
+      }
+      return { pendingPasswordReset: null };
     }),
 
   // ✅ LOGIN AFTER OTP VERIFICATION
@@ -37,10 +47,10 @@ const useAuthStore = create((set) => ({
     if (typeof window !== "undefined") {
       sessionStorage.setItem("accessToken", token);
       sessionStorage.setItem("customer", JSON.stringify(customer));
+      sessionStorage.removeItem("pendingPasswordReset");
     }
     // Prefer server cart; keep guest cart_id in session if user had items before login
-    const storedCartId =
-      typeof window !== "undefined" ? sessionStorage.getItem("cart_id") : null;
+    const storedCartId = typeof window !== "undefined" ? sessionStorage.getItem("cart_id") : null;
     const cartId = cartIdFromServer || storedCartId || null;
     if (cartId && typeof window !== "undefined") {
       sessionStorage.setItem("cart_id", cartId);
@@ -84,6 +94,16 @@ const useAuthStore = create((set) => ({
     const token = sessionStorage.getItem("accessToken");
     const customer = sessionStorage.getItem("customer");
     const cartId = sessionStorage.getItem("cart_id");
+    const pendingPasswordResetValue = sessionStorage.getItem("pendingPasswordReset");
+    let pendingPasswordReset = null;
+
+    if (pendingPasswordResetValue) {
+      try {
+        pendingPasswordReset = JSON.parse(pendingPasswordResetValue);
+      } catch {
+        sessionStorage.removeItem("pendingPasswordReset");
+      }
+    }
 
     if (token && customer) {
       try {
@@ -91,6 +111,7 @@ const useAuthStore = create((set) => ({
           token,
           customer: JSON.parse(customer),
           cartId,
+          pendingPasswordReset,
           isAuthenticated: true,
           hasHydrated: true,
         });
@@ -105,6 +126,7 @@ const useAuthStore = create((set) => ({
       token: null,
       customer: null,
       cartId,
+      pendingPasswordReset,
       isAuthenticated: false,
       hasHydrated: true,
     });

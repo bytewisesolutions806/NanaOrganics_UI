@@ -5,6 +5,8 @@ import {
     updateCartItemApi,
     deleteCartItemApi,
     clearCartApi,
+    applyCouponApi,
+    removeCouponApi,
 } from "@/service/CartService";
 import useAuthStore from "@/store/AuthStore";
 
@@ -19,6 +21,7 @@ const useCartStore = create((set, get) => ({
     itemCount: 0,
     totalQuantity: 0,
     loading: false,
+    couponLoading: false,
 
     // 🔥 per-variant loader (KEY FIX)
     addingVariantId: null,
@@ -194,6 +197,37 @@ const useCartStore = create((set, get) => ({
     },
 
     // ======================
+    // COUPONS
+    // ======================
+    applyCoupon: async(couponCode) => {
+        try {
+            set({ couponLoading: true, error: null });
+            const cart = await applyCouponApi({ coupon_code: couponCode });
+            get().setCartFromApi(cart);
+            set({ couponLoading: false });
+            return cart;
+        } catch (err) {
+            const message = err.message || "Failed to apply coupon";
+            set({ couponLoading: false, error: message });
+            throw new Error(message);
+        }
+    },
+
+    removeCoupon: async(couponCode) => {
+        try {
+            set({ couponLoading: true, error: null });
+            const cart = await removeCouponApi(couponCode);
+            get().setCartFromApi(cart);
+            set({ couponLoading: false });
+            return cart;
+        } catch (err) {
+            const message = err.message || "Failed to remove coupon";
+            set({ couponLoading: false, error: message });
+            throw new Error(message);
+        }
+    },
+
+    // ======================
     // CLEAR TOAST ACTION
     // ======================
     clearLastAction: () => set({ lastAction: null }),
@@ -211,6 +245,7 @@ const useCartStore = create((set, get) => ({
             itemCount: 0,
             totalQuantity: 0,
             loading: false,
+            couponLoading: false,
             addingVariantId: null,
             error: null,
             lastAction: null,

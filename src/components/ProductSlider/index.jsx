@@ -9,6 +9,7 @@ import useCartStore from '@/store/useCartStore';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import ReusableButton from '@/components/ReUsableButton';
+import WishlistButton from '@/components/WishlistButton';
 
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -168,9 +169,10 @@ function ProductCard({ item }) {
           <span className="absolute top-2 left-2 bg-[#E6F4F2] text-[#1EA766] text-xs px-3 py-1 rounded-lg">
             Organic
           </span>
-          <span className="absolute top-2 right-2 bg-white border border-[#E6F4F2] text-gray-500 text-xs w-6 h-6 rounded-full flex items-center justify-center">
-            <i className="pi pi-heart text-[10px]" />
-          </span>
+          <WishlistButton
+            productId={item.productId}
+            className="absolute right-2 top-2 z-10 h-7 w-7 rounded-full border border-[#E6F4F2]"
+          />
 
           <Image
             src={item.thumbnail || '/AppLogo.svg'}

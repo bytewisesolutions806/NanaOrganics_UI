@@ -8,10 +8,19 @@ const CART_ORDER_FRAGMENT = `
     active
     currencyCode
     totalQuantity
+    subTotal
     subTotalWithTax
+    total
     totalWithTax
     customer { id emailAddress }
+    shipping
     shippingWithTax
+    taxSummary {
+      description
+      taxRate
+      taxBase
+      taxTotal
+    }
     shippingAddress {
       fullName
       streetLine1
@@ -37,7 +46,10 @@ const CART_ORDER_FRAGMENT = `
     }
     couponCodes
     discounts {
+      adjustmentSource
+      type
       description
+      amount
       amountWithTax
     }
     lines {
@@ -155,6 +167,15 @@ const APPLY_COUPON = `
   }
 `;
 
+const REMOVE_COUPON = `
+  ${CART_ORDER_FRAGMENT}
+  mutation RemoveCartCoupon($couponCode: String!) {
+    removeCouponCode(couponCode: $couponCode) {
+      ...CartOrder
+    }
+  }
+`;
+
 const SET_CHECKOUT_ADDRESSES = `
   ${CART_ORDER_FRAGMENT}
   mutation SetCheckoutAddresses($input: CreateAddressInput!) {
@@ -208,7 +229,22 @@ const ELIGIBLE_PAYMENT_METHODS = `
   }
 `;
 
-const TRANSITION_TO_PAYMENT = `
+const CREATE_STRIPE_PAYMENT_INTENT = `
+  mutation CreateStripePaymentIntent {
+    createStripePaymentIntent
+  }
+`;
+
+const ORDER_BY_CODE = `
+  ${CART_ORDER_FRAGMENT}
+  query CheckoutOrderByCode($code: String!) {
+    orderByCode(code: $code) {
+      ...CartOrder
+    }
+  }
+`;
+
+const TRANSITION_ORDER_TO_STATE = `
   ${CART_ORDER_FRAGMENT}
   mutation TransitionToPayment($state: String!) {
     transitionOrderToState(state: $state) {
@@ -273,16 +309,24 @@ function mapOrder(order) {
   if (!order) return null;
 
   const subtotal = money(order.subTotalWithTax);
+  const subtotalExcludingTax = money(order.subTotal);
   const total = money(order.totalWithTax);
+  const totalExcludingTax = money(order.total);
   const discount = (order.discounts || []).reduce(
     (sum, item) => sum + Math.abs(money(item.amountWithTax)),
-    0,
+    0
   );
+  const discountExcludingTax = (order.discounts || []).reduce(
+    (sum, item) => sum + Math.abs(money(item.amount)),
+    0
+  );
+  const hasCouponDiscount = Boolean(order.couponCodes?.length);
 
   return {
     id: order.id,
     code: order.code,
     state: order.state,
+    active: order.active,
     currency_code: order.currencyCode,
     item_count: order.lines.length,
     total_quantity: order.totalQuantity,
@@ -296,10 +340,7 @@ function mapOrder(order) {
       unit_price: money(line.unitPriceWithTax),
       total_price: money(line.linePriceWithTax),
       final_price: money(line.discountedLinePriceWithTax),
-      discount_amount: Math.max(
-        0,
-        money(line.linePriceWithTax - line.discountedLinePriceWithTax),
-      ),
+      discount_amount: Math.max(0, money(line.linePriceWithTax - line.discountedLinePriceWithTax)),
       product: {
         id: line.productVariant.product.id,
         slug: line.productVariant.product.slug,
@@ -311,10 +352,28 @@ function mapOrder(order) {
     })),
     pricing: {
       subtotal,
+      subtotal_excluding_tax: subtotalExcludingTax,
+      subtotal_before_discounts_with_tax: subtotal + discount,
+      subtotal_before_discounts: subtotalExcludingTax + discountExcludingTax,
       shipping: money(order.shippingWithTax),
-      product_discount: discount,
+      shipping_excluding_tax: money(order.shipping),
+      tax: Math.max(0, total - totalExcludingTax),
+      tax_lines: (order.taxSummary || [])
+        .filter((tax) => Number(tax.taxTotal || 0) !== 0)
+        .map((tax) => ({
+          description: tax.description,
+          rate: Number(tax.taxRate || 0),
+          base: money(tax.taxBase),
+          amount: money(tax.taxTotal),
+        })),
+      product_discount: hasCouponDiscount ? 0 : discount,
+      product_discount_excluding_tax: hasCouponDiscount ? 0 : discountExcludingTax,
       coupon_code: order.couponCodes?.[0] || null,
-      coupon_discount_amount: discount,
+      coupon_discount_amount: hasCouponDiscount ? discount : 0,
+      coupon_discount_excluding_tax: hasCouponDiscount ? discountExcludingTax : 0,
+      discount_total: discount,
+      discount_total_excluding_tax: discountExcludingTax,
+      total_excluding_tax: totalExcludingTax,
       total,
     },
     checkout_ready: {
@@ -322,6 +381,14 @@ function mapOrder(order) {
       has_shipping_address: Boolean(order.shippingAddress?.streetLine1),
       has_shipping_method: Boolean(order.shippingLines?.length),
     },
+    payments: (order.payments || []).map((payment) => ({
+      id: payment.id,
+      method: payment.method,
+      state: payment.state,
+      amount: money(payment.amount),
+      transaction_id: payment.transactionId,
+      metadata: payment.metadata,
+    })),
   };
 }
 
@@ -330,46 +397,99 @@ export const fetchCartApi = async () => {
   return mapOrder(data.activeOrder);
 };
 
-export const addToCartApi = async ({ variant_id, quantity = 1 }) => {
-  const data = await shopApiRequest(ADD_ITEM, {
-    productVariantId: variant_id,
-    quantity,
+export const ensureActiveOrderAddingItemsApi = async () => {
+  const activeCart = await fetchCartApi();
+  if (!activeCart || activeCart.state === "AddingItems") return activeCart;
+  if (activeCart.state !== "ArrangingPayment") {
+    throw new Error(
+      `This order can no longer be modified because it is in the "${activeCart.state}" state.`
+    );
+  }
+
+  const transitionData = await shopApiRequest(TRANSITION_ORDER_TO_STATE, {
+    state: "AddingItems",
   });
-  const order = unwrapOrder(data.addItemToOrder, "Add to cart");
+  return mapOrder(unwrapOrder(transitionData.transitionOrderToState, "Return order to cart"));
+};
+
+const isLockedCartError = (result) =>
+  result?.errorCode === "ORDER_MODIFICATION_ERROR" && result?.message?.includes('"AddingItems"');
+
+async function runModifiableOrderMutation(document, variables, resultField, operation) {
+  let data = await shopApiRequest(document, variables);
+  if (isLockedCartError(data[resultField])) {
+    await ensureActiveOrderAddingItemsApi();
+    data = await shopApiRequest(document, variables);
+  }
+  return unwrapOrder(data[resultField], operation);
+}
+
+export const addToCartApi = async ({ variant_id, quantity = 1 }) => {
+  const order = await runModifiableOrderMutation(
+    ADD_ITEM,
+    { productVariantId: variant_id, quantity },
+    "addItemToOrder",
+    "Add to cart"
+  );
   return { cart_id: order.id, cart: mapOrder(order) };
 };
 
 export const updateCartItemApi = async ({ item_id, quantity }) => {
-  const data = await shopApiRequest(ADJUST_LINE, {
-    orderLineId: item_id,
-    quantity,
-  });
-  return mapOrder(unwrapOrder(data.adjustOrderLine, "Update cart"));
+  const order = await runModifiableOrderMutation(
+    ADJUST_LINE,
+    { orderLineId: item_id, quantity },
+    "adjustOrderLine",
+    "Update cart"
+  );
+  return mapOrder(order);
 };
 
 export const deleteCartItemApi = async (itemId) => {
-  const data = await shopApiRequest(REMOVE_LINE, { orderLineId: itemId });
-  return mapOrder(unwrapOrder(data.removeOrderLine, "Remove cart item"));
+  const order = await runModifiableOrderMutation(
+    REMOVE_LINE,
+    { orderLineId: itemId },
+    "removeOrderLine",
+    "Remove cart item"
+  );
+  return mapOrder(order);
 };
 
 export const clearCartApi = async () => {
-  const data = await shopApiRequest(REMOVE_ALL_LINES);
-  return mapOrder(unwrapOrder(data.removeAllOrderLines, "Clear cart"));
-};
-
-export const validateCouponApi = async (code) => {
-  if (!code?.trim()) throw new Error("Enter a coupon code.");
-  return { success: true };
+  const order = await runModifiableOrderMutation(
+    REMOVE_ALL_LINES,
+    undefined,
+    "removeAllOrderLines",
+    "Clear cart"
+  );
+  return mapOrder(order);
 };
 
 export const applyCouponApi = async ({ coupon_code }) => {
-  const data = await shopApiRequest(APPLY_COUPON, {
-    couponCode: coupon_code.trim(),
-  });
-  return mapOrder(unwrapOrder(data.applyCouponCode, "Apply coupon"));
+  const couponCode = coupon_code?.trim().toUpperCase();
+  if (!couponCode) throw new Error("Enter a coupon code.");
+  const order = await runModifiableOrderMutation(
+    APPLY_COUPON,
+    { couponCode },
+    "applyCouponCode",
+    "Apply coupon"
+  );
+  return mapOrder(order);
+};
+
+export const removeCouponApi = async (couponCode) => {
+  const normalizedCode = couponCode?.trim();
+  if (!normalizedCode) throw new Error("No coupon code is applied.");
+  const order = await runModifiableOrderMutation(
+    REMOVE_COUPON,
+    { couponCode: normalizedCode },
+    "removeCouponCode",
+    "Remove coupon"
+  );
+  return mapOrder(order);
 };
 
 export const saveShippingAddress = async (input) => {
+  await ensureActiveOrderAddingItemsApi();
   const address = {
     fullName: [input.first_name, input.last_name].filter(Boolean).join(" "),
     streetLine1: input.address_1,
@@ -396,6 +516,8 @@ export const fetchShippingOptionsApi = async () => {
         name: method.name,
         description: method.description,
         amount: money(method.priceWithTax ?? method.price),
+        amount_without_tax: money(method.price),
+        tax: Math.max(0, money(method.priceWithTax) - money(method.price)),
       })),
     },
   };
@@ -413,16 +535,98 @@ export const addShippingMethodApi = async ({ option_id }) => {
 
 export const initPaymentApi = async () => {
   const data = await shopApiRequest(ELIGIBLE_PAYMENT_METHODS);
-  const method = (data.eligiblePaymentMethods || []).find(
-    (item) => item.code === "cash-on-delivery" && item.isEligible,
+  const supportedCodes = new Set(["stripe", "cash-on-delivery"]);
+  const methods = (data.eligiblePaymentMethods || []).filter(
+    (item) => item.isEligible && supportedCodes.has(item.code)
   );
-  if (!method) {
-    throw new Error("Cash on Delivery is not available for this order.");
+  if (methods.length === 0) {
+    throw new Error("No payment method is available for this order.");
   }
   return {
     success: true,
-    data: { client_secret: method.code, payment_method: method },
+    data: { payment_methods: methods },
   };
+};
+
+export const createStripePaymentIntentApi = async () => {
+  const activeCart = await fetchCartApi();
+  if (!activeCart) throw new Error("No active order was found.");
+  if (!activeCart.items.length) throw new Error("Your active order is empty.");
+  if (!activeCart.checkout_ready?.has_customer) {
+    throw new Error(
+      "The active order is not attached to your customer account. Sign out, sign in again, and retry checkout."
+    );
+  }
+  if (!activeCart.checkout_ready?.has_shipping_method) {
+    throw new Error("Select a shipping method before starting payment.");
+  }
+
+  let order = activeCart;
+  if (order.state !== "ArrangingPayment") {
+    const transitionData = await shopApiRequest(TRANSITION_ORDER_TO_STATE, {
+      state: "ArrangingPayment",
+    });
+    order = mapOrder(
+      unwrapOrder(transitionData.transitionOrderToState, "Prepare order for Stripe payment")
+    );
+  }
+
+  let data;
+  try {
+    data = await shopApiRequest(CREATE_STRIPE_PAYMENT_INTENT);
+    if (!data.createStripePaymentIntent) {
+      throw new Error("Stripe did not return a payment session.");
+    }
+  } catch (error) {
+    // No payment can be confirmed without a client secret, so unlock the cart
+    // if Stripe initialization fails after the state transition.
+    try {
+      await ensureActiveOrderAddingItemsApi();
+    } catch {
+      // Preserve the original Stripe error; the next cart mutation can retry
+      // recovery and surface a state error if the order has progressed.
+    }
+    throw error;
+  }
+
+  return {
+    success: true,
+    data: {
+      client_secret: data.createStripePaymentIntent,
+      order: {
+        id: order.id,
+        display_id: order.code,
+        total: order.pricing.total,
+        currency_code: order.currency_code,
+      },
+    },
+  };
+};
+
+export const fetchOrderByCodeApi = async (code) => {
+  if (!code) throw new Error("An order code is required.");
+  const data = await shopApiRequest(ORDER_BY_CODE, { code });
+  return mapOrder(data.orderByCode);
+};
+
+export const waitForStripeOrderApi = async (code, { attempts = 15, intervalMs = 800 } = {}) => {
+  let latestOrder = null;
+
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    latestOrder = await fetchOrderByCodeApi(code);
+    const stripePayment = latestOrder?.payments?.find((payment) => payment.method === "stripe");
+    if (stripePayment?.state === "Settled") {
+      return { order: latestOrder, settled: true };
+    }
+    if (stripePayment?.state === "Declined" || stripePayment?.state === "Cancelled") {
+      throw new Error("Stripe reported that the payment was not completed.");
+    }
+    if (attempt < attempts - 1) {
+      await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    }
+  }
+
+  return { order: latestOrder, settled: false };
 };
 
 export const placeOrderApi = async ({ address, shippingMethodId } = {}) => {
@@ -441,16 +645,20 @@ export const placeOrderApi = async ({ address, shippingMethodId } = {}) => {
     if (!activeCart) throw new Error("No active order was found.");
     if (!activeCart.items.length) throw new Error("Your active order is empty.");
     if (!activeCart.checkout_ready?.has_customer) {
-      throw new Error("The active order is not attached to your customer account. Sign out, sign in again, and retry checkout.");
+      throw new Error(
+        "The active order is not attached to your customer account. Sign out, sign in again, and retry checkout."
+      );
     }
     if (!activeCart.checkout_ready?.has_shipping_method) {
-      throw new Error("The active order does not have a shipping method. Select Standard Delivery and retry.");
+      throw new Error(
+        "The active order does not have a shipping method. Select Standard Delivery and retry."
+      );
     }
     preparedOrder = activeCart;
   }
 
   if (preparedOrder.state !== "ArrangingPayment") {
-    const transitionData = await shopApiRequest(TRANSITION_TO_PAYMENT, {
+    const transitionData = await shopApiRequest(TRANSITION_ORDER_TO_STATE, {
       state: "ArrangingPayment",
     });
     unwrapOrder(transitionData.transitionOrderToState, "Prepare order for payment");

@@ -1,61 +1,125 @@
-import { wishlistMock } from "@/mocks/wishlistMock";
+import { shopApiRequest } from '@/lib/graphql/client';
 
-let items = wishlistMock.map((item) => ({
-  product_id: item.id,
-  product: {
-    id: item.id,
-    title: item.name,
-    thumbnail: item.image,
-    price_range: { min: item.price },
-    discount_percentage: item.discount,
-    variants: [{ title: item.weight }],
-  },
-}));
+const WISHLIST_PRODUCT_FRAGMENT = `
+  fragment WishlistProductFields on WishlistProduct {
+    id
+    name
+    slug
+    preview
+    variants {
+      id
+      name
+      sku
+      priceWithTax
+      currencyCode
+      preview
+    }
+  }
+`;
+
+const MY_WISHLIST = `
+  ${WISHLIST_PRODUCT_FRAGMENT}
+  query MyWishlist($skip: Int!, $take: Int!) {
+    myWishlist(skip: $skip, take: $take) {
+      totalItems
+      items {
+        id
+        createdAt
+        product { ...WishlistProductFields }
+      }
+    }
+  }
+`;
+
+const MY_WISHLIST_PRODUCT_IDS = `
+  query MyWishlistProductIds {
+    myWishlistProductIds
+  }
+`;
+
+const ADD_TO_WISHLIST = `
+  ${WISHLIST_PRODUCT_FRAGMENT}
+  mutation AddProductToWishlist($productId: ID!) {
+    addProductToWishlist(productId: $productId) {
+      success
+      errorCode
+      message
+      item {
+        id
+        createdAt
+        product { ...WishlistProductFields }
+      }
+    }
+  }
+`;
+
+const REMOVE_FROM_WISHLIST = `
+  mutation RemoveProductFromWishlist($productId: ID!) {
+    removeProductFromWishlist(productId: $productId) {
+      success
+      errorCode
+      message
+    }
+  }
+`;
+
+const CLEAR_WISHLIST = `
+  mutation ClearMyWishlist {
+    clearMyWishlist {
+      success
+      errorCode
+      message
+    }
+  }
+`;
 
 export const fetchWishlistApi = async ({ page = 1, limit = 20 } = {}) => {
-  const start = (page - 1) * limit;
-  const total = items.length;
+  const normalizedPage = Math.max(1, Number(page) || 1);
+  const normalizedLimit = Math.max(1, Number(limit) || 20);
+  const data = await shopApiRequest(MY_WISHLIST, {
+    skip: (normalizedPage - 1) * normalizedLimit,
+    take: normalizedLimit,
+  });
+  const wishlist = data?.myWishlist;
+  const total = wishlist?.totalItems ?? 0;
+  const totalPages = Math.ceil(total / normalizedLimit);
+
   return {
     success: true,
     data: {
-      wishlist: items.slice(start, start + limit),
+      wishlist: wishlist?.items || [],
       pagination: {
-        page,
-        limit,
+        page: normalizedPage,
+        limit: normalizedLimit,
         total,
-        total_pages: Math.ceil(total / limit),
-        has_next: start + limit < total,
-        has_prev: page > 1,
+        total_pages: totalPages,
+        has_next: normalizedPage < totalPages,
+        has_prev: normalizedPage > 1,
       },
     },
   };
 };
 
 export const addToWishlistApi = async (productId) => {
-  if (!items.some((item) => item.product_id === productId)) {
-    items = [
-      ...items,
-      {
-        product_id: productId,
-        product: {
-          id: productId,
-          title: "Organic Demo Product",
-          thumbnail: "/AppLogo.png",
-          price_range: { min: 12.49 },
-          discount_percentage: 15,
-          variants: [{ title: "500g" }],
-        },
-      },
-    ];
-  }
-  return { success: true };
+  const data = await shopApiRequest(ADD_TO_WISHLIST, {
+    productId: String(productId),
+  });
+  return data?.addProductToWishlist;
 };
 
 export const removeFromWishlistApi = async (productId) => {
-  items = items.filter((item) => item.product_id !== productId);
-  return { success: true };
+  const data = await shopApiRequest(REMOVE_FROM_WISHLIST, {
+    productId: String(productId),
+  });
+  return data?.removeProductFromWishlist;
+};
+
+export const clearWishlistApi = async () => {
+  const data = await shopApiRequest(CLEAR_WISHLIST);
+  return data?.clearMyWishlist;
 };
 
 export async function fetchAllWishlistProductIds() {
-  return new Set(items.map((item) => item.product_id));
+  const data = await shopApiRequest(MY_WISHLIST_PRODUCT_IDS);
+  return new Set((data?.myWishlistProductIds || []).map(String));
 }

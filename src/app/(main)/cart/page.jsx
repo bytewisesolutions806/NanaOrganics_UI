@@ -8,7 +8,6 @@ import { useRouter } from 'next/navigation';
 import { Button } from 'primereact/button';
 import { Dropdown } from 'primereact/dropdown';
 import { LockKeyhole } from 'lucide-react';
-import { validateCouponApi, applyCouponApi } from '@/service/CartService';
 import useCartStore from '@/store/useCartStore';
 import useAuthStore from '@/store/AuthStore';
 import './index.css';
@@ -25,6 +24,9 @@ export default function CartPage() {
     updateCart,
     deleteItemsFromCart,
     clearCart,
+    applyCoupon,
+    removeCoupon,
+    couponLoading,
     loading,
   } = useCartStore();
 
@@ -52,44 +54,54 @@ export default function CartPage() {
   }, [fetchCart, hasHydrated, isAuthenticated]);
 
   const [couponCode, setCouponCode] = useState('');
-  const [couponLoading, setCouponLoading] = useState(false);
-  const cartId = typeof window !== 'undefined' ? sessionStorage.getItem('cart_id') : null;
 
   const handleApplyCoupon = async () => {
-    if (!couponCode.trim() || !cartId) return;
+    const normalizedCode = couponCode.trim().toUpperCase();
+    if (!normalizedCode || couponLoading) return;
 
     try {
-      setCouponLoading(true);
-
-      // 1️⃣ Validate coupon
-      await validateCouponApi(couponCode);
-
-      // 2️⃣ Apply coupon
-      await applyCouponApi({
-        cart_id: cartId,
-        coupon_code: couponCode,
-      });
-
-      // 3️⃣ Refetch cart
-      await fetchCart(cartId);
-
-      // ✅ SUCCESS TOAST
+      const updatedCart = await applyCoupon(normalizedCode);
+      const appliedCode = updatedCart?.pricing?.coupon_code;
+      const savings = Number(updatedCart?.pricing?.coupon_discount_amount || 0);
+      setCouponCode(appliedCode || normalizedCode);
       toast.current.show({
         severity: 'success',
-        summary: 'Coupon Applied 🎉',
-        detail: `You saved ${currencySymbol}${pricing?.coupon_discount_amount || ''}`,
+        summary: 'Coupon Applied',
+        detail:
+          savings > 0
+            ? `You saved ${currencySymbol}${savings.toFixed(2)}`
+            : 'The code was accepted. Its discount will activate when the order meets the promotion requirements.',
         life: 3000,
       });
     } catch (err) {
-      // ❌ ERROR TOAST
       toast.current.show({
         severity: 'error',
-        summary: 'Invalid Coupon',
-        detail: err?.response?.data?.message || 'Coupon is invalid or expired',
+        summary: 'Coupon Not Applied',
+        detail: err?.message || 'Coupon is invalid, expired, or has reached its usage limit.',
         life: 3000,
       });
-    } finally {
-      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = async () => {
+    const appliedCode = pricing?.coupon_code;
+    if (!appliedCode || couponLoading) return;
+    try {
+      await removeCoupon(appliedCode);
+      setCouponCode('');
+      toast.current.show({
+        severity: 'success',
+        summary: 'Coupon Removed',
+        detail: `${appliedCode} was removed from your cart.`,
+        life: 2500,
+      });
+    } catch (err) {
+      toast.current.show({
+        severity: 'error',
+        summary: 'Coupon Not Removed',
+        detail: err?.message || 'Could not remove the coupon. Please try again.',
+        life: 3000,
+      });
     }
   };
 
@@ -255,7 +267,9 @@ export default function CartPage() {
                 <span>Sub Total</span>
                 <span>
                   {currencySymbol}
-                  {pricing.subtotal.toFixed(2)}
+                  {Number(
+                    pricing.subtotal_before_discounts_with_tax ?? pricing.subtotal,
+                  ).toFixed(2)}
                 </span>
               </div>
 
@@ -289,7 +303,12 @@ export default function CartPage() {
                   placeholder="ENTER CODE"
                   value={pricing.coupon_code || couponCode}
                   onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' && !isCouponApplied) handleApplyCoupon();
+                  }}
                   disabled={isCouponApplied || couponLoading}
+                  maxLength={64}
+                  aria-label="Coupon code"
                   className={`
                   flex-1 px-3 py-2 border rounded-xl text-sm
                   ${isCouponApplied ? 'bg-gray-100 cursor-not-allowed' : ''}
@@ -297,26 +316,27 @@ export default function CartPage() {
                 />
 
                 <Button
-                  label={couponLoading ? 'Applying...' : isCouponApplied ? 'Applied' : 'Apply'}
-                  disabled={isCouponApplied || couponLoading}
+                  label={couponLoading ? 'Please wait...' : isCouponApplied ? 'Remove' : 'Apply'}
+                  disabled={couponLoading || (!isCouponApplied && !couponCode.trim())}
                   className={`
                 px-4 rounded-xl
-                ${
-                  isCouponApplied
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  ${
+                    isCouponApplied
+                    ? 'bg-white text-red-600 border border-red-200'
                     : 'bg-[#6C8F85] text-white'
                 }
               `}
-                  onClick={handleApplyCoupon}
+                  onClick={isCouponApplied ? handleRemoveCoupon : handleApplyCoupon}
                 />
               </div>
 
               {/* SUCCESS MESSAGE */}
               {isCouponApplied && (
                 <p className="text-xs text-green-600 mt-2">
-                  🎉 Coupon <strong>{pricing.coupon_code}</strong> applied — You saved{' '}
-                  {currencySymbol}
-                  {pricing.coupon_discount_amount.toFixed(2)}
+                  Coupon <strong>{pricing.coupon_code}</strong> is applied
+                  {pricing.coupon_discount_amount > 0
+                    ? ` — You saved ${currencySymbol}${pricing.coupon_discount_amount.toFixed(2)}`
+                    : '. Its requirements are not met yet.'}
                 </p>
               )}
             </div>

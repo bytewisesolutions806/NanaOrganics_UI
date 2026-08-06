@@ -24,6 +24,7 @@ const Header = () => {
   const fetchCart = useCartStore((state) => state.fetchCart);
   const wishlistTotal = useWishlistStore((state) => state.wishlistTotal);
   const refreshWishlistCount = useWishlistStore((state) => state.refreshWishlistCount);
+  const resetWishlist = useWishlistStore((state) => state.resetWishlist);
 
   // Refetch when auth cart id, cart-store id, or sessionStorage cart_id is available
   // (add-to-cart only updated the cart store + sessionStorage before; auth cartId could stay null)
@@ -43,9 +44,9 @@ const Header = () => {
     if (isAuthenticated) {
       refreshWishlistCount();
     } else {
-      useWishlistStore.setState({ wishlistTotal: 0, wishlist: [] });
+      resetWishlist();
     }
-  }, [isAuthenticated, refreshWishlistCount]);
+  }, [isAuthenticated, refreshWishlistCount, resetWishlist]);
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [dropdownOpenDesktop, setDropdownOpenDesktop] = useState(null);

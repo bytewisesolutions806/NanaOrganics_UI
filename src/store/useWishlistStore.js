@@ -1,154 +1,202 @@
 import { create } from 'zustand';
 import {
+  addToWishlistApi,
+  clearWishlistApi,
+  fetchAllWishlistProductIds,
   fetchWishlistApi,
   removeFromWishlistApi,
-  addToWishlistApi,
 } from '@/service/WishlistService';
 import { mapWishlistApiRow } from '@/lib/wishlistAdapter';
 
-function getErrorMessage(err) {
-  const d = err?.response?.data;
-  if (typeof d?.message === 'string') return d.message;
-  if (err?.message) return err.message;
+function getErrorMessage(error) {
+  const graphqlMessage = error?.response?.errors?.[0]?.message;
+  if (graphqlMessage) return graphqlMessage;
+  if (error?.message) return error.message;
   return 'Something went wrong';
 }
 
 const DEFAULT_LIMIT = 10;
+let productIdsRequest = null;
+
+const emptyPagination = (limit = DEFAULT_LIMIT) => ({
+  page: 1,
+  limit,
+  total: 0,
+  total_pages: 0,
+  has_next: false,
+  has_prev: false,
+});
+
+const hasAccessToken = () =>
+  typeof window !== 'undefined' && !!sessionStorage.getItem('accessToken');
 
 const useWishlistStore = create((set, get) => ({
   wishlist: [],
-  /** Total items in wishlist (all pages); updated by list fetch and refreshCount */
   wishlistTotal: 0,
+  wishlistProductIds: new Set(),
+  wishlistIdsLoaded: false,
+  wishlistIdsLoading: false,
   loading: false,
+  clearing: false,
   error: null,
   removingId: null,
   pageLimit: DEFAULT_LIMIT,
-  pagination: {
-    page: 1,
-    limit: DEFAULT_LIMIT,
-    total: 0,
-    total_pages: 0,
-    has_next: false,
-    has_prev: false,
+  pagination: emptyPagination(),
+
+  resetWishlist: () => {
+    productIdsRequest = null;
+    set({
+      wishlist: [],
+      wishlistTotal: 0,
+      wishlistProductIds: new Set(),
+      wishlistIdsLoaded: false,
+      wishlistIdsLoading: false,
+      loading: false,
+      clearing: false,
+      error: null,
+      removingId: null,
+      pagination: emptyPagination(get().pageLimit),
+    });
+  },
+
+  fetchWishlistProductIds: async ({ force = false } = {}) => {
+    if (!hasAccessToken()) {
+      get().resetWishlist();
+      return new Set();
+    }
+    if (get().wishlistIdsLoaded && !force) return get().wishlistProductIds;
+    if (productIdsRequest) return productIdsRequest;
+
+    set({ wishlistIdsLoading: true });
+    productIdsRequest = fetchAllWishlistProductIds()
+      .then((ids) => {
+        set({
+          wishlistProductIds: ids,
+          wishlistIdsLoaded: true,
+          wishlistIdsLoading: false,
+        });
+        return ids;
+      })
+      .catch((error) => {
+        set({ wishlistIdsLoading: false });
+        throw error;
+      })
+      .finally(() => {
+        productIdsRequest = null;
+      });
+    return productIdsRequest;
   },
 
   fetchWishlist: async (page = 1, limit) => {
-    if (typeof window === 'undefined') return;
-    if (!sessionStorage.getItem('accessToken')) {
-      set({
-        wishlist: [],
-        wishlistTotal: 0,
-        loading: false,
-        error: null,
-        pagination: {
-          page: 1,
-          limit: limit ?? get().pageLimit,
-          total: 0,
-          total_pages: 0,
-          has_next: false,
-          has_prev: false,
-        },
-      });
+    const normalizedLimit = limit ?? get().pageLimit;
+    if (!hasAccessToken()) {
+      get().resetWishlist();
       return;
     }
 
-    const lim = limit ?? get().pageLimit;
     set({ loading: true, error: null });
     try {
-      const res = await fetchWishlistApi({ page, limit: lim });
-      if (!res?.success) {
-        throw new Error(res?.message || 'Failed to load wishlist');
-      }
-      const rows = res.data?.wishlist || [];
+      const response = await fetchWishlistApi({ page, limit: normalizedLimit });
+      const rows = response.data?.wishlist || [];
       const items = rows.map(mapWishlistApiRow).filter(Boolean);
-      const pag = res.data?.pagination || {};
-      const total = pag.total ?? 0;
+      const pagination = response.data?.pagination || emptyPagination(normalizedLimit);
       set({
         wishlist: items,
-        wishlistTotal: total,
-        pageLimit: lim,
-        pagination: {
-          page: pag.page ?? page,
-          limit: pag.limit ?? lim,
-          total,
-          total_pages: pag.total_pages ?? 0,
-          has_next: !!pag.has_next,
-          has_prev: !!pag.has_prev,
-        },
+        wishlistTotal: pagination.total ?? 0,
+        pageLimit: normalizedLimit,
+        pagination,
         loading: false,
       });
-    } catch (err) {
+    } catch (error) {
       set({
         wishlist: [],
         wishlistTotal: 0,
         loading: false,
-        error: getErrorMessage(err),
-        pagination: {
-          page: 1,
-          limit: lim,
-          total: 0,
-          total_pages: 0,
-          has_next: false,
-          has_prev: false,
-        },
+        error: getErrorMessage(error),
+        pagination: emptyPagination(normalizedLimit),
       });
     }
   },
 
-  /** Lightweight total for header badge (does not replace paginated list). */
   refreshWishlistCount: async () => {
-    if (typeof window === 'undefined') return;
-    if (!sessionStorage.getItem('accessToken')) {
+    if (!hasAccessToken()) {
       set({ wishlistTotal: 0 });
       return;
     }
     try {
-      const res = await fetchWishlistApi({ page: 1, limit: 1 });
-      if (res?.success) {
-        const total = res.data?.pagination?.total ?? 0;
-        set({ wishlistTotal: total });
-      }
+      const response = await fetchWishlistApi({ page: 1, limit: 1 });
+      set({ wishlistTotal: response.data?.pagination?.total ?? 0 });
     } catch {
       set({ wishlistTotal: 0 });
     }
   },
 
   addProduct: async (productId) => {
-    const res = await addToWishlistApi(productId);
-    if (!res?.success) {
-      throw new Error(res?.message || 'Could not add to wishlist');
+    const normalizedId = String(productId);
+    const response = await addToWishlistApi(normalizedId);
+    if (!response?.success) {
+      throw new Error(response?.message || 'Could not add to wishlist');
     }
+    set((state) => ({
+      wishlistProductIds: new Set([...state.wishlistProductIds, normalizedId]),
+      wishlistIdsLoaded: true,
+    }));
     await get().refreshWishlistCount();
-    return res;
+    return response;
   },
 
-  /** Remove by product id without reloading paginated /wishlist list (e.g. product page). */
   removeProductById: async (productId) => {
-    const res = await removeFromWishlistApi(productId);
-    if (!res?.success) {
-      throw new Error(res?.message || 'Could not remove from wishlist');
+    const normalizedId = String(productId);
+    const response = await removeFromWishlistApi(normalizedId);
+    if (!response?.success) {
+      throw new Error(response?.message || 'Could not remove from wishlist');
     }
+    set((state) => {
+      const ids = new Set(state.wishlistProductIds);
+      ids.delete(normalizedId);
+      return { wishlistProductIds: ids };
+    });
     await get().refreshWishlistCount();
-    return res;
+    return response;
   },
 
   setPage: (page) => get().fetchWishlist(page),
 
   removeItem: async (productId) => {
     if (!productId) return;
-    set({ removingId: productId, error: null });
+    const normalizedId = String(productId);
+    set({ removingId: normalizedId, error: null });
     try {
-      const res = await removeFromWishlistApi(productId);
-      if (!res?.success) {
-        throw new Error(res?.message || 'Could not remove item');
-      }
-      const { page, wishlist } = get();
+      await get().removeProductById(normalizedId);
+      const { pagination, wishlist } = get();
       const nextPage =
-        wishlist.length <= 1 && page > 1 ? page - 1 : page;
+        wishlist.length <= 1 && pagination.page > 1
+          ? pagination.page - 1
+          : pagination.page;
       await get().fetchWishlist(nextPage);
       set({ removingId: null });
-    } catch (err) {
-      set({ removingId: null, error: getErrorMessage(err) });
+    } catch (error) {
+      set({ removingId: null, error: getErrorMessage(error) });
+    }
+  },
+
+  clearWishlist: async () => {
+    set({ clearing: true, error: null });
+    try {
+      const response = await clearWishlistApi();
+      if (!response?.success) {
+        throw new Error(response?.message || 'Could not clear wishlist');
+      }
+      set({
+        wishlist: [],
+        wishlistTotal: 0,
+        wishlistProductIds: new Set(),
+        wishlistIdsLoaded: true,
+        clearing: false,
+        pagination: emptyPagination(get().pageLimit),
+      });
+    } catch (error) {
+      set({ clearing: false, error: getErrorMessage(error) });
     }
   },
 }));

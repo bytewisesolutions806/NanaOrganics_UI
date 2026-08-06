@@ -8,6 +8,7 @@ import { Dropdown } from 'primereact/dropdown';
 import { Button } from 'primereact/button';
 import { MessageCircle } from 'lucide-react';
 import useCartStore from '@/store/useCartStore';
+import WishlistButton from '@/components/WishlistButton';
 
 const getVariantDisplayLabel = (variant, productTitle = '') => {
   const fullLabel = String(variant?.label || variant?.title || '').trim();
@@ -80,7 +81,7 @@ const ProductCard = ({ item, category }) => {
           sm:w-[260px]
           md:w-[270px]
           lg:w-[260px]
-          mx-auto
+          mx-auto relative
         "
       >
         {/* CLICKABLE CONTENT */}
@@ -92,10 +93,6 @@ const ProductCard = ({ item, category }) => {
           <div className="relative">
             <span className="absolute top-2 left-2 bg-[#E6F4F2] text-[#1EA766] text-xs px-3 py-1 rounded-lg z-10">
               Organic
-            </span>
-
-            <span className="absolute top-2 right-3 bg-white rounded-full w-8 h-8 flex items-center justify-center z-10">
-              <i className="pi pi-heart text-[16px] text-[#1EA766]" />
             </span>
 
             <Image
@@ -150,6 +147,11 @@ const ProductCard = ({ item, category }) => {
             )}
           </div>
         </Link>
+
+        <WishlistButton
+          productId={item.id}
+          className="absolute right-3 top-2 z-20 h-8 w-8 rounded-full shadow-sm"
+        />
 
         {/* BOTTOM ACTIONS (ALWAYS ALIGNED) */}
         <div className="mt-auto pb-4">

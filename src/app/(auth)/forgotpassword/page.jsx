@@ -44,8 +44,10 @@ export default function ForgotPassword() {
 
       // ✅ STORE RESET INFO IN ZUSTAND
       setPendingPasswordReset({
-        email, // REAL email (used for API later)
-        delivery: res.data.code_delivery, // masked email + medium
+        email: email.trim().toLowerCase(),
+        expiresInSeconds: res.expiresInSeconds,
+        retryAfterSeconds: res.retryAfterSeconds,
+        requestedAt: Date.now(),
       });
 
       // ✅ REDIRECT
@@ -93,9 +95,7 @@ export default function ForgotPassword() {
               </div>
 
               {/* Heading */}
-              <h2 className="text-2xl font-bold text-center mb-6">
-                Forgot Password
-              </h2>
+              <h2 className="text-2xl font-bold text-center mb-6">Forgot Password</h2>
 
               {/* <p className="text-sm text-gray-600 text-center mt-2 mb-6">
           Signup to get full access to your dashboard, tools, and resources in
@@ -105,7 +105,7 @@ export default function ForgotPassword() {
               {/* Email / Phone */}
               {/* Email / Phone */}
               <div className="mb-6">
-                <label className="text-sm font-medium">Email / Phone</label>
+                <label className="text-sm font-medium">Email</label>
 
                 <div className="relative w-full mt-3">
                   <div className="absolute inset-y-0 left-4 flex items-center">
@@ -121,22 +121,16 @@ export default function ForgotPassword() {
                       setEmailError("");
                     }}
                     keyfilter="email"
-                    placeholder="Enter your email or phone number"
+                    placeholder="Enter your email address"
                     className={`
         w-full h-[60px] pl-10 rounded-[10px] bg-[#F5FCFB]
         border
-        ${
-          emailError
-            ? "border-red-500 focus:border-red-500"
-            : "border-[#cfe2e0]"
-        }
+        ${emailError ? "border-red-500 focus:border-red-500" : "border-[#cfe2e0]"}
       `}
                   />
                 </div>
 
-                {emailError && (
-                  <p className="text-xs text-red-500 mt-1">{emailError}</p>
-                )}
+                {emailError && <p className="text-xs text-red-500 mt-1">{emailError}</p>}
               </div>
 
               {/* Checkbox */}
@@ -151,7 +145,7 @@ export default function ForgotPassword() {
     flex items-center justify-center gap-2 cursor-pointer
   "
               >
-                <span>{loading ? "Sending Email" : "Reset Password"}</span>
+                <span>{loading ? "Sending code..." : "Send reset code"}</span>
                 <i className="pi pi-angle-right text-xl font-bold mt-0" />
               </button>
 
@@ -168,7 +162,7 @@ export default function ForgotPassword() {
               <p className="text-sm text-center mt-4">
                 Don{"'"}t have an account?
                 <span
-                  onClick={() => router.push("/login")}
+                  onClick={() => router.push("/signup")}
                   className="text-black font-semibold ml-2 cursor-pointer text-green-600"
                 >
                   {" "}
@@ -180,7 +174,7 @@ export default function ForgotPassword() {
             {/* Mountain Image - Bottom Left */}
             <div className="hidden lg:block absolute bottom-0 left-0 z-0">
               <Image
-              fill
+                fill
                 src="/AuthMountain.svg"
                 alt="Auth Mountain"
                 className="w-[300px] lg:w-[460px] pointer-events-none select-none"

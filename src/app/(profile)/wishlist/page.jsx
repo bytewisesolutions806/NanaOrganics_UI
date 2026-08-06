@@ -13,6 +13,8 @@ export default function WishlistPage() {
     pagination,
     fetchWishlist,
     setPage,
+    clearWishlist,
+    clearing,
   } = useWishlistStore();
 
   useEffect(() => {
@@ -21,7 +23,22 @@ export default function WishlistPage() {
   }, []);
 
   return (
-    <AccountListLayout title="My Wishlist" count={pagination.total}>
+    <AccountListLayout
+      title="My Wishlist"
+      count={pagination.total}
+      headerRight={
+        pagination.total > 0 ? (
+          <button
+            type="button"
+            disabled={clearing || loading}
+            onClick={clearWishlist}
+            className="text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-40"
+          >
+            {clearing ? 'Clearing...' : 'Clear all'}
+          </button>
+        ) : null
+      }
+    >
       {error && (
         <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2 mb-4">
           {error}

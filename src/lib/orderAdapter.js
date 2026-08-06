@@ -118,8 +118,16 @@ function lineItemMinorTotal(item) {
 function formatMoneyMinorUnits(amount, currencyCode = "usd") {
   if (amount == null || Number.isNaN(Number(amount))) return "0.00";
   const n = Number(amount) / 100;
-  const sym = String(currencyCode).toLowerCase() === "eur" ? "€" : "$";
-  return `${sym}${n.toFixed(2)}`;
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: String(currencyCode || "USD").toUpperCase(),
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(n);
+  } catch {
+    return `${String(currencyCode || "USD").toUpperCase()} ${n.toFixed(2)}`;
+  }
 }
 
 function formatMoneyMinorUnitsNumber(amount) {
@@ -288,11 +296,19 @@ export function normalizeOrderFromApi(apiOrder) {
     (sum, sm) => sum + coerceMinorToInt(sm?.amount),
     0
   );
+  const subtotalMinor =
+    merged.subtotal != null
+      ? coerceMinorToInt(merged.subtotal)
+      : computedItemsTotal;
+  const shippingMinor =
+    merged.shipping_total != null
+      ? coerceMinorToInt(merged.shipping_total)
+      : computedShippingTotal;
   const lineTotalMinor = computedItemsTotal + computedShippingTotal;
   const serverTotal = coerceMinorToInt(merged.total);
   const graphPartsMinor =
-    coerceMinorToInt(merged.subtotal) +
-    coerceMinorToInt(merged.shipping_total) +
+    subtotalMinor +
+    shippingMinor +
     coerceMinorToInt(merged.tax_total) -
     coerceMinorToInt(merged.discount_total);
 
@@ -369,17 +385,16 @@ export function normalizeOrderFromApi(apiOrder) {
     updates: buildUpdates(merged, uiStatus),
     items,
     deliveryAddressStr,
-    subtotalDisplay: formatMoneyMinorUnits(
-      computedItemsTotal || coerceMinorToInt(merged.subtotal),
-      currency
-    ),
+    subtotalDisplay: formatMoneyMinorUnits(subtotalMinor, currency),
     taxDisplay: formatMoneyMinorUnits(coerceMinorToInt(merged.tax_total), currency),
-    shippingDisplay: formatMoneyMinorUnits(
-      computedShippingTotal || coerceMinorToInt(merged.shipping_total),
-      currency
-    ),
+    shippingDisplay: formatMoneyMinorUnits(shippingMinor, currency),
     discountDisplay: formatMoneyMinorUnits(coerceMinorToInt(merged.discount_total), currency),
     totalDisplay: formatMoneyMinorUnits(reliableTotal, currency),
+    taxLines: (merged.tax_lines || []).map((tax) => ({
+      ...tax,
+      amountDisplay: formatMoneyMinorUnits(coerceMinorToInt(tax.amount), currency),
+      baseDisplay: formatMoneyMinorUnits(coerceMinorToInt(tax.base), currency),
+    })),
     timeline,
   };
 }

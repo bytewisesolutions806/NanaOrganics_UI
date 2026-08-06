@@ -4,7 +4,7 @@ import Image from "next/image";
 import AppLogo from "../../../assets/images/AppLogo.png";
 import { Toast } from "primereact/toast";
 import { useRouter } from "next/navigation";
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import LoginPageImage from "@/assets/images/AuthPage/LoginPageImage.png";
 import LeafImage from "@/assets/images/gallery/gallery_leave_01.png";
 import loginPageImage01 from "@/assets/images/LoginPage/loginpageLeaf.png";
@@ -20,7 +20,7 @@ import "./index.css";
 export default function Verifyotp() {
   const router = useRouter();
 
-  const { pendingVerification } = useAuthStore();
+  const { hasHydrated, pendingVerification } = useAuthStore();
 
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
@@ -99,10 +99,13 @@ export default function Verifyotp() {
     }
   };
 
-  if (!pendingVerification) {
-    router.replace("/signup");
-    return null;
-  }
+  useEffect(() => {
+    if (hasHydrated && !pendingVerification) {
+      router.replace("/signup");
+    }
+  }, [hasHydrated, pendingVerification, router]);
+
+  if (!hasHydrated || !pendingVerification) return null;
 
   const maskedEmail =
     pendingVerification.verificationInfo?.destination ||
@@ -122,19 +125,17 @@ export default function Verifyotp() {
               <div className="flex justify-center mb-6">
                 {/* <Image src="/AppLogo.png" alt="Logo" width={120} height={100} /> */}
                 <Link href="/" aria-label="Go to home">
-                  <img
+                  <Image
                     src="/AppLogo.svg"
-                    width="150"
-                    height="80"
+                    width={150}
+                    height={80}
                     alt="App Logo"
                     className="cursor-pointer"
                   />
                 </Link>
               </div>
 
-              <h2 className="text-2xl font-bold text-center">
-                Start your Journey
-              </h2>
+              <h2 className="text-2xl font-bold text-center">Start your Journey</h2>
 
               <p className="text-sm text-gray-600 text-center mt-2 mb-6">
                 We sent a 6 digit code to{" "}
@@ -190,9 +191,11 @@ export default function Verifyotp() {
             </div>
             {/* Mountain Image - Bottom Left */}
             <div className="hidden lg:block absolute bottom-0 left-0 z-0">
-              <img
+              <Image
                 src="/AuthMountain.svg"
-                alt="Auth Mountain"
+                width={460}
+                height={260}
+                alt=""
                 className="w-[300px] lg:w-[460px] pointer-events-none select-none"
               />
             </div>
@@ -200,11 +203,12 @@ export default function Verifyotp() {
 
           {/* RIGHT SECTION (DESKTOP ONLY) */}
           <div className="relative hidden lg:block">
-            <img
+            <Image
               src="/LoginPageImage01.png"
               alt="Overlay"
               fill
               className="object-cover w-full h-full rounded-2xl p-4"
+              sizes="50vw"
             />
           </div>
         </div>

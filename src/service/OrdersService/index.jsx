@@ -10,11 +10,15 @@ const ORDER_FIELDS = `
     updatedAt
     orderPlacedAt
     currencyCode
+    subTotal
     subTotalWithTax
+    shipping
     shippingWithTax
+    total
     totalWithTax
     totalQuantity
-    discounts { amountWithTax description }
+    discounts { amount amountWithTax description }
+    taxSummary { description taxRate taxBase taxTotal }
     shippingAddress {
       fullName
       streetLine1
@@ -189,6 +193,18 @@ function uiStatusFor(order) {
 function toUiOrder(order) {
   if (!order) return null;
   const cancelled = /cancel/i.test(order.state);
+  const discountTotal = (order.discounts || []).reduce(
+    (sum, discount) => sum + Math.abs(Number(discount.amount || 0)),
+    0,
+  );
+  const taxTotalFromSummary = (order.taxSummary || []).reduce(
+    (sum, tax) => sum + Number(tax.taxTotal || 0),
+    0,
+  );
+  const taxTotal = taxTotalFromSummary || Math.max(
+    0,
+    Number(order.totalWithTax || 0) - Number(order.total || 0),
+  );
   const legacy = {
     id: String(order.id),
     display_id: order.code,
@@ -196,11 +212,24 @@ function toUiOrder(order) {
     created_at: order.orderPlacedAt || order.createdAt,
     updated_at: order.updatedAt,
     currency_code: String(order.currencyCode || '').toLowerCase(),
-    subtotal: order.subTotalWithTax,
-    shipping_total: order.shippingWithTax,
+    subtotal: Number(order.subTotal || 0) + discountTotal,
+    net_subtotal: order.subTotal,
+    subtotal_with_tax: order.subTotalWithTax,
+    shipping_total: order.shipping,
+    shipping_total_with_tax: order.shippingWithTax,
     total: order.totalWithTax,
-    tax_total: 0,
-    discount_total: (order.discounts || []).reduce(
+    total_excluding_tax: order.total,
+    tax_total: taxTotal,
+    tax_lines: (order.taxSummary || [])
+      .filter((tax) => Number(tax.taxTotal || 0) !== 0)
+      .map((tax) => ({
+        description: tax.description,
+        rate: Number(tax.taxRate || 0),
+        base: Number(tax.taxBase || 0),
+        amount: Number(tax.taxTotal || 0),
+      })),
+    discount_total: discountTotal,
+    discount_total_with_tax: (order.discounts || []).reduce(
       (sum, discount) => sum + Math.abs(Number(discount.amountWithTax || 0)),
       0,
     ),

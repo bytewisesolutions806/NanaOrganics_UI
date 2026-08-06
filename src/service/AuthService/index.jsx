@@ -1,6 +1,10 @@
 import {
   loginWithJwt,
+  requestCustomerPasswordReset,
+  resendCustomerPasswordResetCode,
+  resetCustomerPassword,
   resendCustomerSignupCode,
+  verifyCustomerPasswordResetCode,
   verifyCustomerSignupCode,
 } from "@/graphql/mutations/customer-auth";
 import { requestCustomerSignup } from "@/graphql/mutations/customer-signup";
@@ -23,5 +27,17 @@ export const verifyOtp = async ({ email, confirmation_code }) =>
 export const resendSignupOtp = async (email) =>
   resendCustomerSignupCode(email.trim().toLowerCase());
 
-export const forgotPassword = async () => ({ success: true });
-export const VerfiyResetOTP = async () => ({ success: true });
+export const forgotPassword = async ({ email }) =>
+  requestCustomerPasswordReset(email.trim().toLowerCase());
+
+export const resendPasswordResetOtp = async (email) =>
+  resendCustomerPasswordResetCode(email.trim().toLowerCase());
+
+export const verifyResetOtp = async ({ email, confirmationCode }) =>
+  verifyCustomerPasswordResetCode({
+    emailAddress: email.trim().toLowerCase(),
+    code: confirmationCode,
+  });
+
+export const completePasswordReset = async ({ resetToken, newPassword }) =>
+  resetCustomerPassword({ resetToken, newPassword });

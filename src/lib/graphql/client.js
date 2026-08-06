@@ -13,6 +13,9 @@ export function getShopApiClient() {
   if (!shopApiClient) {
     const channelToken = process.env.NEXT_PUBLIC_VENDURE_CHANNEL_TOKEN;
     shopApiClient = new GraphQLClient(endpoint, {
+      // JWT is used for authenticated requests. The separate Shop cookie keeps
+      // anonymous/public requests on one Vendure session without colliding with
+      // the Dashboard cookie (configured separately by the backend).
       credentials: "include",
       headers: {
         ...(channelToken ? { "vendure-token": channelToken } : {}),
