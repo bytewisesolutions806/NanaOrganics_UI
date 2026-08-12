@@ -74,6 +74,7 @@ const ORDER_FIELDS = `
 const CUSTOMER_ORDERS = `
   ${ORDER_FIELDS}
   query CustomerOrders($options: OrderListOptions) {
+    customerReturnPolicy { returnWindowDays }
     activeCustomer {
       orders(options: $options) {
         totalItems
@@ -89,7 +90,24 @@ const CUSTOMER_ORDERS = `
 const CUSTOMER_ORDER = `
   ${ORDER_FIELDS}
   query CustomerOrder($id: ID!) {
+    customerReturnPolicy { returnWindowDays }
     order(id: $id) { ...CustomerOrderFields }
+    fedExTracking(orderId: $id) {
+      trackingNumber
+      statusCode
+      statusDescription
+      carrierCode
+      estimatedDeliveryAt
+      actualDeliveryAt
+      updatedAt
+      trackingUrl
+      events {
+        timestamp
+        statusCode
+        statusDescription
+        location
+      }
+    }
     myReturnRequests(skip: 0, take: 100) {
       items { orderId status updatedAt }
     }
@@ -186,10 +204,15 @@ function buildOrderUpdates(order) {
   return updates;
 }
 
-function uiStatusFor(order, returnRequest) {
+function uiStatusFor(order, returnRequest, liveTracking) {
   const fulfillmentStates = (order.fulfillments || []).map((item) => item.state);
-  if (returnRequest && ['RECEIVED', 'REFUNDED'].includes(returnRequest.status)) return 'returned';
+  if (returnRequest?.status === 'REFUND_COMPLETED') return 'returned';
   if (order.state === 'Cancelled' || fulfillmentStates.includes('Cancelled')) return 'cancelled';
+  const liveStatus = `${liveTracking?.statusCode || ''} ${liveTracking?.statusDescription || ''}`;
+  if (/\bDL\b|delivered/i.test(liveStatus)) return 'delivered';
+  if (/\b(IT|OD|PU|AR|DP)\b|in transit|out for delivery|picked up|on the way/i.test(liveStatus)) {
+    return 'on_the_way';
+  }
   if (order.state === 'Delivered' || fulfillmentStates.includes('Delivered')) return 'delivered';
   if (
     ['PartiallyShipped', 'Shipped', 'PartiallyDelivered'].includes(order.state) ||
@@ -198,7 +221,7 @@ function uiStatusFor(order, returnRequest) {
   return 'confirmed';
 }
 
-function toUiOrder(order, returnRequest) {
+function toUiOrder(order, returnRequest, liveTracking = null, returnWindowDays = 7) {
   if (!order) return null;
   const cancelled = /cancel/i.test(order.state);
   const discountTotal = (order.discounts || []).reduce(
@@ -252,7 +275,7 @@ function toUiOrder(order, returnRequest) {
     vendure_state: order.state,
     metadata: returnRequest
       ? {
-          returned: ['RECEIVED', 'REFUNDED'].includes(returnRequest.status),
+          returned: returnRequest.status === 'REFUND_COMPLETED',
           return_status: returnRequest.status,
           returned_at: returnRequest.updatedAt,
         }
@@ -285,7 +308,24 @@ function toUiOrder(order, returnRequest) {
   };
   const normalized = normalizeOrderFromApi(legacy);
   const updates = buildOrderUpdates(order);
-  const uiStatus = uiStatusFor(order, returnRequest);
+  for (const [index, event] of (liveTracking?.events || []).entries()) {
+    if (!event.statusDescription) continue;
+    updates.push({
+      id: `fedex-${event.timestamp || index}-${event.statusCode || index}`,
+      status: event.statusDescription,
+      description: event.location || '',
+      date: formatUpdateDate(event.timestamp),
+      createdAt: event.timestamp,
+      type: 'FEDEX_TRACKING',
+      completed: true,
+    });
+  }
+  updates.sort((left, right) => {
+    const leftTime = left.createdAt ? new Date(left.createdAt).getTime() : 0;
+    const rightTime = right.createdAt ? new Date(right.createdAt).getTime() : 0;
+    return leftTime - rightTime;
+  });
+  const uiStatus = uiStatusFor(order, returnRequest, liveTracking);
   if (uiStatus === 'returned' && !updates.some((item) => item.status === 'Returned')) {
     updates.push({
       id: `return-${order.id}`,
@@ -299,11 +339,27 @@ function toUiOrder(order, returnRequest) {
   }
   const tracking = (order.fulfillments || []).find((item) => item.trackingCode) ||
     order.fulfillments?.[0] || null;
+  const deliveredTimes = (order.fulfillments || [])
+    .filter((item) => item.state === 'Delivered' && item.updatedAt)
+    .map((item) => new Date(item.updatedAt).getTime())
+    .filter(Number.isFinite);
+  const deliveredAt = deliveredTimes.length
+    ? new Date(Math.max(...deliveredTimes))
+    : order.state === 'Delivered' ? new Date(order.updatedAt) : null;
+  const returnDeadline = deliveredAt
+    ? new Date(deliveredAt.getTime() + Number(returnWindowDays || 7) * 86400000)
+    : null;
+  const canReturn = uiStatus === 'delivered' && !returnRequest &&
+    Boolean(returnDeadline && Date.now() <= returnDeadline.getTime());
   return {
     ...normalized,
     vendureState: order.state,
     uiStatus,
     status: uiStatus,
+    canReturn,
+    returnWindowDays: Number(returnWindowDays || 7),
+    returnDeadline: returnDeadline?.toISOString() || null,
+    returnRequestStatus: returnRequest?.status || null,
     updates,
     timeline: updates.map((item) => ({
       label: item.description
@@ -311,21 +367,25 @@ function toUiOrder(order, returnRequest) {
         : `${item.status}${item.date ? ` — ${item.date}` : ''}`,
     })),
     adminNotes: updates.filter((item) => item.type === 'ORDER_NOTE'),
-    tracking: tracking
+    tracking: tracking || liveTracking
       ? {
-          state: tracking.state,
-          method: tracking.method,
-          code: tracking.trackingCode,
-          updatedAt: tracking.updatedAt,
+          state: liveTracking?.statusDescription || tracking?.state,
+          statusCode: liveTracking?.statusCode || null,
+          method: tracking?.method || liveTracking?.carrierCode || 'FedEx',
+          code: liveTracking?.trackingNumber || tracking?.trackingCode,
+          updatedAt: liveTracking?.updatedAt || tracking?.updatedAt,
+          estimatedDeliveryAt: liveTracking?.estimatedDeliveryAt || null,
+          actualDeliveryAt: liveTracking?.actualDeliveryAt || null,
+          trackingUrl: liveTracking?.trackingUrl || null,
+          events: liveTracking?.events || [],
         }
       : null,
   };
 }
 
-function returnedRequestsByOrder(items = []) {
+function returnRequestsByOrder(items = []) {
   const result = new Map();
   for (const request of items) {
-    if (!['RECEIVED', 'REFUNDED'].includes(request.status)) continue;
     const key = String(request.orderId);
     const current = result.get(key);
     if (!current || new Date(request.updatedAt) > new Date(current.updatedAt)) {
@@ -340,12 +400,13 @@ export const fetchUserOrdersApi = async ({ take = 100, skip = 0 } = {}) => {
     options: { take, skip, sort: { orderPlacedAt: 'DESC' } },
   });
   const result = data.activeCustomer?.orders;
-  const returns = returnedRequestsByOrder(data.myReturnRequests?.items);
+  const returns = returnRequestsByOrder(data.myReturnRequests?.items);
+  const returnWindowDays = data.customerReturnPolicy?.returnWindowDays || 7;
   return {
     success: true,
     data: {
       orders: (result?.items || []).map((order) =>
-        toUiOrder(order, returns.get(String(order.id))),
+        toUiOrder(order, returns.get(String(order.id)), null, returnWindowDays),
       ),
       pagination: { total: result?.totalItems || 0 },
     },
@@ -354,9 +415,16 @@ export const fetchUserOrdersApi = async ({ take = 100, skip = 0 } = {}) => {
 
 export const fetchUserOrderByIdApi = async (orderId) => {
   const data = await shopApiRequest(CUSTOMER_ORDER, { id: orderId });
-  const returns = returnedRequestsByOrder(data.myReturnRequests?.items);
+  const returns = returnRequestsByOrder(data.myReturnRequests?.items);
   return {
     success: true,
-    data: { order: toUiOrder(data.order, returns.get(String(orderId))) },
+    data: {
+      order: toUiOrder(
+        data.order,
+        returns.get(String(orderId)),
+        data.fedExTracking,
+        data.customerReturnPolicy?.returnWindowDays || 7,
+      ),
+    },
   };
 };

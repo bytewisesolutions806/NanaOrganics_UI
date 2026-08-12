@@ -19,6 +19,9 @@ function readFileAsDataUrl(file) {
   });
 }
 
+const MAX_RETURN_IMAGE_BYTES = 2.5 * 1024 * 1024;
+const RETURN_IMAGE_TYPES = new Set(['image/png', 'image/jpeg', 'image/webp', 'image/gif']);
+
 export default function ReturnOrderPage() {
   const { orderId } = useParams();
   const router = useRouter();
@@ -82,6 +85,17 @@ export default function ReturnOrderPage() {
   const handleUpload = useCallback((e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setError(null);
+    if (!RETURN_IMAGE_TYPES.has(file.type)) {
+      e.target.value = '';
+      setError('Upload a PNG, JPG, WEBP, or GIF image.');
+      return;
+    }
+    if (file.size > MAX_RETURN_IMAGE_BYTES) {
+      e.target.value = '';
+      setError('Return image must be 2.5 MB or smaller.');
+      return;
+    }
     if (imagePreview) URL.revokeObjectURL(imagePreview);
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
@@ -131,6 +145,18 @@ export default function ReturnOrderPage() {
     return (
       <div className="text-red-600 font-medium py-8">
         Return is only available for delivered orders.
+      </div>
+    );
+  }
+
+  if (!order.canReturn) {
+    const deadline = order.returnDeadline
+      ? new Date(order.returnDeadline).toLocaleDateString()
+      : null;
+    return (
+      <div className="py-8 font-medium text-red-600">
+        This return cannot be submitted. The {order.returnWindowDays}-day return window
+        {deadline ? ` closed on ${deadline}` : ' has closed'}, or a return already exists for this order.
       </div>
     );
   }

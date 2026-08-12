@@ -217,6 +217,7 @@ const ELIGIBLE_SHIPPING_METHODS = `
       description
       price
       priceWithTax
+      metadata
     }
   }
 `;
@@ -564,6 +565,11 @@ export const fetchShippingOptionsApi = async () => {
         amount: money(method.priceWithTax ?? method.price),
         amount_without_tax: money(method.price),
         tax: Math.max(0, money(method.priceWithTax) - money(method.price)),
+        carrier: method.metadata?.carrier || null,
+        service_type: method.metadata?.serviceType || null,
+        service_name: method.metadata?.serviceName || null,
+        transit_time: method.metadata?.transitTime || null,
+        estimated_delivery_date: method.metadata?.estimatedDeliveryDate || null,
       })),
     },
   };

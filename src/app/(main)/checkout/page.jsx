@@ -807,12 +807,27 @@ export default function CheckoutPage() {
                     const amount = opt.amount || opt.calculated_price?.calculated_amount || 0;
                     const priceLabel =
                       amount === 0 ? "FREE" : `${currencySymbol} ${amount.toFixed(2)}`;
+                    const deliveryDate = opt.estimated_delivery_date
+                      ? new Date(opt.estimated_delivery_date)
+                      : null;
+                    const deliveryEstimate = deliveryDate && !Number.isNaN(deliveryDate.getTime())
+                      ? `Estimated ${deliveryDate.toLocaleDateString(undefined, {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}`
+                      : opt.transit_time
+                        ? String(opt.transit_time).replaceAll("_", " ").toLowerCase()
+                        : null;
+                    const description = [opt.description, deliveryEstimate]
+                      .filter(Boolean)
+                      .join(" · ");
 
                     return (
                       <ShippingRadio
                         key={opt.id}
-                        label={opt.name}
-                        description={opt.type?.description}
+                        label={opt.service_name || opt.name}
+                        description={description}
                         price={priceLabel}
                         value={opt.id}
                         selected={selectedShipping}

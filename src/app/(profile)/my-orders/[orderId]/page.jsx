@@ -255,6 +255,28 @@ export default function OrderDetailsPage() {
                   {order.tracking.code && (
                     <p className="sm:col-span-2"><span className="font-medium text-gray-800">Tracking code:</span> {order.tracking.code}</p>
                   )}
+                  {order.tracking.estimatedDeliveryAt && (
+                    <p className="sm:col-span-2">
+                      <span className="font-medium text-gray-800">Estimated delivery:</span>{' '}
+                      {new Date(order.tracking.estimatedDeliveryAt).toLocaleString(undefined, {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                      })}
+                    </p>
+                  )}
+                  {order.tracking.trackingUrl && (
+                    <a
+                      href={order.tracking.trackingUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="sm:col-span-2 font-semibold text-[#2C665E] underline underline-offset-2"
+                    >
+                      Track this shipment on FedEx
+                    </a>
+                  )}
                 </div>
               </div>
             )}
@@ -325,7 +347,7 @@ export default function OrderDetailsPage() {
           </div>
 
           <div className="flex gap-4 mt-6">
-            {order.status === 'delivered' && !returnRequest && (
+            {order.status === 'delivered' && order.canReturn && !returnRequest && (
               <button
                 type="button"
                 onClick={() => router.push(`/my-orders/${order.id}/return`)}
@@ -333,6 +355,12 @@ export default function OrderDetailsPage() {
               >
                 Return Order
               </button>
+            )}
+
+            {order.status === 'delivered' && !order.canReturn && !returnRequest && (
+              <p className="self-center text-sm text-gray-500">
+                The {order.returnWindowDays}-day return window has closed.
+              </p>
             )}
 
             {showReviewCta ? (
