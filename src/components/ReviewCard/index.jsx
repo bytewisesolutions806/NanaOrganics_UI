@@ -1,94 +1,63 @@
-"use client";
+'use client';
 
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation } from "swiper/modules";
-import Image from "next/image";
-import { useId } from "react";
-import { Card } from "primereact/card";
+import { useId } from 'react';
+import { ChevronLeft, ChevronRight, Quote, Star } from 'lucide-react';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Autoplay, Navigation } from 'swiper/modules';
+import TestimonialsSkeleton from './TestimonalSkeleton';
+import { useHomeStore } from '@/store/HomeStore';
 
-import CommentImage from "../../assets/images/comment.png";
-import TestimonialsSkeleton from "./TestimonalSkeleton";
-import { useHomeStore } from "@/store/HomeStore";
-
-import "swiper/css";
-import "swiper/css/navigation";
-import "./index.css";
+import 'swiper/css';
+import 'swiper/css/navigation';
+import './index.css';
 
 export default function ReviewCard() {
-  const swiperId = useId();
-  const reviews = useHomeStore((state) => state.testimonials);
+  const swiperId = useId().replaceAll(':', '');
+  const reviews = useHomeStore((state) => state.testimonials).slice(0, 10);
   const loading = useHomeStore((state) => state.loading);
+  const previousClass = `customer-review-prev-${swiperId}`;
+  const nextClass = `customer-review-next-${swiperId}`;
 
-  // ✅ skeleton condition (correct)
-  if (loading && reviews.length === 0) {
-    return <TestimonialsSkeleton />;
-  }
-
+  if (loading && reviews.length === 0) return <TestimonialsSkeleton />;
   if (!reviews.length) return null;
 
   return (
-    <div className="w-full py-6 sm:py-8">
-      <div className="max-w-7xl mx-auto relative px-3 sm:px-6">
-        {/* ================= ARROWS ================= */}
+    <div className="customer-review-stage w-full">
+      <div className="customer-review-track relative mx-auto">
         <button
-          className={`
-            custom-prev-${swiperId}
-            hidden lg:flex
-            absolute top-1/2 -translate-y-1/2 z-20
-            w-10 h-10
-            text-[3rem] text-[#1ea766]
-            items-center justify-center
-            lg:left-2 xl:-left-14
-          `}
+          type="button"
+          aria-label="Previous customer review"
+          className={`${previousClass} customer-review-arrow absolute z-20 hidden -translate-y-1/2 text-[#2F746A] transition hover:scale-110 hover:text-[#1F554D] sm:flex`}
         >
-          ‹
+          <ChevronLeft className="customer-review-chevron" strokeWidth={1.7} />
+        </button>
+        <button
+          type="button"
+          aria-label="Next customer review"
+          className={`${nextClass} customer-review-arrow customer-review-arrow-next absolute z-20 hidden -translate-y-1/2 text-[#2F746A] transition hover:scale-110 hover:text-[#1F554D] sm:flex`}
+        >
+          <ChevronRight className="customer-review-chevron" strokeWidth={1.7} />
         </button>
 
-        <button
-          className={`
-            custom-next-${swiperId}
-            hidden lg:flex
-            absolute top-1/2 -translate-y-1/2 z-20
-            w-10 h-10
-            text-[3rem] text-[#1ea766]
-            items-center justify-center
-            lg:right-2 xl:-right-14
-          `}
-        >
-          ›
-        </button>
-
-        {/* ================= SWIPER ================= */}
         <Swiper
-          modules={[Navigation]}
-          loop
-          spaceBetween={16}
-          navigation={{
-            prevEl: `.custom-prev-${swiperId}`,
-            nextEl: `.custom-next-${swiperId}`,
-          }}
+          className="customer-review-swiper"
+          modules={[Navigation, Autoplay]}
+          loop={reviews.length > 3}
+          autoplay={reviews.length > 1 ? { delay: 5000, disableOnInteraction: false } : false}
+          navigation={{ prevEl: `.${previousClass}`, nextEl: `.${nextClass}` }}
           onBeforeInit={(swiper) => {
-            swiper.params.navigation.prevEl = `.custom-prev-${swiperId}`;
-            swiper.params.navigation.nextEl = `.custom-next-${swiperId}`;
+            swiper.params.navigation.prevEl = `.${previousClass}`;
+            swiper.params.navigation.nextEl = `.${nextClass}`;
           }}
           breakpoints={{
-            0: {
-              slidesPerView: 1.1,
-              centeredSlides: true,
-            },
-            640: {
-              slidesPerView: 2,
-              centeredSlides: false,
-            },
-            1024: {
-              slidesPerView: 3,
-              centeredSlides: false,
-            },
+            0: { slidesPerView: 1.08, centeredSlides: true, spaceBetween: 14 },
+            640: { slidesPerView: 2, centeredSlides: false, spaceBetween: 16 },
+            1024: { slidesPerView: 3, centeredSlides: false, spaceBetween: 16 },
           }}
         >
-          {reviews.map((item) => (
-            <SwiperSlide key={item.id} className="flex justify-center">
-              <CustomCard data={item} />
+          {reviews.map((review) => (
+            <SwiperSlide key={review.id}>
+              <CustomerReviewCard review={review} />
             </SwiperSlide>
           ))}
         </Swiper>
@@ -96,40 +65,39 @@ export default function ReviewCard() {
     </div>
   );
 }
-function CustomCard({ data }) {
-  const { name, comment, rating } = data;
+
+function CustomerReviewCard({ review }) {
+  const rating = Math.min(5, Math.max(0, Math.round(Number(review.rating) || 0)));
 
   return (
-    <div className="relative mt-5 w-full max-w-[400px]">
-      <div className="absolute -top-5 left-4 z-20">
-        <Image src={CommentImage} alt="Comment" width={60} height={60} />
+    <article className="customer-review-card relative flex flex-col bg-white shadow-[0_8px_22px_rgba(36,91,82,0.10)]">
+      <div className="customer-review-quote absolute flex items-center justify-center rounded-md bg-[#2F746A] shadow-sm">
+        <Quote className="customer-review-quote-icon fill-transparent text-white" strokeWidth={2} />
       </div>
 
-      <Card className="border-none rounded-2xl shadow-md">
-        <div className="flex flex-col justify-between min-h-[200px] pt-8 px-4">
-          {/* Review text */}
-          <p className="text-sm sm:text-base text-gray-600 leading-relaxed line-clamp-4">
-            {comment}
-          </p>
+      <p className="customer-review-copy line-clamp-4 flex-1 leading-[1.65] text-[#20272A]">
+        &ldquo;{review.comment}&rdquo;
+      </p>
 
-          {/* Footer */}
-          <div className="flex items-center gap-3 mt-4 mb-6">
-            <span className="text-base sm:text-lg font-semibold">{name}</span>
-
-            <span className="hidden sm:block w-px h-5 bg-gray-300" />
-
-            {/* Rating */}
-            <div className="flex gap-1 text-[#5EA087]">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <i
-                  key={i}
-                  className={`pi ${i < rating ? "pi-star-fill" : "pi-star"}`}
-                />
-              ))}
-            </div>
-          </div>
+      <footer className="customer-review-footer flex items-center">
+        <span className="customer-review-name max-w-[42%] truncate font-semibold text-[#20272A]">
+          {review.name}
+        </span>
+        <span className="customer-review-divider w-px shrink-0 bg-[#DCE8E5]" aria-hidden="true" />
+        <div className="flex gap-0.5" aria-label={`${rating} out of 5 stars`}>
+          {Array.from({ length: 5 }, (_, index) => (
+            <Star
+              key={index}
+              className={`customer-review-star ${
+                index < rating
+                  ? 'fill-[#61A78F] text-[#61A78F]'
+                  : 'fill-[#D9E6E2] text-[#D9E6E2]'
+              }`}
+              strokeWidth={1}
+            />
+          ))}
         </div>
-      </Card>
-    </div>
+      </footer>
+    </article>
   );
 }

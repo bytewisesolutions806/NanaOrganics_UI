@@ -19,6 +19,7 @@ export async function fetchProductReviews({ productId, limit = 5, offset = 0, ra
   let all = (data.productReviews?.items || []).map((review) => ({
     id: String(review.id),
     customer_name: review.customerName,
+    user_name: review.customerName,
     rating: review.rating,
     title: review.title,
     content: review.content,

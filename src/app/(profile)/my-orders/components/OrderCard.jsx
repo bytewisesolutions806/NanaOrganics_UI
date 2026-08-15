@@ -78,7 +78,7 @@ export default function OrderCard({ order, reviewedOrderIds, legacyReviewedProdu
   return (
     <article
       onClick={() => router.push(`/my-orders/${order.id}`)}
-      className="group cursor-pointer rounded-2xl border border-[#D8E7E4] bg-white p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-[#9FC8C1] hover:shadow-[0_10px_30px_rgba(44,102,94,0.10)] sm:p-5"
+      className="group cursor-pointer rounded-2xl border border-[#D8E7E4] bg-white p-4 transition-[border-color,box-shadow] duration-200 hover:border-[#9FC8C1] hover:shadow-[0_8px_24px_rgba(44,102,94,0.10)] sm:p-5"
     >
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(245px,auto)] lg:items-center lg:gap-6">
         <div className="flex min-w-0 items-center gap-4">

@@ -1,70 +1,77 @@
 'use client';
 
 import Image from 'next/image';
-import { Star } from 'lucide-react';
+import { BadgeCheck, Star } from 'lucide-react';
 
-function ordinal(n) {
-  const s = ['th', 'st', 'nd', 'rd'];
-  const v = n % 100;
-  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+function ordinal(number) {
+  const suffixes = ['th', 'st', 'nd', 'rd'];
+  const value = number % 100;
+  return number + (suffixes[(value - 20) % 10] || suffixes[value] || suffixes[0]);
 }
 
-/** @param {string} iso */
 export function formatReviewDate(iso) {
   if (!iso) return '—';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '—';
-  const day = ordinal(d.getDate());
-  const month = d.toLocaleString('en-GB', { month: 'long' });
-  const year = d.getFullYear();
-  return `${day} ${month} ${year}`;
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '—';
+  const day = ordinal(date.getDate());
+  const month = date.toLocaleString('en-GB', { month: 'long' });
+  return `${day} ${month} ${date.getFullYear()}`;
 }
 
 export default function ReviewCard({ review }) {
   const rating = Math.min(5, Math.max(0, Number(review?.rating) || 0));
+  const customerName = review?.user_name || review?.customer_name || 'Customer';
 
   return (
-    <article
-      className="rounded-xl border border-[#E2EBE9] bg-white p-4 md:p-5 text-[#21252C]"
-      style={{ padding: 16 }}
-    >
-      <div className="flex items-center gap-2 mb-2">
-        <div className="flex gap-0.5" aria-label={`${rating} out of 5 stars`}>
-          {Array.from({ length: 5 }, (_, i) => (
-            <Star
-              key={i}
-              className={`w-4 h-4 shrink-0 ${
-                i < rating ? 'text-[#1EA766] fill-[#1EA766]' : 'text-[#CFE3DF] fill-transparent'
-              }`}
-              strokeWidth={1.25}
-            />
-          ))}
+    <article className="rounded-2xl border border-[#E2EBE9] bg-white p-4 text-[#21252C] transition-shadow hover:shadow-sm md:p-5">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <div className="flex gap-0.5" aria-label={`${rating} out of 5 stars`}>
+            {Array.from({ length: 5 }, (_, index) => (
+              <Star
+                key={index}
+                className={`h-4 w-4 shrink-0 ${
+                  index < rating
+                    ? 'fill-[#1EA766] text-[#1EA766]'
+                    : 'fill-transparent text-[#CFE3DF]'
+                }`}
+                strokeWidth={1.25}
+              />
+            ))}
+          </div>
+          <span className="text-xs font-medium text-gray-600">{rating.toFixed(1)}</span>
         </div>
-        <span className="text-xs text-gray-600">{rating.toFixed(1)}</span>
+        {review?.is_verified_purchase ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-[#EDF8F4] px-2.5 py-1 text-xs font-medium text-[#2C665E]">
+            <BadgeCheck className="h-3.5 w-3.5" />
+            Verified purchase
+          </span>
+        ) : null}
       </div>
 
-      {review?.title ? <p className="text-sm font-semibold text-[#1F2937] mb-2">{review.title}</p> : null}
-
+      {review?.title ? (
+        <h3 className="mb-2 text-base font-semibold text-[#1F2937]">{review.title}</h3>
+      ) : null}
       {review?.content ? (
-        <p className="text-sm leading-relaxed text-gray-700 mb-3">{review.content}</p>
+        <p className="mb-4 text-sm leading-relaxed text-gray-700">{review.content}</p>
       ) : null}
 
       {Array.isArray(review?.images) && review.images.length > 0 ? (
-        <div className="flex flex-wrap gap-2 mb-3">
-          {review.images.map((src, idx) => (
+        <div className="mb-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+          {review.images.map((source, index) => (
             <div
-              key={`${review.id}-img-${idx}`}
-              className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-lg overflow-hidden border border-[#E6EFEF] bg-gray-50"
+              key={`${review.id}-image-${index}`}
+              className="relative aspect-square w-full overflow-hidden rounded-xl border border-[#E6EFEF] bg-gray-50 sm:h-24 sm:w-24"
             >
               <Image
-                src={src}
-                alt=""
+                src={source}
+                alt={`Review photo from ${customerName} ${index + 1}`}
                 fill
-                className="object-cover"
-                sizes="80px"
+                className="object-cover transition-transform duration-200 hover:scale-105"
+                sizes="(max-width: 640px) 45vw, 96px"
                 unoptimized={
-                  typeof src === 'string' &&
-                  (src.startsWith('data:') || src.startsWith('http://localhost'))
+                  typeof source === 'string' &&
+                  (source.startsWith('data:') || source.startsWith('http://localhost'))
                 }
               />
             </div>
@@ -72,16 +79,10 @@ export default function ReviewCard({ review }) {
         </div>
       ) : null}
 
-      <footer className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-        <span className="font-medium text-gray-900">{review?.user_name || 'Customer'}</span>
-        <span className="text-gray-400">•</span>
+      <footer className="flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-[#EDF2F1] pt-3 text-sm">
+        <span className="font-semibold text-gray-900">{customerName}</span>
+        <span className="text-gray-300">•</span>
         <span className="text-gray-500">{formatReviewDate(review?.created_at)}</span>
-        {review?.is_verified_purchase ? (
-          <>
-            <span className="text-gray-300">•</span>
-            <span className="text-[#1EA766] text-xs font-medium">Verified purchase</span>
-          </>
-        ) : null}
       </footer>
     </article>
   );

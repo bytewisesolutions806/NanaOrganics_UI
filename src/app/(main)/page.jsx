@@ -152,30 +152,21 @@ const HomePage = () => {
         <WhyChooseNana />
       </section>
 
-      <section className="mt-10 mb-10">
-        {/* What CustmerSays  */}
-
-        <div className="relative w-full  pb-12">
-          {/* Background Image */}
-          <div className="relative w-full h-[360px] sm:h-[460px] lg:h-[400px]">
-            <img
-              src="/what_customer_says.svg"
-              alt="Customer Says"
-              className="object-cover w-full h-full"
-            />
-          </div>
-
-          {/* Overlay Content */}
-          <div className="absolute inset-0 flex flex-col items-center">
-            {/* Title */}
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-playfair font-semibold mt-6 sm:mt-10 text-center px-4">
-              What Our Customers Say
-            </h2>
-
-            <div className="w-full mt-4 sm:mt-6 lg:mt-4">
-              <ReviewCard />
-            </div>
-          </div>
+      <section className="customer-reviews-section relative my-10 overflow-hidden bg-[#EAF6F3]">
+        <img
+          src="/what_customer_says.svg"
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-80"
+        />
+        <div className="relative z-10">
+          <h2
+            className="customer-reviews-heading px-4 text-center font-semibold leading-none text-[#20272A]"
+            style={{ fontFamily: '"Playfair Display", Georgia, serif' }}
+          >
+            What Our Customers Say
+          </h2>
+          <ReviewCard />
         </div>
       </section>
 

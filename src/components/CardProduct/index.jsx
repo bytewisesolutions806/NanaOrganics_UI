@@ -33,6 +33,7 @@ const getVariantDisplayLabel = (variant, productTitle = '') => {
 };
 
 const ProductCard = ({ item, category }) => {
+  const variants = Array.isArray(item?.variants) ? item.variants : [];
   const buildVariantOptions = (variants = []) =>
     variants.map((v) => ({
       label: getVariantDisplayLabel(v, item.title),
@@ -42,7 +43,7 @@ const ProductCard = ({ item, category }) => {
       // disabled: !v.in_stock // PrimeReact supports this
     }));
 
-  const variantOptions = buildVariantOptions(item.variants || []);
+  const variantOptions = buildVariantOptions(variants);
   const reviewsCount = Number(item?.reviews_count || 0);
 
   // ✅ initialize once from props
@@ -51,12 +52,13 @@ const ProductCard = ({ item, category }) => {
   );
 
   // ✅ derive selected variant
-  const selectedVariant = item.variants.find((v) => v.id === selectedVariantId);
+  const selectedVariant = variants.find((v) => v.id === selectedVariantId);
 
   const addToCart = useCartStore((state) => state.addToCart);
   const [selectedWeight, setSelectedWeight] = useState(null);
-  const categoryHandle = category?.parent_category?.handle;
-  const subCategoryHandle = category?.handle;
+  const categoryHandle =
+    category?.parent_category?.handle || item?.parent_category?.handle || 'deals';
+  const subCategoryHandle = category?.handle || item?.subcategory?.handle || 'deals';
 
   const handleAddToCart = () => {
     addToCart({
@@ -149,7 +151,7 @@ const ProductCard = ({ item, category }) => {
         </Link>
 
         <WishlistButton
-          productId={item.id}
+          productId={item.productId || item.id}
           className="absolute right-3 top-2 z-20 h-8 w-8 rounded-full shadow-sm"
         />
 

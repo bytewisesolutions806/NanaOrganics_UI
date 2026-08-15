@@ -1,6 +1,10 @@
-import { getHomepageProductSections } from '@/graphql/queries/homepage';
+import {
+  getHomepageProductSections,
+  getTopCustomerReviews,
+} from '@/graphql/queries/homepage';
 import { getRecentlyViewedProductSlugs } from '@/lib/recentlyViewedProducts';
 import { DEFAULT_IMAGE } from '@/lib/defaultImage';
+import { resolveAssetUrl } from '@/lib/assetUrl';
 
 const money = (value) => Number(value || 0) / 100;
 const isRootCollection = (collection) =>
@@ -74,17 +78,44 @@ function mapSection(section) {
   };
 }
 
+function mapTestimonial(review) {
+  const images = [
+    ...(review.images || []).map((asset) => resolveAssetUrl(asset.preview || asset.source)),
+    ...(review.legacyImages || []).map(resolveAssetUrl),
+  ].filter(Boolean);
+
+  return {
+    id: String(review.id),
+    name: review.customerName || 'Customer',
+    comment: review.content,
+    title: review.title,
+    rating: Number(review.rating || 0),
+    createdAt: review.createdAt,
+    verifiedPurchase: Boolean(review.verifiedPurchase),
+    productId: String(review.productId),
+    productName: review.productName,
+    productSlug: review.productSlug,
+    productImage: resolveAssetUrl(review.productPreview) || DEFAULT_IMAGE,
+    reviewImage: images[0] || null,
+    images,
+  };
+}
+
 export const getHomeData = async () => {
-  const sections = await getHomepageProductSections({
-    take: 8,
-    recentlyViewedSlugs: getRecentlyViewedProductSlugs(),
-  });
+  const [sections, reviews] = await Promise.all([
+    getHomepageProductSections({
+      take: 8,
+      recentlyViewedSlugs: getRecentlyViewedProductSlugs(),
+    }),
+    // A testimonial outage must not prevent product collections from loading.
+    getTopCustomerReviews(10).catch(() => []),
+  ]);
 
   return {
     success: true,
     data: {
       collections: sections.map(mapSection),
-      testimonials: [],
+      testimonials: reviews.map(mapTestimonial),
       stats: null,
     },
   };

@@ -46,9 +46,45 @@ export const GET_HOMEPAGE_PRODUCT_SECTIONS = gql`
   }
 `;
 
-export async function getHomepageProductSections({ take = 8, recentlyViewedSlugs = [] } = {}) {
+export const GET_TOP_CUSTOMER_REVIEWS = gql`
+  query GetTopCustomerReviews($take: Int!) {
+    topCustomerReviews(take: $take) {
+      totalItems
+      items {
+        id
+        createdAt
+        productId
+        productName
+        productSlug
+        productPreview
+        customerName
+        rating
+        title
+        content
+        images {
+          id
+          source
+          preview
+        }
+        legacyImages
+        verifiedPurchase
+      }
+    }
+  }
+`;
+
+export async function getHomepageProductSections({
+  take = 8,
+  codes,
+  recentlyViewedSlugs = [],
+} = {}) {
   const data = await shopApiRequest(GET_HOMEPAGE_PRODUCT_SECTIONS, {
-    input: { take, recentlyViewedSlugs },
+    input: { take, ...(codes?.length ? { codes } : {}), recentlyViewedSlugs },
   });
   return data.homepageProductSections || [];
+}
+
+export async function getTopCustomerReviews(take = 10) {
+  const data = await shopApiRequest(GET_TOP_CUSTOMER_REVIEWS, { take });
+  return data.topCustomerReviews?.items || [];
 }
