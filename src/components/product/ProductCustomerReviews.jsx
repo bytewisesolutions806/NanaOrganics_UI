@@ -26,7 +26,7 @@ function formatHappyCount(n) {
   return Number(n).toLocaleString('en-GB').replace(/,/g, ' ');
 }
 
-export default function ProductCustomerReviews({ productId }) {
+export default function ProductCustomerReviews({ productId, onStatsChange }) {
   const [reviews, setReviews] = useState([]);
   const [stats, setStats] = useState(null);
   const [offset, setOffset] = useState(0);
@@ -56,7 +56,9 @@ export default function ProductCustomerReviews({ productId }) {
         }
         const next = res.data?.reviews ?? [];
         const pag = res.data?.pagination;
-        setStats(res.data?.stats ?? null);
+        const nextStats = res.data?.stats ?? null;
+        setStats(nextStats);
+        if (selectedRating == null && nextStats) onStatsChange?.(nextStats);
         setReviews((prev) => (append ? [...prev, ...next] : next));
         setHasMore(Boolean(pag?.has_more));
         setOffset(fromOffset + next.length);
@@ -71,7 +73,7 @@ export default function ProductCustomerReviews({ productId }) {
         setLoadingMore(false);
       }
     },
-    [productId, selectedRating, sortBy]
+    [onStatsChange, productId, selectedRating, sortBy]
   );
 
   useEffect(() => {
@@ -88,16 +90,25 @@ export default function ProductCustomerReviews({ productId }) {
     load(offset, true);
   };
 
-  if (!productId) return null;
-
   const avg = stats?.average_rating ?? 0;
   const total = stats?.total_reviews ?? 0;
 
+  // Keep the whole review area out of the product page until the initial
+  // request confirms that at least one published review exists.
+  if (
+    !productId ||
+    (!stats && (loading || error)) ||
+    (!loading && !error && Number(total) === 0)
+  ) {
+    return null;
+  }
+
   return (
-    <section className="mt-12 md:mt-16 pb-4" aria-labelledby="customer-reviews-heading">
+    <section id="customer-reviews" className="mt-20 scroll-mt-52 pb-4" aria-labelledby="customer-reviews-heading">
       <h2
         id="customer-reviews-heading"
-        className="font-serif text-2xl md:text-4xl font-semibold text-[#21252C] mb-4"
+        className="mb-4 text-3xl font-bold text-[#21252C] md:text-[38px]"
+        style={{ fontFamily: '"Playfair Display", Georgia, serif' }}
       >
         Our Customer Reviews
       </h2>
@@ -110,13 +121,16 @@ export default function ProductCustomerReviews({ productId }) {
         </p>
       ) : (
         <>
-          <div className="flex flex-wrap items-center gap-3 mb-6">
-            <div className="flex items-center gap-2 bg-[#F5FAF8] border border-[#D9ECE4] rounded-lg px-3 py-2">
-              <Star className="w-5 h-5 text-[#1EA766] fill-[#1EA766]" strokeWidth={1.25} />
-              <span className="text-xl font-semibold text-[#21252C]">{avg.toFixed(1)}</span>
+          <div className="mb-7 flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <span className="flex h-6 w-6 items-center justify-center rounded bg-[#21A56E]">
+                <Star className="h-4 w-4 fill-white text-white" strokeWidth={1.25} />
+              </span>
+              <span className="text-xl font-bold text-[#21252C]">{avg.toFixed(1)}</span>
             </div>
-            <span className="text-gray-600 text-sm md:text-base">
-              {formatHappyCount(total)} customer reviews
+            <span className="h-6 w-px bg-[#B7C6C2]" aria-hidden="true" />
+            <span className="text-sm text-[#2C2C2C]">
+              {formatHappyCount(total)} happy customers
             </span>
           </div>
 
@@ -156,10 +170,10 @@ export default function ProductCustomerReviews({ productId }) {
 
           {reviews.length === 0 ? (
             <p className="text-gray-600 text-sm py-6 border border-dashed border-[#CFE3DF] rounded-2xl text-center">
-              No reviews yet. Be the first to share your experience.
+              No reviews match this rating.
             </p>
           ) : (
-            <ul className="flex flex-col gap-3 list-none p-0 m-0">
+            <ul className="m-0 flex list-none flex-col gap-3 p-0">
               {reviews.map((r) => (
                 <li key={r.id}>
                   <ReviewCard review={r} />

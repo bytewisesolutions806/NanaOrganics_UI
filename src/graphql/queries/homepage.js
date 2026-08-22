@@ -34,6 +34,11 @@ export const GET_HOMEPAGE_PRODUCT_SECTIONS = gql`
             customFields {
               isPopular
             }
+            offerPricing {
+              originalPrice
+              offerPercentage
+              sellingPrice
+            }
             options {
               id
               name

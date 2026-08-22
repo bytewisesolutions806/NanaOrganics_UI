@@ -17,7 +17,10 @@ export default function ProductSliderSkeleton({ title = 'Loading...' }) {
         {/* PRODUCT SKELETONS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="rounded-2xl bg-white border border-[#E6F4F2] p-3">
+            <div
+              key={i}
+              className="h-[440px] rounded-2xl border border-[#E6F4F2] bg-white p-3"
+            >
               {/* IMAGE */}
               <div className="h-[180px] w-full bg-gray-200 rounded-xl animate-pulse"></div>
 

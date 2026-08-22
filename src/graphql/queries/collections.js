@@ -157,6 +157,11 @@ export const GET_HOMEPAGE_COLLECTIONS = gql`
         customFields {
           isPopular
         }
+        offerPricing {
+          originalPrice
+          offerPercentage
+          sellingPrice
+        }
         featuredAsset {
           id
           preview
@@ -252,6 +257,11 @@ export const GET_COLLECTION_PRODUCTS = gql`
           priceWithTax
           currencyCode
           stockLevel
+          offerPricing {
+            originalPrice
+            offerPercentage
+            sellingPrice
+          }
           featuredAsset {
             id
             preview
@@ -292,6 +302,11 @@ export const GET_PRODUCT_DETAILS = gql`
       slug
       description
       enabled
+      customFields {
+        aboutThisItem
+        isVegetarian
+        isOrganic
+      }
       featuredAsset {
         id
         preview
@@ -333,6 +348,11 @@ export const GET_PRODUCT_DETAILS = gql`
         stockLevel
         customFields {
           isPopular
+        }
+        offerPricing {
+          originalPrice
+          offerPercentage
+          sellingPrice
         }
         featuredAsset {
           id
@@ -410,6 +430,23 @@ export const SEARCH_COLLECTION_PRODUCTS = gql`
   }
 `;
 
+export const GET_PRODUCT_VARIANT_ORIGINAL_PRICES = gql`
+  query GetProductVariantOriginalPrices($options: ProductListOptions) {
+    products(options: $options) {
+      items {
+        variants {
+          id
+          offerPricing {
+            originalPrice
+            offerPercentage
+            sellingPrice
+          }
+        }
+      }
+    }
+  }
+`;
+
 export const DEFAULT_COLLECTION_OPTIONS = {
   skip: 0,
   take: 100,
@@ -480,4 +517,18 @@ export async function getProductDetails(slug) {
 
 export async function searchCollectionProducts(input, filterInput) {
   return shopApiRequest(SEARCH_COLLECTION_PRODUCTS, { input, filterInput });
+}
+
+export async function getProductVariantOriginalPrices(productIds = []) {
+  const uniqueIds = [...new Set(productIds.filter(Boolean).map(String))];
+  if (uniqueIds.length === 0) return [];
+
+  const data = await shopApiRequest(GET_PRODUCT_VARIANT_ORIGINAL_PRICES, {
+    options: {
+      take: uniqueIds.length,
+      filter: { id: { in: uniqueIds } },
+    },
+  });
+
+  return (data.products?.items || []).flatMap((product) => product.variants || []);
 }

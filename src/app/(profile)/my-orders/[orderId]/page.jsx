@@ -5,10 +5,12 @@ import useOrdersStore from '@/store/useOrdersStore';
 import Image from 'next/image';
 import Breadcrumb from '@/components/ui/BreadCrumb';
 import OrderUpdatesModal from '../components/OrderUpdatesModal';
+import OrderTimeline from '../components/OrderTimeline';
 import { loadOrderReviewLookup } from '@/lib/userReviewedProducts';
 import { downloadMockInvoice } from '@/utils/downloadMockInvoice';
 import { fetchUserReturnsApi } from '@/service/ReturnsService';
 import { DEFAULT_IMAGE } from '@/lib/defaultImage';
+import { ChevronRight } from 'lucide-react';
 
 export default function OrderDetailsPage() {
   const router = useRouter();
@@ -145,14 +147,6 @@ export default function OrderDetailsPage() {
   }
 
   const status = statusConfig[statusKey] || statusConfig.confirmed;
-  const timeline =
-    order.timeline?.length > 0
-      ? order.timeline
-      : [
-          { label: `Order Confirmed, ${order.confirmedDate || '—'}` },
-          { label: status.title },
-        ];
-
   const priceText =
     order.priceLabel != null
       ? order.priceLabel
@@ -223,28 +217,12 @@ export default function OrderDetailsPage() {
                   className="text-[#2C665E] text-sm font-medium flex items-center gap-1 hover:underline"
                 >
                   See All Updates
-                  <span className="text-lg">›</span>
+                  <ChevronRight className="h-4 w-4" aria-hidden="true" />
                 </button>
               </div>
             </div>
 
-            <div className="mt-6 space-y-5">
-              {timeline.map((step, index) => (
-                <div key={index} className="flex items-start gap-3">
-                  <div className="flex flex-col items-center">
-                    <div className="w-6 h-6 rounded-full border border-green-600 flex items-center justify-center text-green-600">
-                      ✓
-                    </div>
-
-                    {index !== timeline.length - 1 && (
-                      <div className="w-[2px] h-8 bg-green-600 mt-1" />
-                    )}
-                  </div>
-
-                  <p className="text-sm">{step.label}</p>
-                </div>
-              ))}
-            </div>
+            <OrderTimeline order={order} />
 
             {order.tracking && (
               <div className="mt-6 rounded-xl bg-[#F1F8F7] p-4 text-sm">

@@ -31,6 +31,11 @@ export async function fetchProductReviews({ productId, limit = 5, offset = 0, ra
     is_verified_purchase: review.verifiedPurchase,
   }));
 
+  const totalReviews = all.length;
+  const averageRating = totalReviews
+    ? all.reduce((sum, review) => sum + review.rating, 0) / totalReviews
+    : 0;
+
   if (rating) all = all.filter((review) => review.rating === Number(rating));
   all.sort((a, b) => {
     if (sort === 'oldest') return new Date(a.created_at) - new Date(b.created_at);
@@ -38,16 +43,13 @@ export async function fetchProductReviews({ productId, limit = 5, offset = 0, ra
     if (sort === 'lowest_rated') return a.rating - b.rating;
     return new Date(b.created_at) - new Date(a.created_at);
   });
-  const average = all.length
-    ? all.reduce((sum, review) => sum + review.rating, 0) / all.length
-    : 0;
   const reviews = all.slice(offset, offset + limit);
   return {
     success: true,
     data: {
       reviews,
       pagination: { total: all.length, limit, offset, has_more: offset + reviews.length < all.length },
-      stats: { average_rating: average, total_reviews: all.length },
+      stats: { average_rating: averageRating, total_reviews: totalReviews },
     },
   };
 }

@@ -12,11 +12,12 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "./index.css";
 import { useHomeStore } from "@/store/HomeStore";
+import CarouselArrow from "@/components/CarouselArrow";
 
 export default function DiscoverShopnow() {
   const DiscoverShopnow = useHomeStore((state) => state.DiscoverShopnow);
 
-  const swiperId = useId();
+  const swiperId = useId().replace(/:/g, "");
   const cardTemplate = (item) => {
     return (
       <div className="px-1">
@@ -93,70 +94,40 @@ export default function DiscoverShopnow() {
           </div>
         </div>
 
-        {/* Custom Arrows */}
-        <button
-          className={`
-    custom-prev-${swiperId}
-    hidden lg:flex
-    absolute
-    top-1/2 -translate-y-1/2
-    z-20
-    w-10 h-10
-    text-[4rem]
-    font-normal
-    text-[#1ea766]
-    items-center justify-center
-    cursor-pointer
-    transition-all duration-200
-    lg:left-2
-    xl:left-[-60px]
-  `}
-        >
-          ‹
-        </button>
+        <div className="relative">
+          <CarouselArrow
+            direction="previous"
+            label="Previous products"
+            className={`custom-prev-${swiperId} absolute top-1/2 z-20 hidden -translate-y-1/2 lg:left-2 lg:flex xl:left-[-60px]`}
+          />
+          <CarouselArrow
+            direction="next"
+            label="Next products"
+            className={`custom-next-${swiperId} absolute top-1/2 z-20 hidden -translate-y-1/2 lg:right-2 lg:flex xl:right-[-60px]`}
+          />
 
-        <button
-          className={`
-    custom-next-${swiperId}
-    hidden lg:flex
-    absolute
-    top-1/2 -translate-y-1/2
-    z-20
-    w-10 h-10
-    text-[4rem]
-    font-normal
-    text-[#1ea766]
-    items-center justify-center
-    cursor-pointer
-    transition-all duration-200
-    lg:right-2
-    xl:right-[-60px]
-  `}
-        >
-          ›
-        </button>
-
-        {/* Swiper */}
-        <Swiper
-          modules={[Navigation]}
-          loop={true}
-          spaceBetween={10}
-          navigation={{
-            prevEl: `.custom-prev-${swiperId}`,
-            nextEl: `.custom-next-${swiperId}`,
-          }}
-          breakpoints={{
-            1400: { slidesPerView: 5 },
-            1200: { slidesPerView: 4 },
-            992: { slidesPerView: 3 },
-            768: { slidesPerView: 3 },
-            0: { slidesPerView: 1 },
-          }}
-        >
-          {shopNow.map((item, index) => (
-            <SwiperSlide key={index}>{cardTemplate(item)}</SwiperSlide>
-          ))}
-        </Swiper>
+          {/* Swiper */}
+          <Swiper
+            modules={[Navigation]}
+            loop={true}
+            spaceBetween={10}
+            navigation={{
+              prevEl: `.custom-prev-${swiperId}`,
+              nextEl: `.custom-next-${swiperId}`,
+            }}
+            breakpoints={{
+              1400: { slidesPerView: 5 },
+              1200: { slidesPerView: 4 },
+              992: { slidesPerView: 3 },
+              768: { slidesPerView: 3 },
+              0: { slidesPerView: 1 },
+            }}
+          >
+            {shopNow.map((item, index) => (
+              <SwiperSlide key={index}>{cardTemplate(item)}</SwiperSlide>
+            ))}
+          </Swiper>
+        </div>
       </div>
     </div>
   );

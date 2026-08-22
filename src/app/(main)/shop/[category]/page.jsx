@@ -1,12 +1,14 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Leaf } from "lucide-react";
 import Breadcrumb from "@/components/ui/BreadCrumb";
-import SubCategorySection from "@/components/subCategory";
-import HomeNatureBanner from "@/components/HomeNatureBanner";
-import Trending from "@/components/Trending";
 import ExploreOrganicOfferings from "@/components/BannerOrganic";
+import ProductSlider from "@/components/ProductSlider";
+import NaturePromoBanner from "@/components/ShopDiscovery/NaturePromoBanner";
+import ShopCategoryCarousel from "@/components/ShopDiscovery/ShopCategoryCarousel";
 import { getCollectionBySlug } from "@/graphql/queries/collections";
+import { getHomeData } from "@/service/HomeService";
+import { getProductsBySubcategory } from "@/service/ProductService";
+
+export const dynamic = "force-dynamic";
 
 function isRootBreadcrumb(item) {
   return item.slug === "__root_collection__" || item.name === "__root_collection__";
@@ -16,11 +18,26 @@ function plainText(html = "") {
   return html.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 }
 
+function findSection(collections, ...handles) {
+  return handles
+    .map((handle) => collections.find((collection) => collection.handle === handle))
+    .find((collection) => collection?.products?.length > 0);
+}
+
 export default async function CategoryPage({ params }) {
   const { category } = await params;
   const categoryData = await getCollectionBySlug(category);
 
   if (!categoryData) notFound();
+
+  const [productResult, discoveryResult] = await Promise.allSettled([
+    getProductsBySubcategory({
+      subcategoryHandle: categoryData.slug,
+      page: 1,
+      limit: 12,
+    }),
+    getHomeData(),
+  ]);
 
   const hierarchy = (categoryData.breadcrumbs || []).filter(
     (item) => !isRootBreadcrumb(item)
@@ -34,55 +51,76 @@ export default async function CategoryPage({ params }) {
   ];
 
   const subcategories = categoryData.children || [];
+  const categoryProducts =
+    productResult.status === "fulfilled" && productResult.value?.success
+      ? productResult.value.data?.products || []
+      : [];
+  const collections =
+    discoveryResult.status === "fulfilled"
+      ? discoveryResult.value?.data?.collections || []
+      : [];
+  const bestDeals = findSection(collections, "deals", "trending", "featured");
+  const relatedProducts =
+    categoryProducts.length > 0
+      ? categoryProducts
+      : findSection(collections, "trending", "featured", "new-arrivals")?.products || [];
+  const recommended = findSection(
+    collections,
+    "recommended",
+    "best-sellers",
+    "featured",
+  );
+  const description =
+    plainText(categoryData.description) ||
+    `Explore our curated range of ${categoryData.name.toLowerCase()} categories.`;
 
   return (
-    <div className="mx-auto max-w-7xl px-4 md:px-8 lg:px-16 py-10">
-      <Breadcrumb items={breadcrumbItems} />
+    <main className="pb-20 pt-10 md:pt-5">
+      <div className="mx-auto mb-8 w-[calc(100%_-_32px)] max-w-[1296px] md:mb-10 md:w-[calc(100%_-_40px)]">
+        <Breadcrumb items={breadcrumbItems} />
+      </div>
 
-      {subcategories.length > 0 ? (
-        <SubCategorySection
-          categoryHandle={categoryData.slug}
-          categoryName={categoryData.name}
-          categoryDescription={plainText(categoryData.description)}
-          subcategories={subcategories}
-        />
-      ) : (
-        <div
-          className="my-8 md:my-10 mb-10 md:mb-12 flex justify-center"
-          role="status"
-          aria-live="polite"
-        >
-          <div className="w-full max-w-xl rounded-2xl border border-[#CFE3DF] bg-[#F4FAF8] px-6 py-10 md:py-12 text-center shadow-sm">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#E6EFEF] text-[#2C665E]">
-              <Leaf className="h-6 w-6" strokeWidth={1.75} aria-hidden />
-            </div>
-            <h2 className="text-lg md:text-xl font-semibold text-[#21252C]">
-              No subcategories found
-            </h2>
-            <p className="mt-2 text-sm md:text-base text-gray-600 leading-relaxed">
-              This collection does not have any child collections yet.
-            </p>
-            <div className="mt-6 flex justify-center">
-              <Link
-                href="/shop"
-                className="inline-flex items-center justify-center rounded-xl bg-[#2C665E] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#24554e]"
-              >
-                Browse shop
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
+      <ShopCategoryCarousel
+        categories={subcategories}
+        title={categoryData.name}
+        description={description}
+        basePath={`/shop/${categoryData.slug}`}
+      />
 
-      <section>
-        <HomeNatureBanner />
-      </section>
-      <section>
-        <Trending />
-      </section>
-      <section className="mt-10">
-        <ExploreOrganicOfferings />
-      </section>
-    </div>
+      <div className="mt-12 md:mt-16 lg:mt-20">
+        <NaturePromoBanner variant="nature" />
+      </div>
+
+      <ProductSlider
+        title="Best Deal"
+        subtitle="Our most loved products this season."
+        products={bestDeals?.products || relatedProducts}
+        browseLink="/deals"
+        sectionClass="w-full py-12 md:py-16 lg:py-20"
+        designVariant="figma"
+      />
+
+      <NaturePromoBanner variant="spices" />
+
+      <ProductSlider
+        title="Related Products"
+        subtitle={`More products from ${categoryData.name}.`}
+        products={relatedProducts}
+        browseLink={`/shop/${categoryData.slug}`}
+        sectionClass="w-full py-12 md:py-16 lg:py-20"
+        designVariant="figma"
+      />
+
+      <ProductSlider
+        title="Recommended for You"
+        subtitle="Customer favourites and hand-picked recommendations."
+        products={recommended?.products || relatedProducts}
+        browseLink="/shop"
+        sectionClass="w-full pb-12 md:pb-16 lg:pb-20"
+        designVariant="figma"
+      />
+
+      <ExploreOrganicOfferings />
+    </main>
   );
 }

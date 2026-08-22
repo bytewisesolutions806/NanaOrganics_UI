@@ -23,7 +23,7 @@ export default function ReviewCard({ review }) {
   const customerName = review?.user_name || review?.customer_name || 'Customer';
 
   return (
-    <article className="rounded-2xl border border-[#E2EBE9] bg-white p-4 text-[#21252C] transition-shadow hover:shadow-sm md:p-5">
+    <article className="rounded-2xl bg-[#F1F8F7]/60 p-4 text-[#21252C] transition-shadow hover:shadow-sm md:p-5">
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <div className="flex gap-0.5" aria-label={`${rating} out of 5 stars`}>
@@ -79,7 +79,7 @@ export default function ReviewCard({ review }) {
         </div>
       ) : null}
 
-      <footer className="flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-[#EDF2F1] pt-3 text-sm">
+      <footer className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
         <span className="font-semibold text-gray-900">{customerName}</span>
         <span className="text-gray-300">•</span>
         <span className="text-gray-500">{formatReviewDate(review?.created_at)}</span>

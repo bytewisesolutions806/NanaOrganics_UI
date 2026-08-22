@@ -39,6 +39,8 @@ function productRoute(product) {
 function mapProduct(product) {
   const variants = (product?.variants || []).map((variant) => {
     const price = money(variant.priceWithTax ?? variant.price);
+    const configuredOriginalPrice = money(variant.offerPricing?.originalPrice);
+    const originalPrice = configuredOriginalPrice > price ? configuredOriginalPrice : price;
 
     return {
       id: variant.id,
@@ -46,8 +48,9 @@ function mapProduct(product) {
       label: variant.options?.map((option) => option.name).join(' / ') || variant.name,
       sku: variant.sku,
       price,
-      original_price: price,
-      discount: 0,
+      original_price: originalPrice,
+      discount:
+        originalPrice > price ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0,
       currency: variant.currencyCode,
       in_stock: variant.stockLevel !== 'OUT_OF_STOCK',
     };

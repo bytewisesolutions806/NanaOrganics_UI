@@ -1,10 +1,11 @@
-import "@fontsource/plus-jakarta-sans";
 import "@fontsource/playfair-display/400.css";
 import "@fontsource/playfair-display/500.css";
 import "@fontsource/playfair-display/600.css";
 import "@fontsource/playfair-display/700.css";
 import "@fontsource/playfair-display/800.css";
 import "@fontsource/playfair-display/900.css";
+import "@fontsource/plus-jakarta-sans/500.css";
+import "@fontsource/plus-jakarta-sans/700.css";
 import "primereact/resources/themes/lara-light-teal/theme.css";
 import "primereact/resources/primereact.min.css";
 import "primeicons/primeicons.css";

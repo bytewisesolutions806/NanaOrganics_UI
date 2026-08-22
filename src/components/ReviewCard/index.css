@@ -45,11 +45,6 @@
   right: clamp(4px, 0.32vw, 5px);
 }
 
-.customer-review-chevron {
-  width: clamp(28px, 2.22vw, 35px);
-  height: clamp(28px, 2.22vw, 35px);
-}
-
 .customer-review-card {
   height: clamp(145px, 11.47vw, 181.25px);
   margin-top: clamp(15px, 1.19vw, 18.75px);

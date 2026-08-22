@@ -33,18 +33,25 @@ function getProductPath(product, section) {
 
 function mapProduct(product, section) {
   const variants = [...(product.variants || [])]
-    .map((variant) => ({
-      id: variant.id,
-      title: variant.options?.map((option) => option.name).join(' / ') || variant.name,
-      sku: variant.sku,
-      price: money(variant.priceWithTax ?? variant.price),
-      original_price: money(variant.priceWithTax ?? variant.price),
-      discount: 0,
-      currency: variant.currencyCode,
-      inventory_quantity: variant.stockLevel === 'OUT_OF_STOCK' ? 0 : 1,
-      in_stock: variant.stockLevel !== 'OUT_OF_STOCK',
-      isPopular: Boolean(variant.customFields?.isPopular),
-    }))
+    .map((variant) => {
+      const price = money(variant.priceWithTax ?? variant.price);
+      const configuredOriginalPrice = money(variant.offerPricing?.originalPrice);
+      const originalPrice = configuredOriginalPrice > price ? configuredOriginalPrice : price;
+
+      return {
+        id: variant.id,
+        title: variant.options?.map((option) => option.name).join(' / ') || variant.name,
+        sku: variant.sku,
+        price,
+        original_price: originalPrice,
+        discount:
+          originalPrice > price ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0,
+        currency: variant.currencyCode,
+        inventory_quantity: variant.stockLevel === 'OUT_OF_STOCK' ? 0 : 1,
+        in_stock: variant.stockLevel !== 'OUT_OF_STOCK',
+        isPopular: Boolean(variant.customFields?.isPopular),
+      };
+    })
     .sort((left, right) => Number(right.isPopular) - Number(left.isPopular));
 
   return {

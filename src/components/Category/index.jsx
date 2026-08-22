@@ -8,6 +8,8 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useId, useState } from 'react';
 import { getAllCollections } from '@/graphql/queries/collections';
 import { DEFAULT_IMAGE } from '@/lib/defaultImage';
+import ReusableButton from '@/components/ReUsableButton';
+import CarouselArrow from '@/components/CarouselArrow';
 
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -52,29 +54,28 @@ export default function ShopByCategory() {
         <Card
           onClick={() => router.push(`/shop/${item.slug}`)}
           className="
-      bg-[#E6F4F2] hover:bg-white text-center cursor-pointer
+      category-card bg-[#E6F4F2] cursor-pointer
       h-[250px] w-full max-w-[200px] mx-auto
-      flex flex-col items-center
-      p-3
       transition duration-200
       rounded-2xl
     "
         >
           {/* Image */}
-          <div className="relative w-[160px] h-[170px]">
+          <div className="category-card-media">
             <Image
               src={item.featuredAsset?.preview?.replace(/\\/g, '/') || DEFAULT_IMAGE}
               alt={item.name}
               fill
-              sizes="(max-width: 760px) 130px, 150px"
-              className="object-cover rounded-xl"
+              sizes="(max-width: 760px) 160px, 200px"
+              className="category-card-image object-cover"
             />
           </div>
 
-          {/* Title */}
-          <h3 className="mt-3 text-gray-800 text-sm font-semibold line-clamp-2 text-center h-[40px] flex items-center justify-center px-1">
-            {item.name}
-          </h3>
+          <div className="category-card-footer">
+            <h3 className="category-card-title line-clamp-2 text-sm font-semibold text-gray-800">
+              {item.name}
+            </h3>
+          </div>
         </Card>
       </div>
     );
@@ -83,8 +84,18 @@ export default function ShopByCategory() {
   return (
     <section className="w-full p-5 md:p-10 lg:max-w-7xl mx-auto relative">
       {/* Header */}
-      <div className="flex justify-center items-center mb-8">
-        <h2 className="sm:text-3xl font-semibold text-gray-800">Shop By Category</h2>
+      <div className="mb-8 flex items-center justify-between gap-4">
+        <div>
+          <h1 className="mt-2 text-3xl font-semibold text-gray-900 md:text-4xl">
+            Shop by Category
+          </h1>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-gray-600 md:text-base">
+            Choose a category to explore its subcategories and products.
+          </p>
+        </div>
+        <div className="shrink-0">
+          <ReusableButton label="Browse More" onClick={() => router.push('/shop')} />
+        </div>
       </div>
 
       {error ? (
@@ -93,83 +104,63 @@ export default function ShopByCategory() {
         </p>
       ) : null}
 
-      {/* Custom Arrows */}
-      <button
-        className={`
-          custom-prev-${swiperId}
-          hidden lg:flex
-          absolute
-          top-1/2 -translate-y-1/2
-          z-20
-          w-10 h-10
-          text-[4rem]
-          font-normal
-          text-[#1ea766]
-          items-center justify-center
-          cursor-pointer
-          transition-all duration-200
-          lg:left-2
-          xl:left-[-60px]
-        `}
-      >
-        ‹
-      </button>
+      <div className="relative">
+        {/* Custom Arrows */}
+        <CarouselArrow
+          direction="previous"
+          label="Previous categories"
+          className={`
+            custom-prev-${swiperId}
+            absolute top-1/2 z-20 hidden -translate-y-1/2
+            lg:left-2 lg:flex xl:left-[-60px]
+          `}
+        />
 
-      <button
-        className={`
-          custom-next-${swiperId}
-          hidden lg:flex
-          absolute
-          top-1/2 -translate-y-1/2
-          z-20
-          w-10 h-10
-          text-[4rem]
-          font-normal
-          text-[#1ea766]
-          items-center justify-center
-          cursor-pointer
-          transition-all duration-200
-          lg:right-2
-          xl:right-[-60px]
-        `}
-      >
-        ›
-      </button>
+        <CarouselArrow
+          direction="next"
+          label="Next categories"
+          className={`
+            custom-next-${swiperId}
+            absolute top-1/2 z-20 hidden -translate-y-1/2
+            lg:right-2 lg:flex xl:right-[-60px]
+          `}
+        />
 
-      {/* Swiper */}
-      {loading ? (
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
-          {Array.from({ length: 5 }).map((_, index) => (
-            <div
-              key={index}
-              className="mx-auto h-[250px] w-full max-w-[200px] animate-pulse rounded-2xl bg-[#E6F4F2]"
-            />
-          ))}
-        </div>
-      ) : categories.length === 0 ? (
-        !error && <p className="text-center text-sm text-gray-500">No categories found.</p>
-      ) : (
-      <Swiper
-        modules={[Navigation]}
-        loop={true}
-        spaceBetween={16}
-        navigation={{
-          prevEl: `.custom-prev-${swiperId}`,
-          nextEl: `.custom-next-${swiperId}`,
-        }}
-        breakpoints={{
-          1400: { slidesPerView: 6 },
-          1200: { slidesPerView: 5 },
-          992: { slidesPerView: 4 },
-          768: { slidesPerView: 3 },
-          0: { slidesPerView: 2 },
-        }}
-      >
-        {categories.map((item) => (
-          <SwiperSlide key={item.id}>{cardTemplate(item)}</SwiperSlide>
-        ))}
-      </Swiper>
-      )}
+        {/* Swiper */}
+        {loading ? (
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-5">
+            {Array.from({ length: 5 }).map((_, index) => (
+              <div
+                key={index}
+                className="mx-auto h-[250px] w-full max-w-[200px] animate-pulse rounded-2xl bg-[#E6F4F2]"
+              />
+            ))}
+          </div>
+        ) : categories.length === 0 ? (
+          !error && <p className="text-center text-sm text-gray-500">No categories found.</p>
+        ) : (
+          <Swiper
+            modules={[Navigation]}
+            loop={true}
+            spaceBetween={16}
+            navigation={{
+              prevEl: `.custom-prev-${swiperId}`,
+              nextEl: `.custom-next-${swiperId}`,
+            }}
+            breakpoints={{
+              1400: { slidesPerView: 6 },
+              1200: { slidesPerView: 5 },
+              992: { slidesPerView: 4 },
+              768: { slidesPerView: 3 },
+              0: { slidesPerView: 2 },
+            }}
+          >
+            {categories.map((item) => (
+              <SwiperSlide key={item.id}>{cardTemplate(item)}</SwiperSlide>
+            ))}
+          </Swiper>
+        )}
+      </div>
     </section>
   );
 }

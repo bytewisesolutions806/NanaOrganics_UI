@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import ProductClient from "./ProductClient";
 import { getProductById } from "@/service/Product";
+import { getHomeData } from "@/service/HomeService";
 
 export default async function ProductDetailPage({ params }) {
   const { category, subcategory, product: productSlug } = await params;
@@ -40,12 +41,31 @@ export default async function ProductDetailPage({ params }) {
     notFound();
   }
 
+  let relatedProducts = [];
+  try {
+    const homeResponse = await getHomeData();
+    const candidates = (homeResponse?.data?.collections || [])
+      .flatMap((collection) => collection.products || [])
+      .filter((product) => product.handle !== productSlug);
+    const sameCollection = candidates.filter(
+      (product) => product.subcategory?.handle === shopPath.subcategory,
+    );
+    const pool = sameCollection.length > 0 ? sameCollection : candidates;
+    const seen = new Set();
+    relatedProducts = pool
+      .filter((product) => product.handle && !seen.has(product.handle) && seen.add(product.handle))
+      .slice(0, 6);
+  } catch (error) {
+    console.error("Could not load related products", error);
+  }
+
   return (
     <ProductClient
       category={categoryForClient}
       subcategory={shopPath.subcategory}
       subcategoryName={shopCategories?.child?.name ?? shopPath.subcategory}
       productData={productData}
+      relatedProducts={relatedProducts}
     />
   );
 }

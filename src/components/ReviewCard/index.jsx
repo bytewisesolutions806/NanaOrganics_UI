@@ -1,11 +1,12 @@
 'use client';
 
 import { useId } from 'react';
-import { ChevronLeft, ChevronRight, Quote, Star } from 'lucide-react';
+import { Quote, Star } from 'lucide-react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, Navigation } from 'swiper/modules';
 import TestimonialsSkeleton from './TestimonalSkeleton';
 import { useHomeStore } from '@/store/HomeStore';
+import CarouselArrow from '@/components/CarouselArrow';
 
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -24,20 +25,16 @@ export default function ReviewCard() {
   return (
     <div className="customer-review-stage w-full">
       <div className="customer-review-track relative mx-auto">
-        <button
-          type="button"
-          aria-label="Previous customer review"
-          className={`${previousClass} customer-review-arrow absolute z-20 hidden -translate-y-1/2 text-[#2F746A] transition hover:scale-110 hover:text-[#1F554D] sm:flex`}
-        >
-          <ChevronLeft className="customer-review-chevron" strokeWidth={1.7} />
-        </button>
-        <button
-          type="button"
-          aria-label="Next customer review"
-          className={`${nextClass} customer-review-arrow customer-review-arrow-next absolute z-20 hidden -translate-y-1/2 text-[#2F746A] transition hover:scale-110 hover:text-[#1F554D] sm:flex`}
-        >
-          <ChevronRight className="customer-review-chevron" strokeWidth={1.7} />
-        </button>
+        <CarouselArrow
+          direction="previous"
+          label="Previous customer review"
+          className={`${previousClass} customer-review-arrow absolute z-20 hidden -translate-y-1/2 sm:flex`}
+        />
+        <CarouselArrow
+          direction="next"
+          label="Next customer review"
+          className={`${nextClass} customer-review-arrow customer-review-arrow-next absolute z-20 hidden -translate-y-1/2 sm:flex`}
+        />
 
         <Swiper
           className="customer-review-swiper"

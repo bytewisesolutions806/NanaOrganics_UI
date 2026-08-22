@@ -9,6 +9,8 @@ import { Button } from 'primereact/button';
 import { MessageCircle } from 'lucide-react';
 import useCartStore from '@/store/useCartStore';
 import WishlistButton from '@/components/WishlistButton';
+import { DEFAULT_IMAGE } from '@/lib/defaultImage';
+import './index.css';
 
 const getVariantDisplayLabel = (variant, productTitle = '') => {
   const fullLabel = String(variant?.label || variant?.title || '').trim();
@@ -25,9 +27,7 @@ const getVariantDisplayLabel = (variant, productTitle = '') => {
     if (suffix) return suffix;
   }
 
-  const measurement = fullLabel.match(
-    /(\d+(?:[.,]\d+)?\s*(?:kg|mg|g|ml|cl|l|oz|lbs?))\s*$/i,
-  );
+  const measurement = fullLabel.match(/(\d+(?:[.,]\d+)?\s*(?:kg|mg|g|ml|cl|l|oz|lbs?))\s*$/i);
 
   return measurement?.[1] || fullLabel;
 };
@@ -48,19 +48,21 @@ const ProductCard = ({ item, category }) => {
 
   // ✅ initialize once from props
   const [selectedVariantId, setSelectedVariantId] = useState(
-    () => variantOptions[0]?.value ?? null
+    () =>
+      variantOptions.find((variant) => variant.in_stock)?.value ?? variantOptions[0]?.value ?? null
   );
 
   // ✅ derive selected variant
   const selectedVariant = variants.find((v) => v.id === selectedVariantId);
 
   const addToCart = useCartStore((state) => state.addToCart);
-  const [selectedWeight, setSelectedWeight] = useState(null);
   const categoryHandle =
     category?.parent_category?.handle || item?.parent_category?.handle || 'deals';
   const subCategoryHandle = category?.handle || item?.subcategory?.handle || 'deals';
 
   const handleAddToCart = () => {
+    if (!selectedVariant?.id) return;
+
     addToCart({
       variant_id: selectedVariant.id,
       quantity: 1,
@@ -70,20 +72,23 @@ const ProductCard = ({ item, category }) => {
   const { addingVariantId } = useCartStore();
 
   const isAddingThisVariant = addingVariantId === selectedVariant?.id;
+  const sellingPrice = Number(selectedVariant?.price || 0);
+  const originalPrice = Number(selectedVariant?.original_price || sellingPrice);
+  const discountPercent =
+    originalPrice > sellingPrice && sellingPrice > 0
+      ? Math.round(((originalPrice - sellingPrice) / originalPrice) * 100)
+      : Number(selectedVariant?.discount || item?.discount || 0);
+
   return (
-    <div className="px-2 h-full">
+    <div className="h-full px-1 sm:px-2">
       {/* CARD */}
       <div
         className="
-          h-full flex flex-col
+          product-card flex h-[420px] flex-col overflow-hidden sm:h-[440px]
           rounded-2xl bg-white
           border border-[#E6F4F2]
           transition
-          w-full
-          sm:w-[260px]
-          md:w-[270px]
-          lg:w-[260px]
-          mx-auto relative
+          relative mx-auto w-full max-w-[360px] sm:max-w-[290px]
         "
       >
         {/* CLICKABLE CONTENT */}
@@ -98,11 +103,11 @@ const ProductCard = ({ item, category }) => {
             </span>
 
             <Image
-              src={item.thumbnail}
-              alt={item.title}
+              src={item.thumbnail || DEFAULT_IMAGE}
+              alt={item.title || 'Product image'}
               width={300}
               height={200}
-              className="w-full h-[180px] object-cover rounded-t-2xl"
+              className="h-[170px] w-full rounded-t-2xl object-cover sm:h-[180px]"
               priority={false}
             />
           </div>
@@ -110,27 +115,27 @@ const ProductCard = ({ item, category }) => {
           {/* CONTENT */}
           <div className="flex-1 flex flex-col px-3 pt-2">
             {/* PRICE */}
-            <div className="flex items-center gap-2">
+            <div className="flex min-h-7 items-center gap-2">
               <h3 className="flex items-end gap-1">
                 <span className="text-xs relative -top-1">$</span>
-                <span className="text-lg font-semibold">{selectedVariant?.price?.toFixed(2)}</span>
+                <span className="product-card-price text-lg">{sellingPrice.toFixed(2)}</span>
               </h3>
 
-              {item.original_price > item.price && (
-                <span className="line-through text-gray-400 text-xs pl-2">
-                  ${item.original_price?.toFixed(2)}
+              {originalPrice > sellingPrice && (
+                <span className="product-card-original-price pl-2 text-xs text-gray-400 line-through">
+                  ${originalPrice.toFixed(2)}
                 </span>
               )}
 
-              {item.discount > 0 && (
+              {discountPercent > 0 && (
                 <span className="ml-auto bg-[#E6F4F2] text-[#1EA766] text-[10px] px-2 py-1 rounded-md">
-                  Save {item.discount}%
+                  Save {discountPercent}%
                 </span>
               )}
             </div>
 
             {/* TITLE */}
-            <p className="mt-2 text-sm text-gray-800 line-clamp-2 min-h-[40px]">{item.title}</p>
+            <p className="mt-2 h-10 text-sm text-gray-800 line-clamp-2">{item.title}</p>
 
             {/* RATING */}
             {reviewsCount > 0 && (
@@ -191,7 +196,7 @@ const ProductCard = ({ item, category }) => {
             <Button
               disabled={!selectedVariant?.in_stock || isAddingThisVariant}
               className={`
-              w-[90%] p-2 text-xs sm:text-sm rounded-xl
+              product-card-add-button min-h-12 w-[90%] p-1 text-base rounded-xl
               flex items-center justify-center gap-2 font-semibold
               transition-colors duration-200
               ${

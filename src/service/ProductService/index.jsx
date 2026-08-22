@@ -1,5 +1,6 @@
 import {
   getCollectionBySlug,
+  getProductVariantOriginalPrices,
   searchCollectionProducts,
 } from "@/graphql/queries/collections";
 import { DEFAULT_IMAGE } from '@/lib/defaultImage';
@@ -14,9 +15,11 @@ function getSearchPrice(price) {
   return price.value;
 }
 
-function toProductCards(items = []) {
+function toProductCards(items = [], originalPriceByVariantId = new Map()) {
   return items.map((item) => {
     const price = money(getSearchPrice(item.priceWithTax));
+    const configuredOriginalPrice = money(originalPriceByVariantId.get(String(item.productVariantId)));
+    const originalPrice = configuredOriginalPrice > price ? configuredOriginalPrice : price;
     const thumbnail =
       item.productAsset?.preview ||
       item.productVariantAsset?.preview ||
@@ -30,8 +33,9 @@ function toProductCards(items = []) {
       description: item.description || "",
       thumbnail,
       price,
-      original_price: price,
-      discount: 0,
+      original_price: originalPrice,
+      discount:
+        originalPrice > price ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0,
       currency: item.currencyCode,
       rating: 0,
       reviews_count: 0,
@@ -43,7 +47,11 @@ function toProductCards(items = []) {
           label: item.productVariantName,
           sku: item.sku,
           price,
-          original_price: price,
+          original_price: originalPrice,
+          discount:
+            originalPrice > price
+              ? Math.round(((originalPrice - price) / originalPrice) * 100)
+              : 0,
           currency: item.currencyCode,
           in_stock: true,
         },
@@ -138,7 +146,16 @@ export const getProductsBySubcategory = async ({
 
   const list = searchResult?.productResults || { items: [], totalItems: 0 };
   const parent = collection.breadcrumbs?.at(-2);
-  const products = toProductCards(list.items);
+  const originalPrices = await getProductVariantOriginalPrices(
+    list.items.map((item) => item.productId),
+  );
+  const originalPriceByVariantId = new Map(
+    originalPrices.map((variant) => [
+      String(variant.id),
+      variant.offerPricing?.originalPrice,
+    ]),
+  );
+  const products = toProductCards(list.items, originalPriceByVariantId);
   const totalPages = Math.max(1, Math.ceil(list.totalItems / limit));
 
   return {

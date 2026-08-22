@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import Image from "next/image";
-import choosenanaBanner from "@/assets/images/choose_nana_banner.png";
-import gridicons_shipping from "@/assets/images/gridicons_shipping.png";
-import LeafFilled from "@/assets/images/lsicon_leaf-filled.png";
-import Regroup from "@/assets/images/ReGroup.png";
-import TruckImage from "@/assets/images/TruckImage.png";
+import Image from 'next/image';
+import choosenanaBanner from '@/assets/images/choose_nana_banner.png';
+import gridicons_shipping from '@/assets/images/gridicons_shipping.png';
+import LeafFilled from '@/assets/images/lsicon_leaf-filled.png';
+import Regroup from '@/assets/images/ReGroup.png';
+import TruckImage from '@/assets/images/TruckImage.png';
 
 export default function WhyChooseNana() {
   return (
     <div className="relative max-w-7xl mx-auto px-4">
-      <div className="relative w-full lg:h-[350px] rounded-2xl overflow-hidden">
+      <div className="relative w-full lg:h-[300px] rounded-2xl overflow-hidden">
         {/* BACKGROUND IMAGE */}
         <Image
           src="/choose_nana_banner.svg"
@@ -31,16 +31,11 @@ export default function WhyChooseNana() {
               {/* FEATURE 1 */}
               <div className="flex flex-row lg:flex-col gap-3 lg:border-r border-white/40 lg:pr-6">
                 {/* <Image src={LeafFilled} alt="" className="w-10 h-8 shrink-0" /> */}
-                <img
-                  src="/lsicon_leaf-filled.svg"
-                  className="w-10 h-8 shrink-0"
-                  alt=""
-                />
+                <img src="/lsicon_leaf-filled.svg" className="w-10 h-8 shrink-0" alt="" />
                 <div>
                   <h4 className="font-semibold">100% Natural Ingredients</h4>
                   <p className="text-sm text-white/80">
-                    Crafted from pure, organic sources to ensure safety and
-                    freshness.
+                    Crafted from pure, organic sources to ensure safety and freshness.
                   </p>
                 </div>
               </div>
@@ -48,11 +43,7 @@ export default function WhyChooseNana() {
               {/* FEATURE 2 */}
               <div className="flex flex-row lg:flex-col gap-3 lg:border-r border-white/40 lg:pr-6">
                 {/* <Image src={TruckImage} alt="" className="w-10 h-8 shrink-0" /> */}
-                <img
-                  src="/gridicons_shipping.svg"
-                  className="w-10 h-8 shrink-0"
-                  alt=""
-                />
+                <img src="/gridicons_shipping.svg" className="w-10 h-8 shrink-0" alt="" />
                 <div>
                   <h4 className="font-semibold">Free Shipping Above ₹999</h4>
                   <p className="text-sm text-white/80">
@@ -77,9 +68,7 @@ export default function WhyChooseNana() {
                 <img src="/recycle.svg" alt="" className="w-10 h-8 shrink-0" />
                 <div>
                   <h4 className="font-semibold">Hassle-free Returns</h4>
-                  <p className="text-sm text-white/80">
-                    Easy returns and customer-first policies.
-                  </p>
+                  <p className="text-sm text-white/80">Easy returns and customer-first policies.</p>
                 </div>
               </div>
             </div>

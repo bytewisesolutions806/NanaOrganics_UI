@@ -1,65 +1,65 @@
-"use client";
+'use client';
 
-import { Galleria } from "primereact/galleria";
-import Image from "next/image";
-import "./index.css";
+import { useMemo, useState } from 'react';
+import Image from 'next/image';
+import './index.css';
 
-export default function ProductImageGallery({
-  thumbnail,
-  images = [],
-  productName,
-}) {
-  if (!thumbnail && images.length === 0) return null;
+export default function ProductImageGallery({ thumbnail, images = [], productName }) {
+  const galleryImages = useMemo(() => {
+    const candidates = [
+      thumbnail ? { src: thumbnail, alt: productName || 'Product image' } : null,
+      ...images.map((image) => ({
+        src: image?.url,
+        alt: image?.alt || productName || 'Product image',
+      })),
+    ].filter((image) => image?.src);
 
-  // ✅ Normalize images
-  const galleryImages = [
-    ...(thumbnail
-      ? [
-          {
-            src: thumbnail,
-            alt: productName || "Product image",
-          },
-        ]
-      : []),
+    return candidates.filter(
+      (image, index) => candidates.findIndex((candidate) => candidate.src === image.src) === index,
+    );
+  }, [images, productName, thumbnail]);
 
-    ...images.map((img) => ({
-      src: img.url,
-      alt: img.alt || productName || "Product image",
-    })),
-  ];
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const activeImage = galleryImages[selectedIndex] || galleryImages[0];
 
-  const itemTemplate = (item) => (
-    <div className="gallery-main-image relative rounded-xl h-[430px]">
-      <Image
-        src={item.src}
-        alt={item.alt}
-        fill
-        className="object-contain rounded-xl"
-        priority
-      />
-    </div>
-  );
-
-  const thumbnailTemplate = (item) => (
-    <div className="gallery-thumb-image relative h-[80px] w-[80px] rounded-xl">
-      <Image
-        src={item.src}
-        alt={item.alt}
-        fill
-        className="object-cover rounded-xl"
-      />
-    </div>
-  );
+  if (!activeImage) return null;
 
   return (
-    <Galleria
-      value={galleryImages}
-      numVisible={5}
-      item={itemTemplate}
-      thumbnail={thumbnailTemplate}
-      showThumbnails
-      circular
-      className="product-gallery rounded-xl"
-    />
+    <section className="product-gallery" aria-label={`${productName || 'Product'} image gallery`}>
+      <div className="product-gallery__hero">
+        <Image
+          src={activeImage.src}
+          alt={activeImage.alt}
+          fill
+          priority
+          sizes="(min-width: 1400px) 660px, (min-width: 768px) 70vw, calc(100vw - 40px)"
+          className="object-cover"
+        />
+      </div>
+
+      {galleryImages.length > 1 ? (
+        <div className="product-gallery__grid" role="list" aria-label="Choose a product image">
+          {galleryImages.map((image, index) => (
+            <button
+              key={`${image.src}-${index}`}
+              type="button"
+              role="listitem"
+              aria-label={`View product image ${index + 1}`}
+              aria-current={index === selectedIndex ? 'true' : undefined}
+              onClick={() => setSelectedIndex(index)}
+              className="product-gallery__thumbnail"
+            >
+              <Image
+                src={image.src}
+                alt=""
+                fill
+                sizes="(min-width: 1400px) 204px, (min-width: 640px) 30vw, 44vw"
+                className="object-cover"
+              />
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </section>
   );
 }

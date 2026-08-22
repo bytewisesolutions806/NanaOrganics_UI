@@ -8,26 +8,29 @@ const BannerOrganic = () => {
   return (
     <>
      {/* Explore Our Organic Offerings */}
-        <div className="mt-10 mb-12 mx-auto max-w-7xl px-4">
-          <div className="flex flex-col lg:flex-row w-full min-h-80 lg:h-[412px] rounded-2xl overflow-hidden">
+        <div className="mx-auto w-[calc(100%_-_32px)] max-w-[1296px] md:w-[calc(100%_-_40px)]">
+          <div className="flex min-h-80 w-full flex-col overflow-hidden rounded-[32px] lg:h-[412px] lg:flex-row">
             {/* LEFT – IMAGE */}
-            <div className="w-full lg:w-[60%] h-[220px] sm:h-[300px] lg:h-full relative">
+            <div className="relative h-[260px] w-full sm:h-[320px] lg:h-full lg:w-[58%]">
               <Image
                 src={ExploreOrganicOfferings}
                 alt="Card Image"
                 fill
-                className="object-cover"
+                className="object-contain object-left"
                 priority
               />
             </div>
 
             {/* RIGHT – CONTENT */}
-            <div className="w-full lg:w-[40%] p-6 sm:p-8 flex flex-col justify-center bg-white">
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4">
+            <div className="flex w-full flex-col justify-center bg-white p-6 sm:p-8 lg:w-[42%] lg:pl-4">
+              <h2
+                className="mb-3 text-2xl font-semibold leading-tight text-[#21252C] sm:text-3xl"
+                style={{ fontFamily: '"Playfair Display", Georgia, serif' }}
+              >
                 Explore Our Organic Offerings
               </h2>
 
-              <p className="text-gray-600 mb-6 text-sm sm:text-base">
+              <p className="mb-6 text-sm font-medium leading-6 text-[#545860] sm:text-base sm:leading-7">
                 Discover the beauty of nature with our handcrafted organic
                 products. Your journey starts here!
               </p>

@@ -14,6 +14,19 @@ function collectionPath(product) {
   return { parent, child };
 }
 
+function toDescriptionSection(value) {
+  const bullet = String(value || "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!bullet) return null;
+
+  const parts = bullet.match(/^(.+?)\s*(?:–|—|-|:)\s+(.+)$/);
+  return parts
+    ? { title: parts[1].trim(), description: parts[2].trim() }
+    : { title: "", description: bullet };
+}
+
 function toProductDetail(product) {
   const { parent, child } = collectionPath(product);
   const assets = product.assets || [];
@@ -24,6 +37,11 @@ function toProductDetail(product) {
     .filter((value) => value.facet?.code !== "seeded-collection-membership")
     .map((value) => value.name);
   const description = (product.description || "").replace(/<[^>]*>/g, " ").trim();
+  const aboutThisItem = Array.isArray(product.customFields?.aboutThisItem)
+    ? product.customFields.aboutThisItem.map(toDescriptionSection).filter(Boolean)
+    : [];
+  const isVegetarian = product.customFields?.isVegetarian !== false;
+  const isOrganic = product.customFields?.isOrganic !== false;
 
   return {
     id: product.id,
@@ -37,28 +55,42 @@ function toProductDetail(product) {
       url: asset.preview || asset.source,
       alt: asset.name || product.name,
     })),
-    variants: (product.variants || []).map((variant, index) => ({
-      id: variant.id,
-      title: variant.options?.map((option) => option.name).join(" / ") || variant.name,
-      label: variant.options?.map((option) => option.name).join(" / ") || variant.name,
-      sku: variant.sku,
-      price: money(variant.priceWithTax),
-      original_price: money(variant.priceWithTax),
-      currency: variant.currencyCode,
-      in_stock: variant.stockLevel !== "OUT_OF_STOCK",
-      inventory_quantity: variant.stockLevel === "OUT_OF_STOCK" ? 0 : 1,
-      isDefault: index === 0,
-      isPopular: Boolean(variant.customFields?.isPopular),
-    })),
+    variants: (product.variants || []).map((variant, index) => {
+      const price = money(variant.priceWithTax);
+      const configuredOriginalPrice = money(variant.offerPricing?.originalPrice);
+      const originalPrice = configuredOriginalPrice > price ? configuredOriginalPrice : price;
+
+      return {
+        id: variant.id,
+        title: variant.options?.map((option) => option.name).join(" / ") || variant.name,
+        label: variant.options?.map((option) => option.name).join(" / ") || variant.name,
+        sku: variant.sku,
+        price,
+        original_price: originalPrice,
+        discount:
+          originalPrice > price ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0,
+        currency: variant.currencyCode,
+        in_stock: variant.stockLevel !== "OUT_OF_STOCK",
+        inventory_quantity: variant.stockLevel === "OUT_OF_STOCK" ? 0 : 1,
+        isDefault: index === 0,
+        isPopular: Boolean(variant.customFields?.isPopular),
+      };
+    }),
     metadata: {
       quantity_type: "",
       description_sections: JSON.stringify(
-        description ? [{ title: "About this product", description }] : []
+        aboutThisItem.length > 0
+          ? aboutThisItem
+          : description
+            ? [{ title: "About this product", description }]
+            : []
       ),
     },
     specifications: {
-      diet_type: tags.find((tag) => /vegan|vegetarian|gluten/i.test(tag)) || "",
-      item_form: tags.find((tag) => /organic/i.test(tag)) || "",
+      diet_type: isVegetarian ? "Vegetarian" : "",
+      item_form: isOrganic ? "Organic" : "",
+      is_vegetarian: isVegetarian,
+      is_organic: isOrganic,
       brand: brand?.name || "",
     },
     tags,

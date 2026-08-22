@@ -1,25 +1,24 @@
-import { Card } from 'primereact/card';
 import { HandCoins, Leaf, Star, Users } from 'lucide-react';
 
 function StatCard({ Icon, value, label }) {
   return (
-    <Card className="flex h-[200px] items-center justify-center border border-[#3C5750]/30 bg-white/50 text-center sm:h-[248px]">
-      <div className="flex flex-col items-center">
-        <Icon className="mb-2 h-10 w-10 text-[#2C665E] sm:mb-3 sm:h-12 sm:w-12" />
-        <p className="text-xl font-bold sm:text-2xl">{value}</p>
-        <p className="text-xs text-gray-600 sm:text-sm">{label}</p>
+    <article className="flex min-h-[196px] flex-col items-center justify-center gap-4 rounded-2xl border border-[#3C5750]/25 bg-white/50 px-6 py-10 text-center text-[#3C5750] md:min-h-[250px]">
+      <Icon className="h-14 w-14" strokeWidth={1.4} />
+      <div>
+        <p className="text-[28px] font-bold leading-tight md:text-[32px]">{value}</p>
+        <p className="mt-1 text-sm leading-6 md:text-base">{label}</p>
       </div>
-    </Card>
+    </article>
   );
 }
 
-export default function ProductTrustStats({ averageRating, totalReviews }) {
+export default function ProductTrustStats({ averageRating, totalReviews, returnWindow = 30 }) {
   return (
-    <div className="mx-auto mt-10 grid max-w-7xl grid-cols-2 gap-6 px-4 md:px-8 lg:grid-cols-4 lg:px-16">
-      <StatCard Icon={Star} value={totalReviews > 0 ? `${averageRating.toFixed(1)}/5` : '—'} label="Average Rating" />
-      <StatCard Icon={Users} value={totalReviews > 0 ? `${totalReviews}` : '0'} label="Customer Reviews" />
-      <StatCard Icon={Leaf} value="100%" label="Organic Certified" />
-      <StatCard Icon={HandCoins} value="20K+" label="Happy Customers" />
-    </div>
+    <section className="mx-auto mt-14 grid w-[calc(100%_-_40px)] max-w-[1298px] grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <StatCard Icon={Star} value={totalReviews > 0 ? `${averageRating.toFixed(1)}/5` : 'New'} label="Average Rating" />
+      <StatCard Icon={Users} value={totalReviews.toLocaleString('en-IN')} label="Customer Reviews" />
+      <StatCard Icon={Leaf} value="100%" label="Natural Ingredients" />
+      <StatCard Icon={HandCoins} value={`${returnWindow} Days`} label="Money-Back Guarantee" />
+    </section>
   );
 }

@@ -1,0 +1,45 @@
+.product-card {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.product-card-price {
+  font-weight: 700;
+}
+
+.product-card-original-price {
+  font-weight: 500;
+}
+
+.product-card .product-variant-dropdown.p-dropdown,
+.product-card .product-variant-single {
+  min-height: 56px;
+  border-radius: 14px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.product-card .product-variant-dropdown .p-dropdown-label {
+  padding: 0.9rem 1.1rem;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.product-card .product-variant-dropdown .p-dropdown-trigger {
+  color: #1ea766;
+}
+
+.product-variant-dropdown-panel.p-dropdown-panel,
+.product-variant-dropdown-panel .p-dropdown-item {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 500;
+}
+
+.product-card .product-card-add-button.p-button {
+  min-height: 45px;
+  border-radius: 14px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+}
