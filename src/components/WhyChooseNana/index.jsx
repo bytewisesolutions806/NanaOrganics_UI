@@ -10,7 +10,7 @@ import TruckImage from '@/assets/images/TruckImage.png';
 export default function WhyChooseNana() {
   return (
     <div className="relative max-w-7xl mx-auto px-4">
-      <div className="relative w-full lg:h-[300px] rounded-2xl overflow-hidden">
+      <div className="relative w-full lg:h-[280px] rounded-2xl overflow-hidden">
         {/* BACKGROUND IMAGE */}
         <Image
           src="/choose_nana_banner.svg"
@@ -22,7 +22,7 @@ export default function WhyChooseNana() {
 
         {/* OVERLAY */}
         <div className="relative flex items-center h-full">
-          <div className="w-full px-4 sm:px-8 text-white py-8 sm:py-10 lg:py-0">
+          <div className="w-full px-4 sm:px-8 text-white py-6 sm:py-10 lg:py-0">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold mb-8 text-center">
               Why Choose NANA?
             </h2>

@@ -1,38 +1,38 @@
-"use client";
-import Image from "next/image";
-import { InputText } from "primereact/inputtext";
-import { Button } from "primereact/button";
-import { Checkbox } from "primereact/checkbox";
-import "primeicons/primeicons.css";
-import { useRouter } from "next/navigation";
-import footerImage from "../../assets/images/FooterBg.png";
-import footerLogo from "../../assets/images/FooterLogo.png";
+'use client';
+import Image from 'next/image';
+import { InputText } from 'primereact/inputtext';
+import { Button } from 'primereact/button';
+import { Checkbox } from 'primereact/checkbox';
+import 'primeicons/primeicons.css';
+import { useRouter } from 'next/navigation';
+import footerImage from '../../assets/images/FooterBg.png';
+import footerLogo from '../../assets/images/FooterLogo.png';
 
 export default function Footer() {
   const router = useRouter();
 
   const links = [
-    { label: "Shop Now", path: "/shop" },
-    { label: "About Us", path: "/about" },
-    { label: "Contact Us", path: "/contact-us" },
-    { label: "FAQs", path: "/faq" },
-    { label: "Blog Posts", path: "/blog" },
+    { label: 'Shop Now', path: '/shop' },
+    { label: 'About Us', path: '/about' },
+    { label: 'Contact Us', path: '/contact-us' },
+    // { label: "FAQs", path: "/faq" },
+    // { label: "Blog Posts", path: "/blog" },
   ];
 
-  const contacts = [
-    { label: "Newsletter", path: "/newsletter" },
-    { label: "Events", path: "/events" },
-    { label: "Partnership", path: "/partnership" },
-    { label: "Careers", path: "/careers" },
-    { label: "Testimonials", path: "/testimonials" },
-  ];
+  // const contacts = [
+  //   { label: "Newsletter", path: "/newsletter" },
+  //   { label: "Events", path: "/events" },
+  //   { label: "Partnership", path: "/partnership" },
+  //   { label: "Careers", path: "/careers" },
+  //   { label: "Testimonials", path: "/testimonials" },
+  // ];
 
   const socials = [
-    { label: "Facebook", icon: "pi-facebook", path: "https://www.facebook.com/" },
-    { label: "Instagram", icon: "pi-instagram", path: "https://www.instagram.com/" },
-    { label: "Twitter", icon: "pi-twitter", path: "https://x.com/" },
-    { label: "LinkedIn", icon: "pi-linkedin", path: "https://in.linkedin.com/" },
-    { label: "YouTube", icon: "pi-youtube", path: "https://www.youtube.com/" },
+    { label: 'Facebook', icon: 'pi-facebook', path: 'https://www.facebook.com/' },
+    { label: 'Instagram', icon: 'pi-instagram', path: 'https://www.instagram.com/' },
+    { label: 'Twitter', icon: 'pi-twitter', path: 'https://x.com/' },
+    { label: 'LinkedIn', icon: 'pi-linkedin', path: 'https://in.linkedin.com/' },
+    { label: 'YouTube', icon: 'pi-youtube', path: 'https://www.youtube.com/' },
   ];
 
   return (
@@ -128,7 +128,7 @@ export default function Footer() {
           </div>
 
           {/* CONTACT */}
-          <div>
+          {/* <div>
             <h3 className="text-lg font-semibold mb-4">Contact With Us</h3>
             <ul className="space-y-3 text-white/70">
               {contacts.map((c) => (
@@ -141,7 +141,7 @@ export default function Footer() {
                 </li>
               ))}
             </ul>
-          </div>
+          </div> */}
 
           {/* SOCIAL */}
           <div>
@@ -150,14 +150,13 @@ export default function Footer() {
               {socials.map((s) => (
                 <li
                   key={s.label}
-                  onClick={() => window.open(s.path, "_blank", "noopener,noreferrer")}
+                  onClick={() => window.open(s.path, '_blank', 'noopener,noreferrer')}
                   className="flex items-center gap-2 cursor-pointer hover:text-white"
                 >
                   <i className={`pi ${s.icon} text-[#5EA087]`} />
                   {s.label}
                 </li>
               ))}
-
             </ul>
           </div>
         </div>
@@ -168,9 +167,7 @@ export default function Footer() {
         {/* BOTTOM */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col sm:flex-row gap-3 items-center justify-between text-white/60 text-sm text-center sm:text-left">
           <span>© 2025 Nana Organics. All Rights Reserved</span>
-          <span className="cursor-pointer hover:text-white">
-            Privacy Policy · Terms · Cookies
-          </span>
+          <span className="cursor-pointer hover:text-white">Privacy Policy · Terms · Cookies</span>
         </div>
       </div>
     </footer>
