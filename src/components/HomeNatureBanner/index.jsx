@@ -1,8 +1,13 @@
+"use client";
+
 import React from 'react'
 import { Button } from 'primereact/button'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import GalleryImage4 from "@/assets/images/gallery/gallery_image_4.png";
-const index = () => {
+const HomeNatureBanner = () => {
+  const router = useRouter()
+
   return (
     <>
     <section className="mt-10">
@@ -65,6 +70,7 @@ const index = () => {
 
               <div className="flex flex-row items-center gap-2 whitespace-nowrap">
                 <Button
+                  onClick={() => router.push('/shop')}
                   label="Shop now"
                   className="
       bg-white text-black border border-gray-300
@@ -94,4 +100,4 @@ const index = () => {
   )
 }
 
-export default index
+export default HomeNatureBanner

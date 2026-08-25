@@ -1,19 +1,21 @@
-"use client";
+'use client';
 
-import Image from "next/image";
-import { Card } from "primereact/card";
-import productImage02 from "@/assets/images/products/product_image_02.png";
-import ecoImage from "@/assets/images/products/purely_natural_eco.png";
-import peopleFocused from "@/assets/images/people_focused.png";
+import Image from 'next/image';
+import { Card } from 'primereact/card';
+import { Button } from 'primereact/button';
+import { useRouter } from 'next/navigation';
+import productImage02 from '@/assets/images/products/product_image_02.png';
+import ecoImage from '@/assets/images/products/purely_natural_eco.png';
+import peopleFocused from '@/assets/images/people_focused.png';
 
 export default function NaturalIngredients() {
+  const router = useRouter();
+
   return (
     <section className=" px-4">
       {/* Heading */}
       <div className="text-center max-w-6xl mx-auto">
-        <h2 className="text-3xl sm:text-4xl font-bold">
-          Purely Natural Ingredients
-        </h2>
+        <h2 className="text-3xl sm:text-4xl font-bold">Purely Natural Ingredients</h2>
         <p className="mt-2 text-base sm:text-xl text-gray-600">
           Sustainably sourced for a healthier planet
         </p>
@@ -45,9 +47,12 @@ export default function NaturalIngredients() {
                 Handmade products that nourish your body and soul.
               </p>
 
-              <button className="mt-6 bg-green-600 text-white px-5 py-2 rounded-xl w-fit">
+              <Button
+                onClick={() => router.push('/shop')}
+                className="mt-6 bg-green-600 text-white px-5 py-2 rounded-xl w-fit"
+              >
                 Learn More
-              </button>
+              </Button>
             </div>
 
             {/* RIGHT IMAGE — FULL WIDTH & HEIGHT */}
@@ -72,23 +77,20 @@ export default function NaturalIngredients() {
                 <span className="mb-2 w-20 h-6 flex items-center justify-center rounded-xl border border-[#2C665E] text-sm font-bold text-[#2C665E] bg-white">
                   Local
                 </span>
-                <h3 className="text-lg font-semibold text-[#2C665E]">
-                  Fresh Organic Foods
-                </h3>
+                <h3 className="text-lg font-semibold text-[#2C665E]">Fresh Organic Foods</h3>
                 <p className="mt-3 text-sm text-gray-600">
                   Directly sourced from trusted organic farms.
                 </p>
-                <button className="mt-4 text-[#1EA766] border border-[#1EA766] bg-white px-4 py-2 rounded-xl w-fit">
+                <Button
+                  onClick={() => router.push('/shop')}
+                  className="mt-4 text-[#1EA766] border border-[#1EA766] bg-white px-4 py-2 rounded-xl w-fit"
+                >
                   Shop Now
-                </button>
+                </Button>
               </div>
 
               <div className="h-40">
-                <Image
-                  src={ecoImage}
-                  alt="Product"
-                  className="w-full h-full object-cover"
-                />
+                <Image src={ecoImage} alt="Product" className="w-full h-full object-cover" />
               </div>
             </div>
           </Card>
@@ -100,23 +102,20 @@ export default function NaturalIngredients() {
                 <span className="mb-2 w-20 h-6 flex items-center justify-center rounded-xl border border-[#2C665E] text-sm font-bold text-[#2C665E] bg-white">
                   Local
                 </span>
-                <h3 className="text-lg font-semibold text-[#2C665E]">
-                  Fresh Organic Foods
-                </h3>
+                <h3 className="text-lg font-semibold text-[#2C665E]">Fresh Organic Foods</h3>
                 <p className="mt-3 text-sm text-gray-600">
                   Directly sourced from trusted organic farms.
                 </p>
-                <button className="mt-4 text-[#1EA766] border border-[#1EA766] bg-white px-4 py-2 rounded-xl w-fit">
+                <Button
+                  onClick={() => router.push('/shop')}
+                  className="mt-4 text-[#1EA766] border border-[#1EA766] bg-white px-4 py-2 rounded-xl w-fit"
+                >
                   Shop Now
-                </button>
+                </Button>
               </div>
 
               <div className="h-40">
-                <Image
-                  src={peopleFocused}
-                  alt="Product"
-                  className="w-full h-full object-cover"
-                />
+                <Image src={peopleFocused} alt="Product" className="w-full h-full object-cover" />
               </div>
             </div>
           </Card>
