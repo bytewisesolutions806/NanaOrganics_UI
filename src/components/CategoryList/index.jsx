@@ -58,80 +58,76 @@ const CategoryList = ({ availableFilters = [] }) => {
     fetchCategories();
   }, [fetchCategories]);
 
-  if (loading && categories.length === 0) {
-    return <p className="text-sm text-gray-500">Loading categories...</p>;
-  }
-
-  if (error && categories.length === 0) {
-    return <p className="text-sm text-red-600">{error}</p>;
-  }
-
-  if (categories.length === 0) {
-    return <p className="text-sm text-gray-500">No categories available.</p>;
-  }
-
   return (
     <aside aria-label="Catalog filters" className="space-y-8">
       <nav aria-label="Product categories">
         <h2 className="mb-4 text-lg font-semibold text-gray-900">Categories</h2>
 
-      <ul className="category-scrollbar max-h-96 space-y-3 overflow-y-auto pr-2">
-        {categories.map((category) => {
-          const isExpanded = expandedCategory === category.handle;
-          const isActive = categoryHandle === category.handle;
+        {loading && categories.length === 0 ? (
+          <p className="text-sm text-gray-500">Loading categories...</p>
+        ) : error && categories.length === 0 ? (
+          <p className="text-sm text-red-600">{error}</p>
+        ) : categories.length === 0 ? (
+          <p className="text-sm text-gray-500">No categories available.</p>
+        ) : (
+          <ul className="category-scrollbar max-h-96 space-y-3 overflow-y-auto pr-2">
+            {categories.map((category) => {
+              const isExpanded = expandedCategory === category.handle;
+              const isActive = categoryHandle === category.handle;
 
-          return (
-            <li key={category.id}>
-              <button
-                type="button"
-                onClick={() =>
-                  setManualExpanded(isExpanded ? '' : category.handle)
-                }
-                aria-expanded={isExpanded}
-                className={`flex w-full items-center justify-between gap-2 text-left font-semibold ${
-                  isActive ? 'text-[#1EA766]' : 'text-gray-800'
-                }`}
-              >
-                <span>{category.name}</span>
-                {isExpanded ? (
-                  <ChevronDown className="h-5 w-5 shrink-0" />
-                ) : (
-                  <ChevronRight className="h-5 w-5 shrink-0" />
-                )}
-              </button>
+              return (
+                <li key={category.id}>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setManualExpanded(isExpanded ? '' : category.handle)
+                    }
+                    aria-expanded={isExpanded}
+                    className={`flex w-full items-center justify-between gap-2 text-left font-semibold ${
+                      isActive ? 'text-[#1EA766]' : 'text-gray-800'
+                    }`}
+                  >
+                    <span>{category.name}</span>
+                    {isExpanded ? (
+                      <ChevronDown className="h-5 w-5 shrink-0" />
+                    ) : (
+                      <ChevronRight className="h-5 w-5 shrink-0" />
+                    )}
+                  </button>
 
-              {isExpanded && category.subcategories.length > 0 && (
-                <ul className="mt-2 space-y-2 border-l border-[#DDECE9] pl-4">
-                  {category.subcategories.map((subcategory) => {
-                    const isActiveSubcategory =
-                      subcategory.handle === subcategoryHandle;
+                  {isExpanded && category.subcategories.length > 0 && (
+                    <ul className="mt-2 space-y-2 border-l border-[#DDECE9] pl-4">
+                      {category.subcategories.map((subcategory) => {
+                        const isActiveSubcategory =
+                          subcategory.handle === subcategoryHandle;
 
-                    return (
-                      <li key={subcategory.id}>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            router.push(
-                              `/shop/${category.handle}/${subcategory.handle}`,
-                            )
-                          }
-                          className={`text-left text-sm hover:text-[#1EA766] ${
-                            isActiveSubcategory
-                              ? 'font-semibold text-[#1EA766]'
-                              : 'text-gray-600'
-                          }`}
-                        >
-                          {subcategory.name}
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </li>
-          );
-        })}
-        </ul>
+                        return (
+                          <li key={subcategory.id}>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                router.push(
+                                  `/shop/${category.handle}/${subcategory.handle}`,
+                                )
+                              }
+                              className={`text-left text-sm hover:text-[#1EA766] ${
+                                isActiveSubcategory
+                                  ? 'font-semibold text-[#1EA766]'
+                                  : 'text-gray-600'
+                              }`}
+                            >
+                              {subcategory.name}
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </nav>
 
       {availableFilters.length > 0 && (

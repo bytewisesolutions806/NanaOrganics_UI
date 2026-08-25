@@ -15,7 +15,12 @@ const useCategoryStore = create(
 
       // ================= FETCH ALL CATEGORIES =================
       fetchCategories: async () => {
-        if (get().fetched) {
+        const { fetched, categories } = get();
+
+        // An earlier empty response may have been persisted with fetched=true.
+        // Treat that state as stale so the catalog can recover after the dev
+        // database is seeded or the Shop API becomes available again.
+        if (fetched && categories.length > 0) {
           console.log('CategoryStore - using cached categories');
           return;
         }
@@ -90,7 +95,7 @@ const useCategoryStore = create(
       name: 'category-store', // 🔑 localStorage key
 
       // ⛔ Persist only what matters
-      version: 3,
+      version: 4,
       migrate: () => ({
         categories: [],
         megaMenu: [],
