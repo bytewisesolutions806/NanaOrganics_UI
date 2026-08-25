@@ -1,0 +1,128 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$REPO_ROOT"
+
+DEPLOY_ENV="${1:-production}"
+case "$DEPLOY_ENV" in
+    dev|staging|production) ;;
+    *)
+        echo "Usage: bash deploy.sh {dev|staging|production}" >&2
+        exit 2
+        ;;
+esac
+
+BRANCH="${DEPLOY_BRANCH:-main}"
+ENV_FILE="${ENV_FILE:-.env.${DEPLOY_ENV}}"
+COMPOSE_FILE="${COMPOSE_FILE:-compose.production.yml}"
+export ENV_FILE COMPOSE_FILE
+
+if [[ "$DEPLOY_ENV" == "production" ]]; then
+    export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-nanaorganics-ui}"
+    export FRONTEND_IMAGE_REPOSITORY="${FRONTEND_IMAGE_REPOSITORY:-nana-ui}"
+    export STOREFRONT_CONTAINER_NAME="${STOREFRONT_CONTAINER_NAME:-nana-ui}"
+else
+    export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-nanaorganics-ui-${DEPLOY_ENV}}"
+    export FRONTEND_IMAGE_REPOSITORY="${FRONTEND_IMAGE_REPOSITORY:-nana-ui-${DEPLOY_ENV}}"
+    export STOREFRONT_CONTAINER_NAME="${STOREFRONT_CONTAINER_NAME:-nana-ui-${DEPLOY_ENV}}"
+fi
+
+compose() {
+    docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" "$@"
+}
+
+fail() {
+    echo "Deployment failed: $*" >&2
+    exit 1
+}
+
+for command_name in git docker; do
+    command -v "$command_name" >/dev/null 2>&1 || fail "missing command: $command_name"
+done
+docker compose version >/dev/null 2>&1 || fail "Docker Compose v2 is required"
+
+[[ -f "$ENV_FILE" ]] || fail "missing $ENV_FILE"
+if grep -Eq 'replace-with|pk_live_\.\.\.|example-secret' "$ENV_FILE"; then
+    fail "$ENV_FILE still contains placeholder values"
+fi
+
+if command -v flock >/dev/null 2>&1; then
+    exec 9>"$REPO_ROOT/.git/deploy-${DEPLOY_ENV}.lock"
+    flock -n 9 || fail "another $DEPLOY_ENV deployment is already running"
+fi
+
+if [[ -n "$(git status --porcelain)" ]]; then
+    fail "repository has local or untracked changes; commit or preserve them before deploying"
+fi
+
+CURRENT_BRANCH="$(git symbolic-ref --quiet --short HEAD || true)"
+[[ "$CURRENT_BRANCH" == "$BRANCH" ]] || fail "expected branch $BRANCH, found ${CURRENT_BRANCH:-detached HEAD}"
+
+echo "Fetching origin/$BRANCH..."
+START_COMMIT="$(git rev-parse HEAD)"
+git fetch --prune origin "$BRANCH"
+git merge --ff-only "origin/$BRANCH"
+
+if [[ "$(git rev-parse HEAD)" != "$START_COMMIT" && "${DEPLOY_REEXEC:-0}" != "1" ]]; then
+    echo "Repository updated; restarting with the latest deploy.sh..."
+    export DEPLOY_REEXEC=1
+    exec bash "$REPO_ROOT/deploy.sh" "$DEPLOY_ENV"
+fi
+
+RELEASE="$(git rev-parse --short=12 HEAD)"
+export IMAGE_TAG="$RELEASE"
+echo "Deploying frontend $RELEASE to $DEPLOY_ENV using $ENV_FILE"
+
+compose config --quiet
+
+PREVIOUS_CONTAINER="$(compose ps -q storefront 2>/dev/null || true)"
+PREVIOUS_IMAGE_ID=""
+if [[ -n "$PREVIOUS_CONTAINER" ]]; then
+    PREVIOUS_IMAGE_ID="$(docker inspect --format '{{.Image}}' "$PREVIOUS_CONTAINER")"
+fi
+
+# Build without interrupting the currently running storefront.
+compose build --pull storefront
+
+ROLLBACK_TAG="before-${RELEASE}"
+if [[ -n "$PREVIOUS_IMAGE_ID" ]]; then
+    docker image tag "$PREVIOUS_IMAGE_ID" \
+        "${FRONTEND_IMAGE_REPOSITORY}:${ROLLBACK_TAG}"
+fi
+
+compose up -d --no-build --remove-orphans --force-recreate storefront
+
+wait_for_healthy() {
+    local container_id status
+    for ((attempt = 1; attempt <= 60; attempt++)); do
+        container_id="$(compose ps -q storefront 2>/dev/null || true)"
+        if [[ -n "$container_id" ]]; then
+            status="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$container_id" 2>/dev/null || true)"
+            if [[ "$status" == "healthy" ]]; then
+                return 0
+            fi
+            if [[ "$status" == "unhealthy" || "$status" == "exited" || "$status" == "dead" ]]; then
+                echo "storefront entered state: $status" >&2
+                return 1
+            fi
+        fi
+        sleep 5
+    done
+    return 1
+}
+
+if ! wait_for_healthy; then
+    compose logs --tail=200 storefront >&2 || true
+    if [[ -n "$PREVIOUS_IMAGE_ID" ]]; then
+        echo "New storefront failed health checks; restoring the previous image..." >&2
+        export IMAGE_TAG="$ROLLBACK_TAG"
+        compose up -d --no-build --force-recreate storefront
+        wait_for_healthy || fail "both the new and rollback storefront failed health checks"
+        fail "new release failed; previous storefront image was restored"
+    fi
+    fail "storefront did not become healthy and no previous image was available"
+fi
+
+compose ps
+echo "Frontend $RELEASE deployed successfully to $DEPLOY_ENV."

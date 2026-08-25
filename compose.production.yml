@@ -1,7 +1,7 @@
 services:
   storefront:
-    image: nana-ui:latest
-    container_name: nana-ui
+    image: ${FRONTEND_IMAGE_REPOSITORY:-nana-ui}:${IMAGE_TAG:-latest}
+    container_name: ${STOREFRONT_CONTAINER_NAME:-nana-ui}
     build:
       context: .
       args:
@@ -14,4 +14,4 @@ services:
     restart: unless-stopped
     init: true
     ports:
-      - "127.0.0.1:3001:3001"
+      - "${STOREFRONT_BIND_ADDRESS:-127.0.0.1}:${STOREFRONT_PORT:-3001}:3001"
