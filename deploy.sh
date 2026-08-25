@@ -43,8 +43,47 @@ done
 docker compose version >/dev/null 2>&1 || fail "Docker Compose v2 is required"
 
 [[ -f "$ENV_FILE" ]] || fail "missing $ENV_FILE"
-if grep -Eq 'replace-with|pk_live_\.\.\.|example-secret' "$ENV_FILE"; then
-    fail "$ENV_FILE still contains placeholder values"
+
+env_value() {
+    local key="$1" line value
+    line="$(grep -E "^[[:space:]]*${key}=" "$ENV_FILE" | tail -n 1 || true)"
+    [[ -n "$line" ]] || return 0
+    value="${line#*=}"
+    value="${value%$'\r'}"
+    if [[ "$value" == \"*\" && "$value" == *\" ]]; then
+        value="${value:1:${#value}-2}"
+    elif [[ "$value" == \'*\' && "$value" == *\' ]]; then
+        value="${value:1:${#value}-2}"
+    fi
+    printf '%s' "$value"
+}
+
+is_placeholder() {
+    local value="${1,,}"
+    [[ -z "$value" ||
+       "$value" == *"replace-with"* ||
+       "$value" == *"example-secret"* ||
+       "$value" == *"change-me"* ||
+       "$value" == *"changeme"* ||
+       "$value" == *"example.com"* ||
+       "$value" == *"..."* ]]
+}
+
+INVALID_ENV_KEYS=()
+for key in \
+    NEXT_PUBLIC_API_BASE_URL \
+    NEXT_PUBLIC_VENDURE_SHOP_API_URL \
+    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY; do
+    value="$(env_value "$key")"
+    if is_placeholder "$value"; then
+        INVALID_ENV_KEYS+=("$key")
+    fi
+done
+
+if (( ${#INVALID_ENV_KEYS[@]} > 0 )); then
+    printf 'Deployment failed: configure these required variables in %s:\n' "$ENV_FILE" >&2
+    printf '  - %s\n' "${INVALID_ENV_KEYS[@]}" | sort -u >&2
+    exit 1
 fi
 
 if command -v flock >/dev/null 2>&1; then
