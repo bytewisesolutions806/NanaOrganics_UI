@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import React from 'react'
-import { Button } from 'primereact/button'
-import Image from 'next/image'
-import { useRouter } from 'next/navigation'
-import GalleryImage4 from "@/assets/images/gallery/gallery_image_4.png";
+import React from 'react';
+import { Button } from 'primereact/button';
+import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import GalleryImage4 from '@/assets/images/gallery/gallery_image_4.png';
 const HomeNatureBanner = () => {
-  const router = useRouter()
+  const router = useRouter();
 
   return (
     <>
-    <section className="mt-10">
+      <section className="mt-10">
         {/* Image section for Bring Nature Today */}
 
         <div className="relative w-full  px-3 sm:px-4 md:px-6 lg:px-8">
@@ -63,9 +63,8 @@ const HomeNatureBanner = () => {
           leading-relaxed
         "
               >
-                Experience the pure goodness of organic living with Nana
-                Organics. From farm-fresh ingredients to natural care essentials
-                everything your body and home deserve
+                Experience the pure goodness of organic living with Nana Organics. From farm-fresh
+                ingredients to natural care essentials everything your body and home deserve
               </p>
 
               <div className="flex flex-row items-center gap-2 whitespace-nowrap">
@@ -81,7 +80,7 @@ const HomeNatureBanner = () => {
     "
                 />
 
-                <Button
+                {/* <Button
                   label="Explore collections"
                   className="
       bg-green-600 text-white border border-green-600
@@ -90,14 +89,14 @@ const HomeNatureBanner = () => {
       md:w-40 md:h-10 md:text-sm
       rounded-xl font-normal
     "
-                />
+                /> */}
               </div>
             </div>
           </div>
         </div>
       </section>
     </>
-  )
-}
+  );
+};
 
-export default HomeNatureBanner
+export default HomeNatureBanner;
