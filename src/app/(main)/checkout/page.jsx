@@ -19,11 +19,14 @@ import { fetchAddressesApi } from "@/service/AddressService";
 import { apiAddressToCheckout, pickDefaultAddress } from "@/lib/addressAdapter";
 import useOrdersStore from "@/store/useOrdersStore";
 import StripePayment from "@/components/StripePayment";
+import useAuthStore from '@/store/AuthStore';
 
 /** Match cart page — amounts from API are major units in this project */
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const customer = useAuthStore((state) => state.customer);
 
   const [step, setStep] = useState(1);
   const [errors, setErrors] = useState({});
@@ -76,33 +79,23 @@ export default function CheckoutPage() {
     setMounted(true);
     if (typeof window === "undefined") return;
     const cartId = sessionStorage.getItem("cart_id");
-    if (cartId) {
-      fetchCart(cartId);
+    if (cartId || isAuthenticated) {
+      fetchCart();
     }
     // Vendure needs the active order address before calculating shipping quotes.
-  }, [fetchCart]);
+  }, [fetchCart, isAuthenticated]);
 
   /** Logged-in: load saved profile addresses once; pre-fill shipping from default + account email. */
   useEffect(() => {
     if (!mounted || typeof window === "undefined") return;
     if (shippingPrefillDoneRef.current) return;
-    const token = sessionStorage.getItem("accessToken");
-    if (!token) {
-      shippingPrefillDoneRef.current = true;
+    if (!isAuthenticated) {
       return;
     }
 
-    let customerEmail = "";
-    let cf = "";
-    let cl = "";
-    try {
-      const c = JSON.parse(sessionStorage.getItem("customer") || "{}");
-      customerEmail = c.email || "";
-      cf = c.first_name || "";
-      cl = c.last_name || "";
-    } catch {
-      /* ignore */
-    }
+    const customerEmail = customer?.email || "";
+    const cf = customer?.first_name || "";
+    const cl = customer?.last_name || "";
 
     setLoadingSavedAddresses(true);
     fetchAddressesApi()
@@ -142,20 +135,14 @@ export default function CheckoutPage() {
         }));
       })
       .finally(() => setLoadingSavedAddresses(false));
-  }, [mounted]);
+  }, [customer, isAuthenticated, mounted]);
 
   const applySavedAddressById = (id) => {
     setSelectedSavedId(id);
     if (!id) return;
     const row = savedAddresses.find((x) => x.id === id);
     if (!row) return;
-    let customerEmail = "";
-    try {
-      const c = JSON.parse(sessionStorage.getItem("customer") || "{}");
-      customerEmail = c.email || "";
-    } catch {
-      /* ignore */
-    }
+    const customerEmail = customer?.email || "";
     const co = apiAddressToCheckout(row, customerEmail);
     setAddress((prev) => ({
       ...prev,

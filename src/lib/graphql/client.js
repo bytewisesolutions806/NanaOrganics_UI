@@ -1,4 +1,5 @@
 import { GraphQLClient } from 'graphql-request';
+import { getStoredAccessToken, hasStoredAuthSession } from '@/lib/authSession';
 
 const PUBLIC_QUERY_TTL_MS = 30_000;
 const AUTHENTICATED_QUERY_TTL_MS = 3_000;
@@ -69,8 +70,8 @@ export function clearShopApiCache() {
 }
 
 export function shopApiRequest(document, variables, options = {}) {
-  const token =
-    typeof window !== 'undefined' ? sessionStorage.getItem('accessToken') : null;
+  const token = getStoredAccessToken();
+  const authenticatedSession = hasStoredAuthSession();
   const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
 
   if (isMutation(document)) {
@@ -79,7 +80,12 @@ export function shopApiRequest(document, variables, options = {}) {
   }
 
   const version = cacheVersion;
-  const key = requestKey(document, variables, token, version);
+  const key = requestKey(
+    document,
+    variables,
+    token || (authenticatedSession ? 'cookie-session' : null),
+    version,
+  );
   const now = Date.now();
   const cached = queryCache.get(key);
   if (cached && cached.expiresAt > now) return Promise.resolve(cached.data);
@@ -89,7 +95,7 @@ export function shopApiRequest(document, variables, options = {}) {
   const ttlMs = Math.max(
     0,
     options.cacheTtlMs ??
-      (token ? AUTHENTICATED_QUERY_TTL_MS : PUBLIC_QUERY_TTL_MS),
+      (authenticatedSession ? AUTHENTICATED_QUERY_TTL_MS : PUBLIC_QUERY_TTL_MS),
   );
   const request = getShopApiClient()
     .request(document, variables, headers)

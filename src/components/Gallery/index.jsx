@@ -6,12 +6,15 @@ import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { Galleria } from "primereact/galleria";
 import { PhotoService } from "../../service/PhotoService";
+import useAuthStore from '@/store/AuthStore';
 
 export default function PositionDemo() {
   const router = useRouter();
   const pathname = usePathname();
   const page = pathname === "/contact-us" ? "contact-us" : "home";
   const images = PhotoService.getImagesByPage(page);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
 
   const itemTemplate = (item) => {
     return (
@@ -95,7 +98,7 @@ export default function PositionDemo() {
                   rounded-xl space-x-2 font-normal
                 "
                 />
-              ) : (
+              ) : hasHydrated && !isAuthenticated ? (
                 <Button
                  onClick={() => router.push("/signup")}
                   icon="pi pi-user-plus"
@@ -109,7 +112,7 @@ export default function PositionDemo() {
                   rounded-xl space-x-2
                 "
                 />
-              )}
+              ) : null}
             </div>
           </div>
         </div>

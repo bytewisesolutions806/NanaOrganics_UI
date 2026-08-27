@@ -1,6 +1,7 @@
 import { gql } from 'graphql-request';
 import { clearShopApiCache, shopApiRequest } from '@/lib/graphql/client';
 import { resolveAssetUrl } from '@/lib/assetUrl';
+import { getStoredAccessToken } from '@/lib/authSession';
 import {
   requestCustomerPasswordReset,
   resendCustomerPasswordResetCode,
@@ -96,7 +97,7 @@ function apiError(error, fallback) {
 
 export async function fetchProfileApi() {
   try {
-    const data = await shopApiRequest(CUSTOMER_PROFILE);
+    const data = await shopApiRequest(CUSTOMER_PROFILE, undefined, { cacheTtlMs: 0 });
     return { success: true, data: { customer: toUiCustomer(data.customerProfile) } };
   } catch (error) {
     throw apiError(error, 'Could not load profile.');
@@ -137,7 +138,7 @@ export async function uploadProfilePhotoApi(file) {
   form.append('map', JSON.stringify({ 0: ['variables.file'] }));
   form.append('0', file, file.name);
 
-  const token = sessionStorage.getItem('accessToken');
+  const token = getStoredAccessToken();
   const channelToken = process.env.NEXT_PUBLIC_VENDURE_CHANNEL_TOKEN;
   const response = await fetch(endpoint, {
     method: 'POST',

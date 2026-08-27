@@ -104,9 +104,9 @@ const Header = () => {
   const logout = useAuthStore((state) => state.logout);
   const resetCart = useCartStore((state) => state.resetCart);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     resetCart();
-    logout();
+    await logout();
     router.push('/login');
   };
 
@@ -285,7 +285,9 @@ const Header = () => {
                   Login/Signup
                 </button> */}
 
-                  {!isAuthenticated ? (
+                  {!hasHydrated ? (
+                    <div className="hidden h-10 w-[116px] xl:block" aria-hidden="true" />
+                  ) : !isAuthenticated ? (
                     <button
                       onClick={() => router.push('/signup')}
                       className="hidden xl:flex items-center text-sm font-semibold bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-800 transition cursor-pointer"

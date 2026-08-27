@@ -14,9 +14,9 @@ export default function ProfileSidebar() {
   const logout = useAuthStore((state) => state.logout);
   const resetCart = useCartStore((state) => state.resetCart);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     resetCart();
-    logout();
+    await logout();
     router.push('/');
   };
 

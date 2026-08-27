@@ -1,5 +1,6 @@
 import {
   loginWithJwt,
+  logoutCustomer,
   requestCustomerPasswordReset,
   resendCustomerPasswordResetCode,
   resetCustomerPassword,
@@ -15,6 +16,8 @@ export const loginUser = async ({ email, password, rememberMe = false }) =>
     password,
     rememberMe,
   });
+
+export const logoutUser = async () => logoutCustomer();
 
 export const signupUser = async (input) => requestCustomerSignup(input);
 

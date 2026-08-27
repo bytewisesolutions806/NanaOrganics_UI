@@ -17,6 +17,14 @@ export const LOGIN_WITH_JWT = gql`
   }
 `;
 
+export const LOGOUT_CUSTOMER = gql`
+  mutation LogoutCustomer {
+    logout {
+      success
+    }
+  }
+`;
+
 export const VERIFY_CUSTOMER_SIGNUP_CODE = gql`
   mutation VerifyCustomerSignupCode($emailAddress: String!, $code: String!) {
     verifyCustomerSignupCode(emailAddress: $emailAddress, code: $code) {
@@ -94,6 +102,11 @@ export const RESET_CUSTOMER_PASSWORD = gql`
 export async function loginWithJwt(variables) {
   const data = await shopApiRequest(LOGIN_WITH_JWT, variables);
   return data.loginWithJwt;
+}
+
+export async function logoutCustomer() {
+  const data = await shopApiRequest(LOGOUT_CUSTOMER);
+  return data.logout;
 }
 
 export async function verifyCustomerSignupCode(variables) {

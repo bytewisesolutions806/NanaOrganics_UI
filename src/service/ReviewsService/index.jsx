@@ -1,6 +1,7 @@
 import { clearShopApiCache, shopApiRequest } from '@/lib/graphql/client';
 import { resolveAssetUrl } from '@/lib/assetUrl';
 import { DEFAULT_IMAGE } from '@/lib/defaultImage';
+import { getStoredAccessToken } from '@/lib/authSession';
 
 const REVIEW_FIELDS = `
   id createdAt updatedAt productId productName productSlug productPreview
@@ -104,7 +105,7 @@ async function reviewUploadRequest(query, variables, files) {
   )));
   files.forEach((file, index) => form.append(String(index), file, file.name));
 
-  const token = sessionStorage.getItem('accessToken');
+  const token = getStoredAccessToken();
   const channelToken = process.env.NEXT_PUBLIC_VENDURE_CHANNEL_TOKEN;
   const response = await fetch(endpoint, {
     method: 'POST',

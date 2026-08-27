@@ -10,6 +10,7 @@ import {
   formToCreateBody,
   formToPatchBody,
 } from "@/lib/addressAdapter";
+import { hasStoredAuthSession } from '@/lib/authSession';
 
 function getErrorMessage(err) {
   const d = err?.response?.data;
@@ -20,8 +21,7 @@ function getErrorMessage(err) {
 }
 
 function hasSessionToken() {
-  if (typeof window === "undefined") return false;
-  return !!sessionStorage.getItem("accessToken");
+  return hasStoredAuthSession();
 }
 
 const useAddressStore = create((set, get) => ({

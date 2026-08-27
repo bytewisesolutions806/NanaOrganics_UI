@@ -7,6 +7,7 @@ import {
   removeFromWishlistApi,
 } from '@/service/WishlistService';
 import { mapWishlistApiRow } from '@/lib/wishlistAdapter';
+import { hasStoredAuthSession } from '@/lib/authSession';
 
 function getErrorMessage(error) {
   const graphqlMessage = error?.response?.errors?.[0]?.message;
@@ -27,8 +28,7 @@ const emptyPagination = (limit = DEFAULT_LIMIT) => ({
   has_prev: false,
 });
 
-const hasAccessToken = () =>
-  typeof window !== 'undefined' && !!sessionStorage.getItem('accessToken');
+const hasAccessToken = () => hasStoredAuthSession();
 
 const useWishlistStore = create((set, get) => ({
   wishlist: [],
