@@ -30,8 +30,8 @@ export default function Footer() {
   const socials = [
     { label: 'Facebook', icon: 'pi-facebook', path: 'https://www.facebook.com/' },
     { label: 'Instagram', icon: 'pi-instagram', path: 'https://www.instagram.com/' },
-    { label: 'Twitter', icon: 'pi-twitter', path: 'https://x.com/' },
-    { label: 'LinkedIn', icon: 'pi-linkedin', path: 'https://in.linkedin.com/' },
+    // { label: 'Twitter', icon: 'pi-twitter', path: 'https://x.com/' },
+    // { label: 'LinkedIn', icon: 'pi-linkedin', path: 'https://in.linkedin.com/' },
     { label: 'YouTube', icon: 'pi-youtube', path: 'https://www.youtube.com/' },
   ];
 
