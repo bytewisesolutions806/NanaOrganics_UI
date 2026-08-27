@@ -16,8 +16,8 @@ export default function WhyChooseNana() {
           src="/choose_nana_banner.svg"
           alt="Why Choose Nana"
           fill
+          sizes="(max-width: 1280px) 100vw, 1280px"
           className="object-cover"
-          priority
         />
 
         {/* OVERLAY */}
@@ -31,7 +31,7 @@ export default function WhyChooseNana() {
               {/* FEATURE 1 */}
               <div className="flex flex-row lg:flex-col gap-3 lg:border-r border-white/40 lg:pr-6">
                 {/* <Image src={LeafFilled} alt="" className="w-10 h-8 shrink-0" /> */}
-                <img src="/lsicon_leaf-filled.svg" className="w-10 h-8 shrink-0" alt="" />
+                <Image src="/lsicon_leaf-filled.svg" width={40} height={32} className="h-8 w-10 shrink-0" alt="" />
                 <div>
                   <h4 className="font-semibold">100% Natural Ingredients</h4>
                   <p className="text-sm text-white/80">
@@ -43,7 +43,7 @@ export default function WhyChooseNana() {
               {/* FEATURE 2 */}
               <div className="flex flex-row lg:flex-col gap-3 lg:border-r border-white/40 lg:pr-6">
                 {/* <Image src={TruckImage} alt="" className="w-10 h-8 shrink-0" /> */}
-                <img src="/gridicons_shipping.svg" className="w-10 h-8 shrink-0" alt="" />
+                <Image src="/gridicons_shipping.svg" width={40} height={32} className="h-8 w-10 shrink-0" alt="" />
                 <div>
                   <h4 className="font-semibold">Free Shipping Above ₹999</h4>
                   <p className="text-sm text-white/80">
@@ -54,7 +54,7 @@ export default function WhyChooseNana() {
 
               {/* FEATURE 3 */}
               <div className="flex flex-row lg:flex-col gap-3 lg:border-r border-white/40 lg:pr-6">
-                <img src="/shipping.svg" alt="" className="w-10 h-8 shrink-0" />
+                <Image src="/shipping.svg" width={40} height={32} alt="" className="h-8 w-10 shrink-0" />
                 <div>
                   <h4 className="font-semibold">Secure Payments</h4>
                   <p className="text-sm text-white/80">
@@ -65,7 +65,7 @@ export default function WhyChooseNana() {
 
               {/* FEATURE 4 */}
               <div className="flex flex-row lg:flex-col gap-3">
-                <img src="/recycle.svg" alt="" className="w-10 h-8 shrink-0" />
+                <Image src="/recycle.svg" width={40} height={32} alt="" className="h-8 w-10 shrink-0" />
                 <div>
                   <h4 className="font-semibold">Hassle-free Returns</h4>
                   <p className="text-sm text-white/80">Easy returns and customer-first policies.</p>

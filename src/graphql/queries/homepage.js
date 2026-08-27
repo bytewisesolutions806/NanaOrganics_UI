@@ -78,6 +78,26 @@ export const GET_TOP_CUSTOMER_REVIEWS = gql`
   }
 `;
 
+export const GET_HOMEPAGE_VIDEO = gql`
+  query GetHomepageVideo {
+    homepageVideo {
+      id
+      title
+      description
+      videos {
+        id
+        position
+        videoAsset {
+          id
+          name
+          mimeType
+          source
+        }
+      }
+    }
+  }
+`;
+
 export async function getHomepageProductSections({
   take = 8,
   codes,
@@ -92,4 +112,9 @@ export async function getHomepageProductSections({
 export async function getTopCustomerReviews(take = 10) {
   const data = await shopApiRequest(GET_TOP_CUSTOMER_REVIEWS, { take });
   return data.topCustomerReviews?.items || [];
+}
+
+export async function getHomepageVideo() {
+  const data = await shopApiRequest(GET_HOMEPAGE_VIDEO);
+  return data.homepageVideo || null;
 }

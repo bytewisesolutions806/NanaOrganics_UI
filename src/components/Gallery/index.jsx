@@ -1,5 +1,6 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React from "react";
+import Image from "next/image";
 import { Button } from "primereact/button";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
@@ -8,28 +9,23 @@ import { PhotoService } from "../../service/PhotoService";
 
 export default function PositionDemo() {
   const router = useRouter();
-  const [images, setImages] = useState(null);
   const pathname = usePathname();
-
-  useEffect(() => {
-    const page = pathname === "/contact-us" ? "contact-us" : "home";
-
-    setImages(PhotoService.getImagesByPage(page));
-  }, [pathname]);
+  const page = pathname === "/contact-us" ? "contact-us" : "home";
+  const images = PhotoService.getImagesByPage(page);
 
   const itemTemplate = (item) => {
     return (
-      <div className="relative w-full">
+      <div className="relative h-[260px] w-full sm:h-[320px] md:h-[400px] lg:h-[520px]">
         {/* IMAGE WITH RESPONSIVE HEIGHT */}
-        <img
+        <Image
           src={item.itemImageSrc}
           alt={item.alt}
+          fill
+          sizes="100vw"
+          priority={Boolean(item.priority)}
+          quality={76}
           className="
-            w-full object-cover
-            h-[260px]
-            sm:h-[320px]
-            md:h-[400px]
-            lg:h-[520px]
+            object-cover
           "
         />
 

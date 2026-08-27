@@ -43,7 +43,7 @@ export default function Footer() {
           src={footerImage}
           alt="Footer Banner"
           fill
-          priority
+          sizes="100vw"
           className="object-cover bg-[#375653]"
         />
 
@@ -96,10 +96,13 @@ export default function Footer() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 text-center sm:text-left">
           {/* LOGO */}
           <div>
-            <img
+            <Image
               src="/footerLogo.svg"
               alt="Footer Logo"
-              className="mx-auto sm:mx-0 w-[140px] sm:w-[160px] lg:w-[180px] h-auto]"
+              width={180}
+              height={90}
+              sizes="(max-width: 640px) 140px, (max-width: 1024px) 160px, 180px"
+              className="mx-auto h-auto w-[140px] sm:mx-0 sm:w-[160px] lg:w-[180px]"
             />
             <p className="mt-4 flex items-center justify-center sm:justify-start text-[#C6D8D7]">
               <i className="pi pi-envelope mr-2 text-[#5EA087]"></i>

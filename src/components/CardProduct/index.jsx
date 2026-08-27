@@ -107,6 +107,7 @@ const ProductCard = ({ item, category }) => {
               alt={item.title || 'Product image'}
               width={300}
               height={200}
+              sizes="(max-width: 480px) 92vw, (max-width: 640px) 68vw, (max-width: 900px) 46vw, (max-width: 1280px) 31vw, 290px"
               className="h-[170px] w-full rounded-t-2xl object-cover sm:h-[180px]"
               priority={false}
             />

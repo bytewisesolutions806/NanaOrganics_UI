@@ -1,0 +1,11 @@
+.header-product-search::-webkit-search-cancel-button {
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.header-product-search::-ms-clear,
+.header-product-search::-ms-reveal {
+  display: none;
+  height: 0;
+  width: 0;
+}

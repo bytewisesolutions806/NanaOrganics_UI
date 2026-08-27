@@ -17,8 +17,8 @@ const BannerOrganic = () => {
               src={ExploreOrganicOfferings}
               alt="Card Image"
               fill
+              sizes="100vw"
               className="object-contain object-left"
-              priority
             />
           </div>
 

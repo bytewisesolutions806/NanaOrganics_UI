@@ -145,7 +145,7 @@ const Header = () => {
             <div className="flex-shrink-0 flex items-center">
               <Link href="/">
                 {/* <Image src={Logo} width={120} height={90} alt="Logo" priority /> */}
-                <img src="/AppLogo.svg" width="130" height="80" />
+                <Image src="/AppLogo.svg" width={130} height={80} alt="Nana Organics" priority />
               </Link>
             </div>
 
@@ -439,7 +439,7 @@ const Header = () => {
               {/* LEFT: LOGO (2 rows feel) */}
               <div className="flex items-center ml-4">
                 {/* <Image src={Logo} alt="Logo" width={90} height={30} priority /> */}
-                <img src="/AppLogo.svg" width="100" height="80" />
+                <Image src="/AppLogo.svg" width={100} height={80} alt="Nana Organics" priority />
               </div>
 
               {/* RIGHT: ICONS + MENU */}

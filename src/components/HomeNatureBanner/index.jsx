@@ -28,7 +28,7 @@ const HomeNatureBanner = () => {
               src={GalleryImage4}
               alt="Banner Image"
               fill
-              priority
+              sizes="(max-width: 1280px) 100vw, 1220px"
               className="object-cover rounded-xl"
             />
           </div>

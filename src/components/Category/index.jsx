@@ -15,15 +15,22 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import './index.css';
 
-export default function ShopByCategory() {
+export default function ShopByCategory({ initialCategories = [] }) {
   const router = useRouter();
   const swiperId = useId().replace(/:/g, '');
 
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState(initialCategories);
+  const [loading, setLoading] = useState(initialCategories.length === 0);
   const [error, setError] = useState('');
 
   useEffect(() => {
+    if (initialCategories.length > 0) {
+      setCategories(initialCategories);
+      setLoading(false);
+      setError('');
+      return undefined;
+    }
+
     let cancelled = false;
 
     async function loadCollections() {
@@ -46,7 +53,7 @@ export default function ShopByCategory() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [initialCategories]);
 
   const cardTemplate = (item) => {
     return (

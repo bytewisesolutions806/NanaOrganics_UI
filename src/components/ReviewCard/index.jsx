@@ -12,10 +12,12 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import './index.css';
 
-export default function ReviewCard() {
+export default function ReviewCard({ reviews: initialReviews, loading: initialLoading }) {
   const swiperId = useId().replaceAll(':', '');
-  const reviews = useHomeStore((state) => state.testimonials).slice(0, 10);
-  const loading = useHomeStore((state) => state.loading);
+  const storedReviews = useHomeStore((state) => state.testimonials);
+  const storedLoading = useHomeStore((state) => state.loading);
+  const reviews = (initialReviews ?? storedReviews).slice(0, 10);
+  const loading = initialLoading ?? storedLoading;
   const previousClass = `customer-review-prev-${swiperId}`;
   const nextClass = `customer-review-next-${swiperId}`;
 

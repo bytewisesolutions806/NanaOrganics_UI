@@ -6,6 +6,8 @@ const nextConfig = {
   // This setting applies to the dev server's origin checks for /_next/*.
   allowedDevOrigins: ['192.168.1.5'],
   images: {
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 86400,
     // next/image fetches remote URLs on the server; localhost resolves to 127.0.0.1
     // and is blocked as a private IP unless this is enabled (Medusa static on :9001).
     dangerouslyAllowLocalIP:

@@ -1,4 +1,5 @@
 import {
+  getHomepageVideo,
   getHomepageProductSections,
   getTopCustomerReviews,
 } from '@/graphql/queries/homepage';
@@ -109,19 +110,38 @@ function mapTestimonial(review) {
 }
 
 export const getHomeData = async () => {
-  const [sections, reviews] = await Promise.all([
+  const [sections, reviews, homepageVideo] = await Promise.all([
     getHomepageProductSections({
       take: 8,
       recentlyViewedSlugs: getRecentlyViewedProductSlugs(),
     }),
     // A testimonial outage must not prevent product collections from loading.
     getTopCustomerReviews(10).catch(() => []),
+    // Content editors can hide or replace the video independently of products.
+    getHomepageVideo().catch(() => null),
   ]);
 
   return {
     success: true,
     data: {
       collections: sections.map(mapSection),
+      homepageVideo: homepageVideo?.videos?.length
+        ? {
+            id: String(homepageVideo.id),
+            title: homepageVideo.title,
+            description: homepageVideo.description || '',
+            videos: homepageVideo.videos
+              .slice()
+              .sort((left, right) => left.position - right.position)
+              .map((item) => ({
+                id: String(item.id),
+                name: item.videoAsset.name,
+                source: resolveAssetUrl(item.videoAsset.source),
+                mimeType: item.videoAsset.mimeType,
+              }))
+              .filter((item) => item.source),
+          }
+        : null,
       testimonials: reviews.map(mapTestimonial),
       stats: null,
     },

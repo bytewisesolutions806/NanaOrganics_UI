@@ -9,6 +9,7 @@ import {
   searchHeaderProducts,
 } from '@/graphql/queries/collections';
 import { DEFAULT_IMAGE } from '@/lib/defaultImage';
+import './index.css';
 
 const MIN_SEARCH_LENGTH = 2;
 
@@ -184,7 +185,7 @@ export default function HeaderSearch() {
         aria-expanded={showDropdown}
         aria-controls="header-product-search-results"
         autoComplete="off"
-        className="h-[46px] w-full rounded-[10px] border border-[#cfe2e0] bg-white pl-10 pr-10 text-sm text-[#0D1D2C] outline-none transition focus:border-[#1EA766] focus:ring-2 focus:ring-[#1EA766]/15"
+        className="header-product-search h-[46px] w-full rounded-[10px] border border-[#cfe2e0] bg-white pl-10 pr-10 text-sm text-[#0D1D2C] outline-none transition focus:border-[#1EA766] focus:ring-2 focus:ring-[#1EA766]/15"
       />
 
       {query && (

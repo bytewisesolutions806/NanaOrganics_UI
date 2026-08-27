@@ -61,7 +61,7 @@ export default function NaturalIngredients() {
                 src={productImage02}
                 alt="Product"
                 fill
-                priority
+                sizes="(max-width: 1024px) 50vw, 25vw"
                 className="object-cover rounded-tr-2xl rounded-br-2xl"
               />
             </div>

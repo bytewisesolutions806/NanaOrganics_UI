@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { FiX, FiChevronDown } from 'react-icons/fi';
 import { useRouter, usePathname } from 'next/navigation';
@@ -43,7 +44,7 @@ export default function Sidebar({
       >
         {/* Header */}
         <div className="flex justify-between items-center p-4 border-b">
-          <img src="/AppLogo.svg" className="w-28" />
+          <Image src="/AppLogo.svg" width={112} height={64} alt="Nana Organics" />
           <FiX size={26} className="cursor-pointer" onClick={() => setSidebarOpen(false)} />
         </div>
 
