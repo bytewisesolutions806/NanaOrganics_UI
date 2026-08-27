@@ -29,6 +29,7 @@ export const GET_HOMEPAGE_PRODUCT_SECTIONS = gql`
           variants {
             id
             name
+            currencyCode
             priceWithTax
             stockLevel
             customFields {
@@ -92,6 +93,46 @@ export const GET_HOMEPAGE_VIDEO = gql`
           name
           mimeType
           source
+        }
+        product {
+          id
+          name
+          slug
+          featuredAsset {
+            id
+            preview
+            source
+          }
+          collections {
+            id
+            name
+            slug
+            breadcrumbs {
+              id
+              name
+              slug
+            }
+          }
+          variants {
+            id
+            name
+            currencyCode
+            priceWithTax
+            stockLevel
+            customFields {
+              isPopular
+            }
+            offerPricing {
+              originalPrice
+              offerPercentage
+              sellingPrice
+            }
+            options {
+              id
+              name
+              code
+            }
+          }
         }
       }
     }

@@ -138,6 +138,9 @@ export const getHomeData = async () => {
                 name: item.videoAsset.name,
                 source: resolveAssetUrl(item.videoAsset.source),
                 mimeType: item.videoAsset.mimeType,
+                product: item.product
+                  ? mapProduct(item.product, { code: 'featured', title: 'Products' })
+                  : null,
               }))
               .filter((item) => item.source),
           }
