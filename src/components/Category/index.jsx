@@ -6,8 +6,9 @@ import { Navigation } from 'swiper/modules';
 import { Card } from 'primereact/card';
 import { useRouter } from 'next/navigation';
 import { useEffect, useId, useState } from 'react';
-import { getAllCollections } from '@/graphql/queries/collections';
+import { getCategories } from '@/service/categoryService';
 import { DEFAULT_IMAGE } from '@/lib/defaultImage';
+import { resolveAssetUrl } from '@/lib/assetUrl';
 import ReusableButton from '@/components/ReUsableButton';
 import CarouselArrow from '@/components/CarouselArrow';
 
@@ -37,8 +38,11 @@ export default function ShopByCategory({ initialCategories = [] }) {
       try {
         setLoading(true);
         setError('');
-        const result = await getAllCollections();
-        if (!cancelled) setCategories(result?.items || []);
+        // Use the same top-level-only service as the server-rendered homepage.
+        // Fetching raw collections here can allow child collections to leak
+        // into the carousel if the query defaults change later.
+        const result = await getCategories();
+        if (!cancelled) setCategories(result?.data?.categories || []);
       } catch (err) {
         if (!cancelled) {
           setCategories([]);
@@ -56,6 +60,17 @@ export default function ShopByCategory({ initialCategories = [] }) {
   }, [initialCategories]);
 
   const cardTemplate = (item) => {
+    // Server-provided initial categories use the normalized `image` field,
+    // while the client-side fallback query returns Vendure's `featuredAsset`.
+    // Support both shapes so a valid parent-category image never falls back to
+    // the application placeholder.
+    const rawImage =
+      item.featuredAsset?.preview || item.featuredAsset?.source || item.image;
+    const categoryImage =
+      rawImage && rawImage !== DEFAULT_IMAGE
+        ? resolveAssetUrl(rawImage) || DEFAULT_IMAGE
+        : DEFAULT_IMAGE;
+
     return (
       <div className="px-1">
         <Card
@@ -70,7 +85,7 @@ export default function ShopByCategory({ initialCategories = [] }) {
           {/* Image */}
           <div className="category-card-media">
             <Image
-              src={item.featuredAsset?.preview?.replace(/\\/g, '/') || DEFAULT_IMAGE}
+              src={categoryImage}
               alt={item.name}
               fill
               sizes="(max-width: 760px) 160px, 200px"

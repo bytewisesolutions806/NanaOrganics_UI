@@ -3,6 +3,7 @@ import {
   getCollectionBySlug,
 } from "@/graphql/queries/collections";
 import { DEFAULT_IMAGE } from '@/lib/defaultImage';
+import { resolveAssetUrl } from '@/lib/assetUrl';
 
 const toSubcategory = (collection) => ({
   id: collection.id,
@@ -20,7 +21,10 @@ const toCategory = (collection) => ({
   slug: collection.slug,
   position: collection.position,
   product_count: collection.productVariantCount || 0,
-  image: collection.featuredAsset?.preview || DEFAULT_IMAGE,
+  image:
+    resolveAssetUrl(
+      collection.featuredAsset?.preview || collection.featuredAsset?.source,
+    ) || DEFAULT_IMAGE,
   subcategories: (collection.children || [])
     .slice()
     .sort((a, b) => (a.position || 0) - (b.position || 0))
