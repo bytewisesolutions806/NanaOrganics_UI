@@ -1,4 +1,5 @@
 import { DEFAULT_IMAGE } from '@/lib/defaultImage';
+import { resolveAssetUrl } from '@/lib/assetUrl';
 
 /** Maps one Shop API WishlistItem into the profile wishlist view model. */
 export function mapWishlistApiRow(row) {
@@ -27,6 +28,6 @@ export function mapWishlistApiRow(row) {
     price: Number(displayVariant?.priceWithTax || 0) / 100,
     currency: displayVariant?.currencyCode || 'INR',
     variant_id: displayVariant?.id ? String(displayVariant.id) : null,
-    image: product.preview || displayVariant?.preview || DEFAULT_IMAGE,
+    image: resolveAssetUrl(product.preview || displayVariant?.preview) || DEFAULT_IMAGE,
   };
 }

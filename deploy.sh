@@ -151,6 +151,25 @@ wait_for_healthy() {
     return 1
 }
 
+cleanup_old_release_images() {
+    local repository="$1"
+    local current_ref="${repository}:${RELEASE}"
+    local rollback_ref="${repository}:${ROLLBACK_TAG}"
+    local image_ref
+
+    echo "Removing old ${repository} release images..."
+    while IFS= read -r image_ref; do
+        [[ -n "$image_ref" ]] || continue
+        if [[ "$image_ref" == "$current_ref" || "$image_ref" == "$rollback_ref" ]]; then
+            continue
+        fi
+
+        # A reference still used by another container is deliberately retained.
+        docker image rm "$image_ref" >/dev/null 2>&1 || true
+    done < <(docker image ls "$repository" --format '{{.Repository}}:{{.Tag}}')
+
+}
+
 if ! wait_for_healthy; then
     compose logs --tail=200 storefront >&2 || true
     if [[ -n "$PREVIOUS_IMAGE_ID" ]]; then
@@ -163,5 +182,6 @@ if ! wait_for_healthy; then
     fail "storefront did not become healthy and no previous image was available"
 fi
 
+cleanup_old_release_images "$FRONTEND_IMAGE_REPOSITORY"
 compose ps
 echo "Frontend $RELEASE deployed successfully to $DEPLOY_ENV."

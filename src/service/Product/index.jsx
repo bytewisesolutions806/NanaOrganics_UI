@@ -1,4 +1,5 @@
 import { getCollectionBySlug, getProductDetails } from "@/graphql/queries/collections";
+import { resolveAssetUrl } from '@/lib/assetUrl';
 import { DEFAULT_IMAGE } from '@/lib/defaultImage';
 
 const money = (value) => Number(value || 0) / 100;
@@ -27,11 +28,40 @@ function toDescriptionSection(value) {
     : { title: "", description: bullet };
 }
 
+function productGalleryAssets(product) {
+  const variants = product.variants || [];
+  const preferredVariant =
+    variants.find((variant) => variant.customFields?.isPopular) ||
+    variants.find((variant) => variant.stockLevel !== 'OUT_OF_STOCK') ||
+    variants[0];
+  const orderedVariants = preferredVariant
+    ? [preferredVariant, ...variants.filter((variant) => variant.id !== preferredVariant.id)]
+    : variants;
+  const candidates = [
+    product.featuredAsset,
+    ...(product.assets || []),
+    ...orderedVariants.flatMap((variant) => [variant.featuredAsset, ...(variant.assets || [])]),
+  ];
+  const seenUrls = new Set();
+
+  return candidates.reduce((gallery, asset) => {
+    const url = resolveAssetUrl(asset?.preview || asset?.source);
+    if (!url || seenUrls.has(url)) return gallery;
+
+    seenUrls.add(url);
+    gallery.push({
+      id: asset.id || url,
+      url,
+      alt: asset.name || product.name,
+    });
+    return gallery;
+  }, []);
+}
+
 function toProductDetail(product) {
   const { parent, child } = collectionPath(product);
-  const assets = product.assets || [];
-  const thumbnail =
-    product.featuredAsset?.preview || assets[0]?.preview || DEFAULT_IMAGE;
+  const galleryAssets = productGalleryAssets(product);
+  const thumbnail = galleryAssets[0]?.url || DEFAULT_IMAGE;
   const brand = product.facetValues?.find((value) => value.facet?.code === "organic-brand");
   const tags = (product.facetValues || [])
     .filter((value) => value.facet?.code !== "seeded-collection-membership")
@@ -50,11 +80,7 @@ function toProductDetail(product) {
     handle: product.slug,
     slug: product.slug,
     thumbnail,
-    images: assets.map((asset) => ({
-      id: asset.id,
-      url: asset.preview || asset.source,
-      alt: asset.name || product.name,
-    })),
+    images: galleryAssets,
     variants: (product.variants || []).map((variant, index) => {
       const price = money(variant.priceWithTax);
       const configuredOriginalPrice = money(variant.offerPricing?.originalPrice);
