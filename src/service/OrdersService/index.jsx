@@ -131,7 +131,6 @@ function address(address) {
 }
 
 const stateLabels = {
-  PaymentAuthorized: 'Order confirmed',
   PaymentSettled: 'Payment confirmed',
   PartiallyShipped: 'Partially shipped',
   Shipped: 'Shipped',
@@ -139,6 +138,42 @@ const stateLabels = {
   Delivered: 'Delivered',
   Cancelled: 'Cancelled',
 };
+
+const FAILED_PAYMENT_STATES = new Set(['Declined', 'Cancelled', 'Error']);
+const FULFILLMENT_ORDER_STATES = new Set([
+  'PartiallyShipped',
+  'Shipped',
+  'PartiallyDelivered',
+  'Delivered',
+]);
+
+function paymentStatusFor(order) {
+  const payments = order.payments || [];
+  const settledPayment = payments.find((payment) => payment.state === 'Settled');
+  if (settledPayment || order.state === 'PaymentSettled') {
+    return { kind: 'settled', payment: settledPayment || null, confirmed: true };
+  }
+
+  const codPayment = payments.find(
+    (payment) => payment.method === 'cash-on-delivery' && payment.state === 'Authorized',
+  );
+  if (codPayment) {
+    return { kind: 'cod_confirmed', payment: codPayment, confirmed: true };
+  }
+
+  if (FULFILLMENT_ORDER_STATES.has(order.state)) {
+    return { kind: 'settled', payment: payments[0] || null, confirmed: true };
+  }
+
+  const allPaymentsFailed = payments.length > 0 && payments.every(
+    (payment) => FAILED_PAYMENT_STATES.has(payment.state),
+  );
+  if (allPaymentsFailed) {
+    return { kind: 'failed', payment: payments[payments.length - 1], confirmed: false };
+  }
+
+  return { kind: 'pending', payment: payments[payments.length - 1] || null, confirmed: false };
+}
 
 function formatUpdateDate(value) {
   if (!value) return '';
@@ -151,18 +186,25 @@ function formatUpdateDate(value) {
   });
 }
 
-function historyMessage(entry) {
+function historyMessage(entry, paymentStatus) {
   const data = entry?.data || {};
   if (entry.type === 'ORDER_NOTE') {
     return data.note || data.message || data.text || '';
   }
   if (entry.type === 'ORDER_STATE_TRANSITION') {
+    if (data.to === 'PaymentAuthorized') {
+      return paymentStatus.kind === 'cod_confirmed' ? 'Order confirmed' : 'Payment authorized';
+    }
     return stateLabels[data.to] || '';
   }
   if (entry.type === 'ORDER_PAYMENT_TRANSITION') {
-    if (data.to === 'Authorized') return 'Cash on Delivery confirmed';
+    if (data.to === 'Authorized') {
+      return paymentStatus.kind === 'cod_confirmed'
+        ? 'Cash on Delivery confirmed'
+        : 'Payment authorized';
+    }
     if (data.to === 'Settled') return 'Payment received';
-    if (data.to === 'Declined') return 'Payment declined';
+    if (FAILED_PAYMENT_STATES.has(data.to)) return 'Payment not completed';
   }
   if (entry.type === 'ORDER_FULFILLMENT') return 'Shipment created';
   if (entry.type === 'ORDER_FULFILLMENT_TRANSITION') {
@@ -173,9 +215,10 @@ function historyMessage(entry) {
 }
 
 function buildOrderUpdates(order) {
+  const paymentStatus = paymentStatusFor(order);
   const updates = (order.history?.items || [])
     .map((entry) => {
-      const message = historyMessage(entry);
+      const message = historyMessage(entry, paymentStatus);
       if (!message) return null;
       const isNote = entry.type === 'ORDER_NOTE';
       return {
@@ -190,7 +233,10 @@ function buildOrderUpdates(order) {
     })
     .filter(Boolean);
 
-  if (!updates.some((item) => item.status === 'Order confirmed')) {
+  if (
+    paymentStatus.confirmed &&
+    !updates.some((item) => ['Order confirmed', 'Payment confirmed'].includes(item.status))
+  ) {
     updates.unshift({
       id: `placed-${order.id}`,
       status: 'Order confirmed',
@@ -198,6 +244,32 @@ function buildOrderUpdates(order) {
       date: formatUpdateDate(order.orderPlacedAt || order.createdAt),
       createdAt: order.orderPlacedAt || order.createdAt,
       type: 'ORDER_PLACED',
+      completed: true,
+    });
+  } else if (
+    paymentStatus.kind === 'pending' &&
+    !updates.some((item) => item.status === 'Payment pending')
+  ) {
+    updates.push({
+      id: `payment-pending-${order.id}`,
+      status: 'Payment pending',
+      description: 'The order will be confirmed after payment is completed.',
+      date: formatUpdateDate(order.updatedAt || order.createdAt),
+      createdAt: order.updatedAt || order.createdAt,
+      type: 'PAYMENT_PENDING',
+      completed: false,
+    });
+  } else if (
+    paymentStatus.kind === 'failed' &&
+    !updates.some((item) => item.status === 'Payment not completed')
+  ) {
+    updates.push({
+      id: `payment-failed-${order.id}`,
+      status: 'Payment not completed',
+      description: 'The payment failed or was cancelled, so this order is not confirmed.',
+      date: formatUpdateDate(order.updatedAt || order.createdAt),
+      createdAt: order.updatedAt || order.createdAt,
+      type: 'PAYMENT_FAILED',
       completed: true,
     });
   }
@@ -218,6 +290,9 @@ function uiStatusFor(order, returnRequest, liveTracking) {
     ['PartiallyShipped', 'Shipped', 'PartiallyDelivered'].includes(order.state) ||
     fulfillmentStates.some((state) => ['Shipped', 'Delivered'].includes(state))
   ) return 'on_the_way';
+  const paymentStatus = paymentStatusFor(order);
+  if (paymentStatus.kind === 'failed') return 'payment_failed';
+  if (!paymentStatus.confirmed) return 'payment_pending';
   return 'confirmed';
 }
 
@@ -270,8 +345,8 @@ function toUiOrder(order, returnRequest, liveTracking = null, returnWindowDays =
       name: line.shippingMethod?.name,
       amount: line.priceWithTax,
     })),
-    payment_method: order.payments?.[0]?.method || 'cash-on-delivery',
-    payment_status: order.payments?.[0]?.state || 'Authorized',
+    payment_method: order.payments?.[0]?.method || null,
+    payment_status: order.payments?.[0]?.state || 'Pending',
     vendure_state: order.state,
     metadata: returnRequest
       ? {

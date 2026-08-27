@@ -96,6 +96,18 @@ export default function OrderDetailsPage() {
   const statusKey = order?.status || order?.uiStatus || 'on_the_way';
 
   const statusConfig = {
+    payment_pending: {
+      color: 'text-amber-700',
+      dot: 'bg-amber-500',
+      title: 'Payment pending',
+      message: 'Your order will be confirmed after payment is completed',
+    },
+    payment_failed: {
+      color: 'text-red-600',
+      dot: 'bg-red-600',
+      title: 'Payment not completed',
+      message: 'This order has not been confirmed',
+    },
     confirmed: {
       color: 'text-[#2C665E]',
       dot: 'bg-[#2C665E]',
@@ -146,7 +158,7 @@ export default function OrderDetailsPage() {
     return <p className="text-gray-600 py-12 text-center">Order not found</p>;
   }
 
-  const status = statusConfig[statusKey] || statusConfig.confirmed;
+  const status = statusConfig[statusKey] || statusConfig.payment_pending;
   const priceText =
     order.priceLabel != null
       ? order.priceLabel

@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle } from "lucide-react";
+import { AlertCircle, CheckCircle, Clock3 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
@@ -28,23 +28,51 @@ function SuccessContent() {
   const paymentMethod = searchParams.get("payment_method");
   const paymentStatus = searchParams.get("payment_status");
   const isStripe = paymentMethod === "stripe";
-  const isProcessing = isStripe && paymentStatus === "processing";
   const [order, setOrder] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
     if (!displayId) return undefined;
-    fetchOrderByCodeApi(displayId)
-      .then((result) => {
-        if (!cancelled) setOrder(result);
-      })
-      .catch(() => {
+    let timeoutId;
+    let attempts = 0;
+
+    const refreshOrder = async () => {
+      try {
+        const result = await fetchOrderByCodeApi(displayId);
+        if (cancelled) return;
+        setOrder(result);
+        const stripePayment = result?.payments?.find((payment) => payment.method === "stripe");
+        const terminal = ["Settled", "Declined", "Cancelled", "Error"].includes(
+          stripePayment?.state,
+        );
+        attempts += 1;
+        if (isStripe && !terminal && attempts < 20) {
+          timeoutId = window.setTimeout(refreshOrder, 3000);
+        }
+      } catch {
+        attempts += 1;
+        if (!cancelled && isStripe && attempts < 20) {
+          timeoutId = window.setTimeout(refreshOrder, 3000);
+        }
         // The query-string total remains available if the order refresh is delayed.
-      });
+      }
+    };
+
+    refreshOrder();
     return () => {
       cancelled = true;
+      window.clearTimeout(timeoutId);
     };
-  }, [displayId]);
+  }, [displayId, isStripe]);
+
+  const stripePayment = order?.payments?.find((payment) => payment.method === "stripe");
+  const stripeState = stripePayment?.state;
+  const isPaymentFailed = isStripe && ["Declined", "Cancelled", "Error"].includes(stripeState);
+  const isSettled = isStripe && (
+    stripeState === "Settled" || (!order && paymentStatus === "settled")
+  );
+  const isProcessing = isStripe && !isSettled && !isPaymentFailed;
+  const StatusIcon = isPaymentFailed ? AlertCircle : isProcessing ? Clock3 : CheckCircle;
 
   const pricing = order?.pricing;
   const currencyCode = order?.currency_code || currency || "USD";
@@ -57,21 +85,29 @@ function SuccessContent() {
   return (
     <main className="flex min-h-[80vh] items-center justify-center px-4 py-12 sm:py-16">
       <section className="w-full max-w-[500px] rounded-3xl border border-[#DDEEEB] bg-white px-6 py-9 text-center sm:px-10 sm:py-11">
-        <CheckCircle
+        <StatusIcon
           aria-hidden="true"
-          className="mx-auto h-16 w-16 text-[#1EA766]"
+          className={`mx-auto h-16 w-16 ${
+            isPaymentFailed ? "text-red-600" : isProcessing ? "text-amber-600" : "text-[#1EA766]"
+          }`}
           strokeWidth={2}
         />
 
         <h1 className="mt-5 text-2xl font-semibold leading-tight text-gray-900">
-          {isProcessing ? "Payment Received" : "Order Placed Successfully"}
+          {isPaymentFailed
+            ? "Payment Not Completed"
+            : isProcessing
+              ? "Payment Processing"
+              : "Order Placed Successfully"}
         </h1>
 
         <p className="mx-auto mt-3 max-w-sm text-base leading-6 text-gray-600">
           {isStripe
-            ? isProcessing
-              ? "Stripe accepted your payment. The store is still finishing the order confirmation, and it will appear in My Orders shortly."
-              : "Your Stripe payment and order have been confirmed successfully."
+            ? isPaymentFailed
+              ? "Stripe did not complete this payment. Your order has not been confirmed."
+              : isProcessing
+                ? "We are waiting for Stripe to complete the payment. Your order is not confirmed yet; this page will update automatically."
+                : "Your Stripe payment and order have been confirmed successfully."
             : "Your Cash on Delivery order has been confirmed. Please keep the order amount ready when it is delivered."}
         </p>
 

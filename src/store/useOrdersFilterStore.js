@@ -5,6 +5,8 @@ import { ordersFilterMock } from "@/mocks/ordersFilter.mock";
 const y = new Date().getFullYear();
 const defaultFilters = {
   status: [
+    { id: "payment_pending", label: "Payment pending" },
+    { id: "payment_failed", label: "Payment not completed" },
     { id: "confirmed", label: "Confirmed" },
     { id: "on_the_way", label: "On the way" },
     { id: "delivered", label: "Delivered" },

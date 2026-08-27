@@ -17,6 +17,20 @@ export default function OrderCard({ order, reviewedOrderIds, legacyReviewedProdu
   const showReviewCta = isDelivered && firstProductId;
 
   const statusConfig = {
+    payment_pending: {
+      color: 'text-amber-700',
+      dot: 'bg-amber-500',
+      label: 'Payment pending',
+      message: 'Your order is not confirmed yet',
+      showReturn: false,
+    },
+    payment_failed: {
+      color: 'text-red-600',
+      dot: 'bg-red-500',
+      label: 'Payment not completed',
+      message: 'This order has not been confirmed',
+      showReturn: false,
+    },
     confirmed: {
       color: 'text-[#2C665E]',
       dot: 'bg-[#2C665E]',
@@ -56,7 +70,7 @@ export default function OrderCard({ order, reviewedOrderIds, legacyReviewedProdu
     },
   };
 
-  const status = statusConfig[key] || statusConfig.confirmed;
+  const status = statusConfig[key] || statusConfig.payment_pending;
   const returnWindowOpen = Boolean(status.showReturn && order.canReturn);
   const returnDeadlineLabel = order.returnDeadline
     ? new Intl.DateTimeFormat('en-US', {
