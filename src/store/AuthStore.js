@@ -152,6 +152,18 @@ const useAuthStore = create((set, get) => ({
         return;
       }
 
+      // Local/session storage has now been read, so the UI can render. Cookie
+      // session recovery continues below without holding the page behind the
+      // profile request.
+      set({
+        token: null,
+        customer: null,
+        cartId,
+        pendingPasswordReset,
+        isAuthenticated: false,
+        hasHydrated: true,
+      });
+
       // sessionStorage is isolated per tab. Recover the shared Vendure
       // session from its HttpOnly cookie for new tabs and remembered sessions.
       try {

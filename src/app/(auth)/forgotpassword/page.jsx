@@ -4,9 +4,6 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, useRef } from "react";
 import { Toast } from "primereact/toast";
-import loginPageImage01 from "@/assets/images/LoginPage/loginpageLeaf.png";
-import loginPageImage02 from "@/assets/images/LoginPage/loginPageTruck.png";
-import loginPageImage03 from "@/assets/images/LoginPage/loginPageStar.png";
 import Link from "next/link";
 import { forgotPassword } from "@/service/AuthService";
 import useAuthStore from "@/store/AuthStore";
@@ -63,12 +60,6 @@ export default function ForgotPassword() {
       setLoading(false);
     }
   };
-
-  const features = [
-    { text: "100% Organic Products", icon: loginPageImage01 },
-    { text: "On-Time Delivery Record", icon: loginPageImage02 },
-    { text: "98% Satisfaction Rating", icon: loginPageImage03 },
-  ];
 
   return (
     <>
@@ -139,14 +130,24 @@ export default function ForgotPassword() {
               <button
                 onClick={handleForgotPassword}
                 disabled={loading}
+                aria-busy={loading}
                 className="
     w-full bg-green-600 text-white py-2 rounded-lg font-semibold
     hover:bg-green-700 transition
-    flex items-center justify-center gap-2 cursor-pointer
+    flex items-center justify-center gap-2 cursor-pointer disabled:cursor-wait disabled:opacity-75
   "
               >
-                <span>{loading ? "Sending code..." : "Send reset code"}</span>
-                <i className="pi pi-angle-right text-xl font-bold mt-0" />
+                {loading ? (
+                  <>
+                    <i className="pi pi-spinner pi-spin" aria-hidden="true" />
+                    <span>Sending code...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>Send reset code</span>
+                    <i className="pi pi-angle-right text-xl font-bold mt-0" aria-hidden="true" />
+                  </>
+                )}
               </button>
 
               {/* Login Link */}
@@ -171,24 +172,17 @@ export default function ForgotPassword() {
               </p>
             </div>
 
-            {/* Mountain Image - Bottom Left */}
-            <div className="hidden lg:block absolute bottom-0 left-0 z-0">
-              <Image
-                fill
-                src="/AuthMountain.svg"
-                alt="Auth Mountain"
-                className="w-[300px] lg:w-[460px] pointer-events-none select-none"
-              />
-            </div>
           </div>
 
           {/* RIGHT SECTION (DESKTOP ONLY) */}
           <div className="relative hidden lg:block">
             <Image
-              src="/LoginPageImage01.png"
-              alt="Overlay"
+              src="/LoginPageImage01.webp"
+              alt="Organic spices and ingredients"
               fill
               className="object-cover w-full h-full rounded-2xl p-4"
+              sizes="(min-width: 1024px) 50vw, 0px"
+              fetchPriority="high"
             />
           </div>
         </div>

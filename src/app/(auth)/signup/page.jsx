@@ -15,7 +15,6 @@ export default function Signup() {
 
   const router = useRouter();
 
-  const [remember, setRemember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState("");
   const [email, setEmail] = useState("");
@@ -344,17 +343,27 @@ export default function Signup() {
 
               <button
                 onClick={handleSignup}
-                disabled={!agree}
+                disabled={!agree || loading}
+                aria-busy={loading}
                 className={`
-    w-full h-[46px] rounded-lg font-semibold transition
+    w-full h-[46px] rounded-lg font-semibold transition flex items-center justify-center gap-2
     ${
-      agree
+      agree && !loading
         ? "bg-green-600 hover:bg-green-700 text-white cursor-pointer"
+        : loading
+        ? "bg-green-600 text-white cursor-wait opacity-75"
         : "bg-gray-300 text-gray-500 cursor-not-allowed"
     }
   `}
               >
-                {loading ? "Creating Account..." : "Create Account"}
+                {loading ? (
+                  <>
+                    <i className="pi pi-spinner pi-spin" aria-hidden="true" />
+                    <span>Creating account...</span>
+                  </>
+                ) : (
+                  "Create Account"
+                )}
               </button>
 
               <p className="text-sm text-center mt-4">
@@ -368,24 +377,17 @@ export default function Signup() {
                 </span>
               </p>
             </div>
-            {/* Mountain Image - Bottom Left */}
-            <div className="hidden lg:block absolute bottom-0 left-0 z-0">
-              <Image
-              fill
-                src="/AuthMountain.svg"
-                alt="Auth Mountain"
-                className="w-[300px] lg:w-[460px] pointer-events-none select-none"
-              />
-            </div>
           </div>
 
           {/* RIGHT SECTION (DESKTOP ONLY) */}
           <div className="relative hidden lg:block">
             <Image
-              src="/LoginPageImage01.png"
-              alt="Overlay"
+              src="/LoginPageImage01.webp"
+              alt="Organic spices and ingredients"
               fill
               className="object-contain w-full h-full rounded-2xl p-4"
+              sizes="(min-width: 1024px) 50vw, 0px"
+              fetchPriority="high"
             />
           </div>
         </div>

@@ -1,16 +1,8 @@
 "use client";
-import { InputText } from "primereact/inputtext";
 import Image from "next/image";
-import AppLogo from "../../../assets/images/AppLogo.png";
 import { Toast } from "primereact/toast";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
-import LoginPageImage from "@/assets/images/AuthPage/LoginPageImage.png";
-import LeafImage from "@/assets/images/gallery/gallery_leave_01.png";
-import loginPageImage01 from "@/assets/images/LoginPage/loginpageLeaf.png";
-import loginPageImage02 from "@/assets/images/LoginPage/loginPageTruck.png";
-import loginPageImage03 from "@/assets/images/LoginPage/loginPageStar.png";
-import loginPageImage from "@/assets/images/LoginTree.png";
 import Link from "next/link";
 import { InputOtp } from "primereact/inputotp";
 import useAuthStore from "@/store/AuthStore";
@@ -156,25 +148,45 @@ export default function Verifyotp() {
               <button
                 onClick={handleVerify}
                 disabled={otp.length !== 6 || loading}
-                className={`w-full h-[46px] rounded-lg font-semibold transition ${
-                  otp.length === 6
+                aria-busy={loading}
+                className={`w-full h-[46px] rounded-lg font-semibold transition flex items-center justify-center gap-2 ${
+                  otp.length === 6 && !loading
                     ? "bg-[#1EA766] text-white cursor-pointer"
+                    : loading
+                    ? "bg-[#1EA766] text-white cursor-wait opacity-75"
                     : "bg-gray-300 text-gray-500 cursor-not-allowed"
                 }`}
               >
-                {loading ? "Verifying..." : "Verify"}
+                {loading ? (
+                  <>
+                    <i className="pi pi-spinner pi-spin" aria-hidden="true" />
+                    <span>Verifying...</span>
+                  </>
+                ) : (
+                  "Verify"
+                )}
               </button>
 
               {/* Dont Get a Code Click to Resend */}
 
               <p className="text-sm text-center mt-4">
                 Don{"'"}t get a code?
-                <span
-                  className="text-[#21252C] font-semibold cursor-pointer"
+                <button
+                  type="button"
+                  className="text-[#21252C] font-semibold cursor-pointer disabled:cursor-wait disabled:text-gray-400"
                   onClick={handleResend}
+                  disabled={resending}
+                  aria-busy={resending}
                 >
-                  {resending ? " Sending..." : " Click to Resend"}
-                </span>
+                  {resending ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <i className="pi pi-spinner pi-spin" aria-hidden="true" />
+                      Sending...
+                    </span>
+                  ) : (
+                    " Click to Resend"
+                  )}
+                </button>
               </p>
 
               {/* Login Link */}
@@ -204,11 +216,12 @@ export default function Verifyotp() {
           {/* RIGHT SECTION (DESKTOP ONLY) */}
           <div className="relative hidden lg:block">
             <Image
-              src="/LoginPageImage01.png"
-              alt="Overlay"
+              src="/LoginPageImage01.webp"
+              alt="Organic spices and ingredients"
               fill
               className="object-cover w-full h-full rounded-2xl p-4"
-              sizes="50vw"
+              sizes="(min-width: 1024px) 50vw, 0px"
+              fetchPriority="high"
             />
           </div>
         </div>

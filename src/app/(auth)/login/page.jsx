@@ -1,12 +1,8 @@
 "use client";
 import { InputText } from "primereact/inputtext";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { useState, useRef } from "react";
 import { Toast } from "primereact/toast";
-import loginPageImage01 from "@/assets/images/LoginPage/loginpageLeaf.png";
-import loginPageImage02 from "@/assets/images/LoginPage/loginPageTruck.png";
-import loginPageImage03 from "@/assets/images/LoginPage/loginPageStar.png";
-import loginPageImage from "@/assets/images/LoginTree.png";
 import { loginUser } from "@/service/AuthService";
 import { fetchProfileApi } from "@/service/ProfileService";
 import useAuthStore from "@/store/AuthStore";
@@ -16,9 +12,8 @@ import Image from "next/image";
 import { Checkbox } from "primereact/checkbox";
 import "./index.css";
 
-function LoginContent() {
+export default function Login() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const login = useAuthStore((state) => state.login);
   const setCustomer = useAuthStore((state) => state.setCustomer);
   const setPendingVerification = useAuthStore(
@@ -102,7 +97,7 @@ function LoginContent() {
       // order even when logout cleared the browser's local cart identifier.
       await useCartStore.getState().fetchCart();
 
-      const raw = searchParams.get("redirect");
+      const raw = new URLSearchParams(window.location.search).get("redirect");
       const safe =
         raw &&
         raw.startsWith("/") &&
@@ -257,9 +252,17 @@ function LoginContent() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 transition cursor-pointer"
+                aria-busy={loading}
+                className="w-full bg-green-600 text-white py-2 rounded-lg font-semibold hover:bg-green-700 transition cursor-pointer flex items-center justify-center gap-2 disabled:cursor-wait disabled:opacity-75"
               >
-                {loading ? "Logging in..." : "Login"}
+                {loading ? (
+                  <>
+                    <i className="pi pi-spinner pi-spin" aria-hidden="true" />
+                    <span>Logging in...</span>
+                  </>
+                ) : (
+                  "Login"
+                )}
               </button>
 
               <p className="text-sm text-center mt-4">
@@ -274,43 +277,21 @@ function LoginContent() {
               </p>
             </div>
 
-            {/* Mountain Image - Bottom Left */}
-            <div className="hidden lg:block absolute bottom-0 left-0 z-0">
-              <Image
-                fill
-                src="/AuthMountain.svg"
-                alt="Auth Mountain"
-                className="w-[300px] lg:w-[460px] pointer-events-none select-none"
-              />
-            </div>
           </div>
 
           {/* RIGHT SECTION (DESKTOP ONLY) */}
           <div className="relative hidden lg:block">
-            <Image
-            
-              src="/LoginPageImage01.png"
-              alt="Overlay"
+              <Image
+              src="/LoginPageImage01.webp"
+              alt="Organic spices and ingredients"
               fill
               className="object-cover w-full h-full rounded-2xl p-4"
+              sizes="(min-width: 1024px) 50vw, 0px"
+              fetchPriority="high"
             />
           </div>
         </div>
       </div>
     </form>
-  );
-}
-
-export default function Login() {
-  return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center text-gray-600">
-          Loading login...
-        </div>
-      }
-    >
-      <LoginContent />
-    </Suspense>
   );
 }

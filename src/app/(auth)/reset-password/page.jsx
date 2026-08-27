@@ -290,9 +290,17 @@ export default function ResetPassword() {
               <button
                 type="submit"
                 disabled={loading || (!hasResetToken && otp.length !== 6)}
-                className="w-full h-[46px] rounded-lg font-semibold transition bg-[#1EA766] text-white disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed"
+                aria-busy={loading}
+                className="w-full h-[46px] rounded-lg font-semibold transition bg-[#1EA766] text-white disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                {loading ? "Resetting password..." : "Reset password"}
+                {loading ? (
+                  <>
+                    <i className="pi pi-spinner pi-spin" aria-hidden="true" />
+                    <span>Resetting password...</span>
+                  </>
+                ) : (
+                  "Reset password"
+                )}
               </button>
 
               {!hasResetToken && (
@@ -303,8 +311,16 @@ export default function ResetPassword() {
                     className="text-[#21252C] font-semibold disabled:text-gray-400"
                     disabled={resending}
                     onClick={handleResend}
+                    aria-busy={resending}
                   >
-                    {resending ? "Sending..." : "Resend code"}
+                    {resending ? (
+                      <span className="inline-flex items-center gap-1.5">
+                        <i className="pi pi-spinner pi-spin" aria-hidden="true" />
+                        Sending...
+                      </span>
+                    ) : (
+                      "Resend code"
+                    )}
                   </button>
                 </p>
               )}
@@ -330,11 +346,12 @@ export default function ResetPassword() {
 
           <div className="relative hidden lg:block">
             <Image
-              src="/LoginPageImage01.png"
+              src="/LoginPageImage01.webp"
               alt="Organic products"
               fill
               className="object-cover w-full h-full rounded-2xl p-4"
-              sizes="50vw"
+              sizes="(min-width: 1024px) 50vw, 0px"
+              fetchPriority="high"
             />
           </div>
         </div>
