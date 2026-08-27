@@ -4,12 +4,32 @@ import {
   clearStoredAuthSession,
   getStoredAccessToken,
   getStoredCustomer,
+  publishAuthEvent,
   storeAuthSession,
 } from '@/lib/authSession';
 import { fetchProfileApi } from '@/service/ProfileService';
 import { logoutUser } from '@/service/AuthService';
 
 let hydrationRequest = null;
+
+function clearClientAuthState(set) {
+  if (typeof window !== "undefined") {
+    clearStoredAuthSession();
+    sessionStorage.removeItem("cart_id");
+    sessionStorage.removeItem("pendingPasswordReset");
+  }
+
+  clearShopApiCache();
+  set({
+    token: null,
+    customer: null,
+    cartId: null,
+    isAuthenticated: false,
+    hasHydrated: true,
+    pendingVerification: null,
+    pendingPasswordReset: null,
+  });
+}
 
 const useAuthStore = create((set, get) => ({
   // ✅ AUTHENTICATED STATE
@@ -176,26 +196,12 @@ const useAuthStore = create((set, get) => ({
   // ✅ LOGOUT
   logout: async () => {
     const serverLogout = logoutUser().catch(() => null);
-    if (typeof window !== "undefined") {
-      clearStoredAuthSession();
-      sessionStorage.removeItem("cart_id");
-      sessionStorage.removeItem("pendingPasswordReset");
-    }
-
-    clearShopApiCache();
-
-    set({
-      token: null,
-      customer: null,
-      cartId: null,
-      isAuthenticated: false,
-      hasHydrated: true,
-      pendingVerification: null,
-      pendingPasswordReset: null,
-    });
-
+    clearClientAuthState(set);
     await serverLogout;
+    publishAuthEvent('logout');
   },
+
+  logoutFromAnotherTab: () => clearClientAuthState(set),
 }));
 
 export default useAuthStore;

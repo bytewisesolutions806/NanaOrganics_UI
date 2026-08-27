@@ -1,4 +1,5 @@
 const AUTH_SESSION_KEY = 'nana-authenticated-session';
+export const AUTH_EVENT_KEY = 'nana-auth-event';
 
 function browserSessionStorage() {
   return typeof window === 'undefined' ? null : window.sessionStorage;
@@ -63,4 +64,17 @@ export function clearStoredAuthSession() {
   storage.removeItem('accessToken');
   storage.removeItem('customer');
   storage.removeItem(AUTH_SESSION_KEY);
+}
+
+export function publishAuthEvent(type) {
+  if (typeof window === 'undefined') return;
+
+  try {
+    window.localStorage.setItem(
+      AUTH_EVENT_KEY,
+      JSON.stringify({ type, timestamp: Date.now(), nonce: Math.random().toString(36).slice(2) }),
+    );
+  } catch {
+    // The originating tab is already updated even if cross-tab storage is unavailable.
+  }
 }
