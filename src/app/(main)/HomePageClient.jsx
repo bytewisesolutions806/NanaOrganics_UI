@@ -24,7 +24,11 @@ const CUSTOMER_ONLY_COLLECTIONS = new Set([
 
 const isCustomerOnlyCollection = (collection) =>
   [collection?.id, collection?.handle, collection?.title].some((value) =>
-    CUSTOMER_ONLY_COLLECTIONS.has(String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '')),
+    CUSTOMER_ONLY_COLLECTIONS.has(
+      String(value || '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '')
+    )
   );
 
 export default function HomePageClient({ initialHomeData, initialCategories }) {
@@ -54,18 +58,13 @@ export default function HomePageClient({ initialHomeData, initialCategories }) {
 
   const useStoreData = storeCollections.length > 0;
   const collections = useStoreData ? storeCollections : initialHomeData?.collections || [];
-  const homepageVideo = useStoreData
-    ? storeHomepageVideo
-    : initialHomeData?.homepageVideo || null;
-  const testimonials = useStoreData
-    ? storeTestimonials
-    : initialHomeData?.testimonials || [];
+  const homepageVideo = useStoreData ? storeHomepageVideo : initialHomeData?.homepageVideo || null;
+  const testimonials = useStoreData ? storeTestimonials : initialHomeData?.testimonials || [];
   const loading = !hasInitialData && storeLoading;
 
   const validCollections = collections.filter(
     (collection) =>
-      collection.products?.length > 0 &&
-      (isAuthenticated || !isCustomerOnlyCollection(collection)),
+      collection.products?.length > 0 && (isAuthenticated || !isCustomerOnlyCollection(collection))
   );
   const firstThree = validCollections.slice(0, 3);
   const remaining = validCollections.slice(3);
@@ -156,7 +155,9 @@ export default function HomePageClient({ initialHomeData, initialCategories }) {
         </div>
       </section>
 
-      <ExploreOrganicOfferings />
+      <section className="mb-10">
+        <ExploreOrganicOfferings />
+      </section>
     </>
   );
 }

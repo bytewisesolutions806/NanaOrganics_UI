@@ -1,0 +1,207 @@
+.nana-footer {
+  background: #212c29;
+  color: #c6d8d7;
+  font-family: 'Plus Jakarta Sans', Arial, sans-serif;
+}
+
+.nana-footer__main {
+  min-height: 191px;
+  border-bottom: 1px solid rgba(198, 216, 215, 0.16);
+}
+
+.nana-footer__grid,
+.nana-footer__legal {
+  width: min(100% - 48px, 1296px);
+  margin-inline: auto;
+}
+
+.nana-footer__grid {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr 1.25fr 1fr;
+  gap: clamp(36px, 4.25vw, 82px);
+  align-items: start;
+  padding-block: 38px 29px;
+}
+
+.nana-footer__brand {
+  min-height: 95px;
+  display: flex;
+  align-items: flex-start;
+}
+
+.nana-footer__logo {
+  width: 106px;
+  height: 92px;
+  object-fit: contain;
+}
+
+.nana-footer__heading {
+  margin: 0 0 10px;
+  color: #ffffff;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 30px;
+}
+
+.nana-footer__quick-links {
+  display: grid;
+  grid-template-columns: repeat(2, max-content);
+  gap: 10px clamp(24px, 3vw, 48px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.nana-footer__quick-links a,
+.nana-footer__contact-item {
+  color: #c6d8d7;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 20px;
+  text-decoration: none;
+  transition: color 160ms ease;
+}
+
+.nana-footer__quick-links a:hover,
+.nana-footer__quick-links a:focus-visible,
+.nana-footer__contact-item:hover,
+.nana-footer__contact-item:focus-visible {
+  color: #ffffff;
+}
+
+.nana-footer__contact-list {
+  display: grid;
+  gap: 10px;
+}
+
+.nana-footer__contact-item {
+  display: flex;
+  width: fit-content;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.nana-footer__contact-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  overflow: hidden;
+}
+
+.nana-footer__contact-icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.nana-footer__socials {
+  position: relative;
+  width: 192px;
+  height: 16px;
+  margin-top: 14px;
+}
+
+.nana-footer__socials img {
+  display: block;
+  width: 192px;
+  height: 16px;
+  pointer-events: none;
+}
+
+.nana-footer__socials a {
+  position: absolute;
+  top: 0;
+  z-index: 1;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+}
+
+.nana-footer__socials a:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 3px;
+}
+
+.nana-footer__legal {
+  min-height: 59px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+  color: rgba(198, 216, 215, 0.8);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+.nana-footer__legal p {
+  margin: 0;
+}
+
+@media (max-width: 1023px) {
+  .nana-footer__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 40px 64px;
+    padding-block: 40px;
+  }
+
+  .nana-footer__legal {
+    min-height: 72px;
+  }
+}
+
+@media (max-width: 639px) {
+  .nana-footer__grid,
+  .nana-footer__legal {
+    width: min(100% - 40px, 420px);
+  }
+
+  .nana-footer__grid {
+    grid-template-columns: 1fr;
+    gap: 34px;
+    justify-items: center;
+    padding-block: 40px;
+    text-align: center;
+  }
+
+  .nana-footer__brand {
+    min-height: auto;
+  }
+
+  .nana-footer__logo {
+    width: 112px;
+    height: auto;
+  }
+
+  .nana-footer__section {
+    display: grid;
+    justify-items: center;
+  }
+
+  .nana-footer__quick-links {
+    gap-inline: 32px;
+    text-align: left;
+  }
+
+  .nana-footer__contact-item {
+    white-space: normal;
+  }
+
+  .nana-footer__legal {
+    min-height: 100px;
+    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
+    padding-block: 18px;
+    text-align: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nana-footer__quick-links a,
+  .nana-footer__contact-item {
+    transition: none;
+  }
+}
