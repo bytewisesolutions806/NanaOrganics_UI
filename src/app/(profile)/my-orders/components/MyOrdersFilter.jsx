@@ -33,7 +33,7 @@ export default function MyOrdersFilter({
         const checked = selectedFilters.status?.includes(value);
 
         return (
-          <label key={value} className="flex items-center gap-2 cursor-pointer">
+          <label key={value} className="flex cursor-pointer items-center gap-2 whitespace-nowrap">
             <input
               type="checkbox"
               checked={checked}
@@ -55,7 +55,7 @@ export default function MyOrdersFilter({
         const checked = selectedFilters.orderTime?.includes(value);
 
         return (
-          <label key={value} className="flex items-center gap-2 cursor-pointer">
+          <label key={value} className="flex cursor-pointer items-center gap-2 whitespace-nowrap">
             <input
               type="checkbox"
               checked={checked}
@@ -73,7 +73,7 @@ export default function MyOrdersFilter({
     <>
       <aside
         aria-label="Order filters"
-        className="hidden lg:block lg:col-span-3 bg-[#E6EFEF] rounded-xl p-6 h-fit min-h-[300px]"
+        className="hidden h-[708px] overflow-hidden rounded-[24px] bg-[#F2F9F8] p-6 lg:block"
       >
         <h3 className="font-semibold mb-4">Status</h3>
         {renderStatus()}

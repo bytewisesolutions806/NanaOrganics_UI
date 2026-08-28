@@ -89,8 +89,8 @@ export default function MyOrdersPage() {
 
   return (
     <>
-      <div className="grid grid-cols-12 gap-6">
-        <div className="col-span-12 lg:col-span-9 flex flex-col min-h-[400px] lg:h-[650px]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
+        <div className="flex min-h-[400px] flex-col lg:h-[650px]">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <h2 className="text-xl font-semibold">My Orders</h2>

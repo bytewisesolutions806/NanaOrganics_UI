@@ -6,9 +6,20 @@ import { Navigation } from 'swiper/modules';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import CarouselArrow from '@/components/CarouselArrow';
 import { DEFAULT_IMAGE } from '@/lib/defaultImage';
+import { resolveAssetUrl } from '@/lib/assetUrl';
 
 import 'swiper/css';
 import 'swiper/css/navigation';
+
+function getCategoryImage(category) {
+  const rawImage =
+    category.featuredAsset?.preview ||
+    category.featuredAsset?.source ||
+    category.image;
+
+  if (!rawImage || rawImage === DEFAULT_IMAGE) return DEFAULT_IMAGE;
+  return resolveAssetUrl(rawImage) || DEFAULT_IMAGE;
+}
 
 export default function ShopCategoryCarousel({
   categories = [],
@@ -76,11 +87,15 @@ export default function ShopCategoryCarousel({
                 >
                   <span className="relative mx-auto mt-[10px] block h-[170px] w-[calc(100%-20px)] shrink-0 overflow-hidden rounded-xl bg-[#E6F4F2]">
                     <Image
-                      src={(category.featuredAsset?.preview || DEFAULT_IMAGE).replace(/\\/g, '/')}
+                      src={getCategoryImage(category)}
                       alt={category.name}
                       fill
                       sizes="(max-width: 640px) 55vw, (max-width: 1100px) 25vw, 190px"
                       className="object-cover"
+                      onError={(event) => {
+                        event.currentTarget.srcset = '';
+                        event.currentTarget.src = DEFAULT_IMAGE;
+                      }}
                     />
                   </span>
                   <span className="flex h-[70px] min-h-[70px] w-full shrink-0 items-center justify-center bg-[#E6F4F2] px-4 py-[10px] text-center text-sm font-semibold leading-5 text-[#21252C] transition-colors group-hover:bg-white">

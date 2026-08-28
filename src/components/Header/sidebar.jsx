@@ -84,7 +84,9 @@ export default function Sidebar({
                       <button
                         className="flex justify-between items-center w-full font-medium text-[16px]"
                         onClick={() => {
-                          if (item.isDynamic) fetchCategories();
+                          if (item.isDynamic && dropdownOpenMobile !== index) {
+                            fetchCategories(true);
+                          }
                           setDropdownOpenMobile(dropdownOpenMobile === index ? null : index);
                         }}
                       >

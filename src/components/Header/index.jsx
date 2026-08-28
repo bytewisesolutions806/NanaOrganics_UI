@@ -92,7 +92,11 @@ const Header = () => {
   const fetchCategories = useCategoryStore((state) => state.fetchCategories);
 
   const handleShopByCategoryOpen = (index) => {
-    fetchCategories();
+    if (dropdownOpenDesktop !== index) {
+      // Category data is server state. Refresh it when the menu opens so removed
+      // collections cannot linger in the header from an older browser session.
+      fetchCategories(true);
+    }
     setDropdownOpenDesktop(dropdownOpenDesktop === index ? null : index);
   };
   const megaMenuItems = categories.map((category) => ({

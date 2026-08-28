@@ -16,7 +16,7 @@ const appearance = {
     colorText: "#1f2937",
     colorDanger: "#dc2626",
     borderRadius: "12px",
-    fontFamily: '"Playfair Display", Georgia, serif',
+    fontFamily: '"Plus Jakarta Sans", Arial, sans-serif',
   },
 };
 
@@ -26,7 +26,7 @@ const cardElementOptions = {
   style: {
     base: {
       color: "#1f2937",
-      fontFamily: '"Playfair Display", Georgia, serif',
+      fontFamily: '"Plus Jakarta Sans", Arial, sans-serif',
       fontSize: "16px",
       fontSmoothing: "antialiased",
       "::placeholder": { color: "#9ca3af" },

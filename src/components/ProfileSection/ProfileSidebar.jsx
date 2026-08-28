@@ -1,11 +1,15 @@
 'use client';
 
 import Link from 'next/link';
+import { LogIn } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
-import profileMenu from '@/constants/menuItems/profileMenu';
 import { useState } from 'react';
+import profileMenu from '@/constants/menuItems/profileMenu';
 import useAuthStore from '@/store/AuthStore';
 import useCartStore from '@/store/useCartStore';
+
+const menuItemClass =
+  'flex min-h-[66px] w-full items-center gap-3 rounded-[20px] px-5 text-left text-base font-medium transition-colors';
 
 export default function ProfileSidebar() {
   const pathname = usePathname();
@@ -23,81 +27,108 @@ export default function ProfileSidebar() {
   const menuItems = profileMenu.filter((item) => item.action !== 'logout');
   const logoutItem = profileMenu.find((item) => item.action === 'logout');
 
-  // Helper to check active route
-  const isRouteActive = (url) => pathname === url || pathname.startsWith(url + '/');
+  const isRouteActive = (url) => pathname === url || pathname.startsWith(`${url}/`);
 
   return (
-    <div className="w-[260px] bg-[#E6EFEF] rounded-2xl flex flex-col justify-between min-h-[650px] mb-10">
-      {/* MENU SECTION */}
-      <div className="p-4 space-y-2">
-        {menuItems.map((item, index) => {
-          const isActive = item.url && isRouteActive(item.url);
-
-          const isChildActive = item.children?.some((child) => isRouteActive(child.url));
-
+    <aside
+      className="mb-10 flex min-h-[708px] w-full max-w-[280px] flex-col overflow-hidden rounded-[24px] bg-[#F2F9F8]"
+      aria-label="Profile navigation"
+    >
+      <nav className="flex flex-1 flex-col gap-3 p-4">
+        {menuItems.map((item) => {
+          const isActive = Boolean(item.url && isRouteActive(item.url));
+          const isChildActive = Boolean(
+            item.children?.some((child) => isRouteActive(child.url)),
+          );
+          const isExpanded = openMenu === item.label || isChildActive;
+          const isHighlighted = isActive || isChildActive;
           const Icon = item.icon;
 
           return (
-            <div key={index}>
-              {/* Parent Menu */}
+            <div key={item.label}>
               {item.url ? (
                 <Link
                   href={item.url}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition
-                    ${isActive ? 'bg-[#2C665E] text-white' : 'hover:bg-[#2C665E]/10'}`}
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`${menuItemClass} ${
+                    isActive
+                      ? 'bg-[#2C665E] text-white'
+                      : 'text-[#21252C] hover:bg-[#E6F4F2]'
+                  }`}
                 >
-                  <Icon size={20} className={isActive ? 'text-white' : 'text-[#1EA766]'} />
-                  {item.label}
+                  <Icon
+                    aria-hidden="true"
+                    size={24}
+                    strokeWidth={1.75}
+                    className={isActive ? 'shrink-0 text-white' : 'shrink-0 text-[#1EA766]'}
+                  />
+                  <span>{item.label}</span>
                 </Link>
               ) : (
                 <button
-                  onClick={() => setOpenMenu(openMenu === index ? null : index)}
-                  className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl transition
-                    ${isChildActive ? 'bg-[#2C665E] text-white' : 'hover:bg-[#2C665E]/10'}`}
+                  type="button"
+                  aria-expanded={isExpanded}
+                  onClick={() => setOpenMenu(isExpanded && !isChildActive ? null : item.label)}
+                  className={`${menuItemClass} ${
+                    isHighlighted
+                      ? 'bg-[#2C665E] text-white'
+                      : 'text-[#21252C] hover:bg-[#E6F4F2]'
+                  }`}
                 >
-                  <Icon size={20} className={isChildActive ? 'text-white' : 'text-[#1EA766]'} />
-                  {item.label}
+                  <Icon
+                    aria-hidden="true"
+                    size={24}
+                    strokeWidth={1.75}
+                    className={
+                      isHighlighted ? 'shrink-0 text-white' : 'shrink-0 text-[#1EA766]'
+                    }
+                  />
+                  <span>{item.label}</span>
                 </button>
               )}
 
-              {/* CHILD MENU */}
-              {item.children && (openMenu === index || isChildActive) && (
-                <div className="ml-8 mt-2 space-y-1">
-                  {item.children.map((child, i) => {
-                    const isChildActive = isRouteActive(child.url);
+              {item.children && isExpanded ? (
+                <div className="mx-5 mt-2 grid gap-1 rounded-2xl bg-[#E6F4F2] p-2">
+                  {item.children.map((child) => {
+                    const childIsActive = isRouteActive(child.url);
 
                     return (
                       <Link
-                        key={i}
+                        key={child.url}
                         href={child.url}
-                        className={`block text-sm px-2 py-1 rounded
-                          ${
-                            isChildActive
-                              ? 'text-[#2C665E] font-semibold'
-                              : 'text-gray-600 hover:text-[#2C665E]'
-                          }`}
+                        aria-current={childIsActive ? 'page' : undefined}
+                        className={`flex min-h-9 items-center rounded-xl px-3 text-sm transition-colors ${
+                          childIsActive
+                            ? 'bg-white font-semibold text-[#2C665E]'
+                            : 'font-medium text-[#53605D] hover:bg-white/70 hover:text-[#2C665E]'
+                        }`}
                       >
                         {child.label}
                       </Link>
                     );
                   })}
                 </div>
-              )}
+              ) : null}
             </div>
           );
         })}
-      </div>
+      </nav>
 
-      {/* LOGOUT SECTION */}
-      <div className="bg-[#DCE7E7] px-4 py-4 rounded-b-2xl border-t">
+      <div className="min-h-[70px] bg-[#E6F4F2]">
         <button
+          type="button"
           onClick={handleLogout}
-          className="flex items-center gap-3 w-full text-[#2C665E] hover:text-red-500"
+          className="flex min-h-[70px] w-full items-center gap-3 px-9 text-left text-base font-medium text-[#21252C] transition-colors hover:bg-[#D9EEEA] hover:text-[#2C665E] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-[#2C665E]"
         >
-          <i className={logoutItem.icon}></i>
-          {logoutItem.label}
+          <LogIn
+            aria-hidden="true"
+            size={24}
+            strokeWidth={1.75}
+            className="shrink-0 text-[#1EA766]"
+          />
+          <span>{logoutItem?.label || 'Logout'}</span>
         </button>
       </div>
-    </div>
+    </aside>
   );
 }

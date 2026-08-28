@@ -14,6 +14,7 @@
   overflow: hidden;
   border: 1px solid transparent;
   background: #e6f4f2;
+  box-shadow: none !important;
   transition:
     background-color 200ms ease,
     border-color 200ms ease;
@@ -50,12 +51,12 @@
 
 .category-card.p-card:hover {
   border-color: rgba(44, 102, 94, 0.24);
-  background: #ffffff;
+  background: #e6f4f2;
   box-shadow: none !important;
 }
 
 .category-card:hover .category-card-footer {
-  background: #ffffff;
+  background: #e6f4f2;
 }
 
 .category-card-title {

@@ -35,12 +35,12 @@ export default function ProfileLayout({ children }) {
       <Header />
 
       <main className="pt-[220px] mb-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-0 grid grid-cols-12 gap-3">
-          <div className="hidden lg:block lg:col-span-3">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 sm:px-6 lg:grid-cols-[280px_minmax(0,1fr)] lg:px-0">
+          <div className="hidden lg:block">
             <ProfileSidebar />
           </div>
 
-          <div className="col-span-12 lg:col-span-9">{children}</div>
+          <div className="min-w-0">{children}</div>
         </div>
       </main>
 

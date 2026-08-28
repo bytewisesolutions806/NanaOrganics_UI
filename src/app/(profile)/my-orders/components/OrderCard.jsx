@@ -94,7 +94,7 @@ export default function OrderCard({ order, reviewedOrderIds, legacyReviewedProdu
       onClick={() => router.push(`/my-orders/${order.id}`)}
       className="group cursor-pointer rounded-2xl border border-[#D8E7E4] bg-white p-4 transition-[border-color,box-shadow] duration-200 hover:border-[#9FC8C1] hover:shadow-[0_8px_24px_rgba(44,102,94,0.10)] sm:p-5"
     >
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(245px,auto)] lg:items-center lg:gap-6">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_285px] xl:items-stretch xl:gap-6">
         <div className="flex min-w-0 items-center gap-4">
           <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-[#F2F8F6] sm:h-24 sm:w-24">
             <Image
@@ -128,9 +128,9 @@ export default function OrderCard({ order, reviewedOrderIds, legacyReviewedProdu
           </div>
         </div>
 
-        <div className="border-t border-[#E4EFED] pt-4 lg:border-l lg:border-t-0 lg:pl-6 lg:pt-0">
-          <div className="flex items-start justify-between gap-3 lg:flex-col lg:items-end">
-            <div className="lg:text-right">
+        <div className="border-t border-[#E4EFED] pt-4 xl:flex xl:flex-col xl:justify-center xl:border-l xl:border-t-0 xl:pl-6 xl:pt-0">
+          <div className="flex items-start justify-between gap-3 xl:flex-col xl:items-end">
+            <div className="xl:text-right">
               <div
                 className={`inline-flex items-center gap-2 rounded-full bg-gray-50 px-3 py-1.5 text-xs font-semibold ${status.color}`}
               >
@@ -139,17 +139,17 @@ export default function OrderCard({ order, reviewedOrderIds, legacyReviewedProdu
               </div>
               <p className="mt-2 text-xs text-gray-500">{status.message}</p>
             </div>
-            <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-gray-300 transition-transform group-hover:translate-x-1 group-hover:text-[#2C665E] lg:hidden" />
+            <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-gray-300 transition-transform group-hover:translate-x-1 group-hover:text-[#2C665E] xl:hidden" />
           </div>
 
           {returnWindowOpen && (
-            <p className="mt-3 flex items-center gap-1.5 text-xs font-medium text-[#2C665E] lg:justify-end">
+            <p className="mt-3 flex items-center gap-1.5 text-xs font-medium text-[#2C665E] xl:justify-end">
               <RotateCcw className="h-3.5 w-3.5" />
               Return available{returnDeadlineLabel ? ` until ${returnDeadlineLabel}` : ''}
             </p>
           )}
 
-          <div className="mt-4 flex flex-wrap items-center gap-2 lg:justify-end">
+          <div className="mt-4 flex flex-wrap items-center gap-2 xl:justify-end">
             {returnWindowOpen && (
               <button
                 type="button"
