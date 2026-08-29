@@ -51,12 +51,12 @@
 
 .category-card.p-card:hover {
   border-color: rgba(44, 102, 94, 0.24);
-  background: #e6f4f2;
+  background: #ffffff;
   box-shadow: none !important;
 }
 
 .category-card:hover .category-card-footer {
-  background: #e6f4f2;
+  background: #ffffff;
 }
 
 .category-card-title {

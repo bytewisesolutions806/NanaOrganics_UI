@@ -76,7 +76,7 @@ export default async function CategoryPage({ params }) {
 
   return (
     <main className="pb-20 pt-10 md:pt-5">
-      <div className="mx-auto mb-8 w-[calc(100%_-_32px)] max-w-[1296px] md:mb-10 md:w-[calc(100%_-_40px)]">
+      <div className="site-shell mb-8 md:mb-10">
         <Breadcrumb items={breadcrumbItems} />
       </div>
 

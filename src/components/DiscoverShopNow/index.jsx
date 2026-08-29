@@ -84,7 +84,7 @@ export default function DiscoverShopnow() {
 
   return (
     <div className="w-full ">
-      <div className="px-5 md:px-10 lg:max-w-[1300px] mx-auto relative">
+      <div className="site-shell relative">
         {/* Header */}
         <div className="flex justify-center items-center mb-8">
           <div>

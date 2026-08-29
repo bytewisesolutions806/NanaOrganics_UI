@@ -3,7 +3,7 @@
 export default function ProductSliderSkeleton({ title = 'Loading...' }) {
   return (
     <section className="w-full mt-10 mb-16">
-      <div className="px-5 md:px-10 lg:max-w-[1300px] mx-auto">
+      <div className="site-shell">
         {/* HEADER SKELETON */}
         <div className="flex justify-between items-center mb-6">
           <div>

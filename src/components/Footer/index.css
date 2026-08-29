@@ -11,7 +11,7 @@
 
 .nana-footer__grid,
 .nana-footer__legal {
-  width: min(100% - 48px, 1296px);
+  width: min(100% - 40px, var(--site-shell-max-width));
   margin-inline: auto;
 }
 

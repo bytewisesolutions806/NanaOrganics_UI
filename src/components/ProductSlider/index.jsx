@@ -31,7 +31,7 @@ export default function ProductSlider({
   return (
     <section className={`${bgClass} ${sectionClass}`}>
       <div
-        className={`${isFigmaLayout ? 'mx-auto w-[calc(100%_-_32px)] max-w-[1296px] md:w-[calc(100%_-_40px)]' : 'mx-auto px-5 md:px-10 lg:max-w-[1300px]'} relative`}
+        className="site-shell relative"
       >
         {/* HEADER */}
         <div className={`flex gap-5 ${isFigmaLayout ? 'mb-6 flex-col items-start sm:flex-row sm:items-end sm:justify-between' : 'mb-6 items-end justify-between'}`}>

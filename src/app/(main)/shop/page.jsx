@@ -56,7 +56,7 @@ export default async function ShopPage() {
 
       {discoveryError ? (
         <p
-          className="mx-auto mt-10 w-[calc(100%_-_40px)] max-w-[1298px] rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
+          className="site-shell mt-10 rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
           role="alert"
         >
           {discoveryError}

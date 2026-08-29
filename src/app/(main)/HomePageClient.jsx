@@ -71,7 +71,7 @@ export default function HomePageClient({ initialHomeData, initialCategories }) {
 
   return (
     <>
-      <section>
+      <section className="w-full">
         <Gallery />
       </section>
       <Category initialCategories={initialCategories} />

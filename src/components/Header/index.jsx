@@ -142,9 +142,9 @@ const Header = () => {
   return (
     <>
       <header className="bg-white fixed top-[40px] md:top-[50px] left-0 z-50 w-full border-b border-[#1EA766]">
-        <div className="max-w-[1400px] mx-auto px-6 lg:px-10">
+        <div className="site-shell">
           {/* ================= DESKTOP (LG & XL) ================= */}
-          <div className="hidden lg:flex items-center w-full px-8 py-4 gap-8">
+          <div className="hidden w-full items-center gap-10 py-4 lg:flex xl:gap-12">
             {/* LEFT – LOGO (25%) */}
             <div className="flex-shrink-0 flex items-center">
               <Link href="/">
@@ -155,7 +155,7 @@ const Header = () => {
 
             {/* RIGHT – CONTENT (70%) */}
             <div className="flex-1">
-              <div className="flex items-start gap-6">
+              <div className="flex items-start gap-8 xl:gap-10">
                 {/* LEFT: SEARCH + MENU (same width) */}
                 <div className="w-full max-w-[900px]">
                   {/* SEARCH */}
@@ -255,7 +255,7 @@ const Header = () => {
                 </div>
 
                 {/* RIGHT: ICONS / BADGES (fixed area) Desktop */}
-                <div className="flex gap-6 shrink-0 ">
+                <div className="flex shrink-0 gap-5 xl:gap-6">
                   <Link href="/wishlist" className="relative cursor-pointer block">
                     <div className="w-10 h-10 bg-[#E6F4F2] rounded-xl flex items-center justify-center">
                       <span className="pi pi-heart text-[18px]  text-[#2C665E]" />

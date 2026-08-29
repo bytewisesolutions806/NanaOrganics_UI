@@ -16,7 +16,7 @@ const SubCategorySection = ({
 
   const router = useRouter();
   return (
-    <section className="w-full p-5 md:p-10 lg:max-w-7xl mx-auto">
+    <section className="site-shell py-5 md:py-10">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>

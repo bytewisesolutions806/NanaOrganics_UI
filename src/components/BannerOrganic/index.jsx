@@ -9,7 +9,7 @@ const BannerOrganic = () => {
   return (
     <>
       {/* Explore Our Organic Offerings */}
-      <div className="mx-auto w-[calc(100%_-_32px)] max-w-[1296px] md:w-[calc(100%_-_40px)]">
+      <div className="site-shell">
         <div className="flex min-h-80 w-full flex-col overflow-hidden rounded-[32px] lg:h-[412px] lg:flex-row">
           {/* LEFT – IMAGE */}
           <div className="relative h-[260px] w-full sm:h-[320px] lg:h-full lg:w-[58%]">

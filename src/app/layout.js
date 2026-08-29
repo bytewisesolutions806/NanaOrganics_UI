@@ -1,25 +1,26 @@
-import "@fontsource/playfair-display/400.css";
-import "@fontsource/playfair-display/500.css";
-import "@fontsource/playfair-display/600.css";
-import "@fontsource/playfair-display/700.css";
-import "@fontsource/plus-jakarta-sans/400.css";
-import "@fontsource/plus-jakarta-sans/500.css";
-import "@fontsource/plus-jakarta-sans/600.css";
-import "@fontsource/plus-jakarta-sans/700.css";
-import "primereact/resources/themes/lara-light-teal/theme.css";
-import "primereact/resources/primereact.min.css";
-import "primeicons/primeicons.css";
-import "../assets/styles/globals.css";
+import '@fontsource/playfair-display/400.css';
+import '@fontsource/playfair-display/500.css';
+import '@fontsource/playfair-display/600.css';
+import '@fontsource/playfair-display/700.css';
+import '@fontsource/plus-jakarta-sans/400.css';
+import '@fontsource/plus-jakarta-sans/500.css';
+import '@fontsource/plus-jakarta-sans/600.css';
+import '@fontsource/plus-jakarta-sans/700.css';
+import 'primereact/resources/themes/lara-light-teal/theme.css';
+import 'primereact/resources/primereact.min.css';
+import 'primeicons/primeicons.css';
+import '../assets/styles/globals.css';
 
-import AuthHydration from "@/components/Authhydration";
-import AppToastProvider from "@/components/AppToastProvider";
-import CartToastListener from "@/components/CartToastListener";
+import AuthHydration from '@/components/Authhydration';
+import AppToastProvider from '@/components/AppToastProvider';
+import CartToastListener from '@/components/CartToastListener';
+import ScrollToTop from '@/components/ScrollToTop';
 
 export const metadata = {
-  title: "Nana Organics",
+  title: 'Nana Organics',
   icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon.ico",
+    icon: '/favicon.ico',
+    shortcut: '/favicon.ico',
   },
 };
 
@@ -33,6 +34,8 @@ export default function RootLayout({ children }) {
 
           {/* ✅ CART TOAST LISTENER */}
           <CartToastListener />
+
+          <ScrollToTop />
 
           {children}
         </AppToastProvider>

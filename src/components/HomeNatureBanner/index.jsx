@@ -1,101 +1,56 @@
 'use client';
 
 import React from 'react';
-import { Button } from 'primereact/button';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import GalleryImage4 from '@/assets/images/gallery/gallery_image_4.png';
+
 const HomeNatureBanner = () => {
-  const router = useRouter();
-
   return (
-    <>
-      <section className="mt-10">
-        {/* Image section for Bring Nature Today */}
+    <section className="site-shell my-10">
+      <div className="relative isolate min-h-[300px] overflow-hidden rounded-xl sm:min-h-[330px] md:min-h-[360px] lg:min-h-[380px]">
+        <Image
+          src={GalleryImage4}
+          alt="Fresh organic vegetables, herbs, and spices"
+          fill
+          sizes="(max-width: 768px) calc(100vw - 32px), (max-width: 1336px) calc(100vw - 40px), 1296px"
+          className="object-cover object-[64%_center] sm:object-center"
+        />
 
-        <div className="relative w-full  px-3 sm:px-4 md:px-6 lg:px-8">
-          {/* IMAGE CONTAINER */}
-          <div
-            className="
-      relative w-full max-w-[1220px] mx-auto
-      h-[260px]
-      sm:h-[320px]
-      md:h-[360px]
-      lg:h-[420px]
-    "
-          >
-            <Image
-              src={GalleryImage4}
-              alt="Banner Image"
-              fill
-              sizes="(max-width: 1280px) 100vw, 1220px"
-              className="object-cover rounded-xl"
-            />
-          </div>
+        <div
+          className="absolute inset-0 bg-gradient-to-r from-[#13201E]/75 via-[#13201E]/45 to-transparent"
+          aria-hidden="true"
+        />
 
-          {/* OVERLAY CONTENT */}
-          <div className="absolute inset-0 flex items-center px-6 sm:px-8">
-            <div
-              className="
-        ml-[6%] sm:ml-[8%] md:ml-[12%] lg:ml-[20%]
-        max-w-[90%] sm:max-w-[500px] lg:max-w-[600px]
-        text-white space-y-4
-      "
-            >
-              <h2
-                className="
-          font-semibold leading-tight
-          text-[18px]
-          sm:text-[22px]
-          md:text-[28px]
-          lg:text-[36px]
-        "
+        <div className="relative z-10 flex min-h-[300px] items-center px-5 py-8 sm:min-h-[330px] sm:px-10 md:min-h-[360px] md:px-14 lg:min-h-[380px] lg:px-20">
+          <div className="max-w-[580px] text-white">
+            <h2 className="text-[26px] font-semibold leading-tight sm:text-[30px] md:text-[34px] lg:text-[38px]">
+              Bring Nature Home Today
+            </h2>
+
+            <p className="mt-3 max-w-[560px] text-[13px] leading-6 sm:text-sm md:text-base md:leading-7">
+              Experience the pure goodness of organic living with Nana Organics. From farm-fresh
+              ingredients to natural care essentials—everything your body and home deserve.
+            </p>
+
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <Link
+                href="/shop"
+                className="inline-flex min-h-10 min-w-[106px] items-center justify-center rounded-lg border border-[#D7DFDD] bg-white px-5 text-xs font-semibold text-[#17211F] transition-colors hover:bg-[#F3F8F7] sm:min-h-11 sm:min-w-[122px] sm:text-sm"
               >
-                Bring Nature Home Today
-              </h2>
-
-              <p
-                className="
-          text-[13px]
-          sm:text-[14px]
-          md:text-[16px]
-          lg:text-lg
-          leading-relaxed
-        "
+                Shop Now
+              </Link>
+              <Link
+                href="/shop"
+                className="inline-flex min-h-10 min-w-[138px] items-center justify-center rounded-lg border border-[#1EA766] bg-[#1EA766] px-5 text-xs font-semibold text-white transition-colors hover:border-[#178753] hover:bg-[#178753] sm:min-h-11 sm:min-w-[160px] sm:text-sm"
               >
-                Experience the pure goodness of organic living with Nana Organics. From farm-fresh
-                ingredients to natural care essentials everything your body and home deserve
-              </p>
-
-              <div className="flex flex-row items-center gap-2 whitespace-nowrap">
-                <Button
-                  onClick={() => router.push('/shop')}
-                  label="Shop now"
-                  className="
-      bg-white text-black border border-gray-300
-      w-24 h-8 text-[11px]
-      sm:w-28 sm:h-9 sm:text-xs
-      md:w-32 md:h-10 md:text-sm
-      rounded-xl
-    "
-                />
-
-                {/* <Button
-                  label="Explore collections"
-                  className="
-      bg-green-600 text-white border border-green-600
-      w-28 h-8 text-[10px]
-      sm:w-36 sm:h-9 sm:text-xs
-      md:w-40 md:h-10 md:text-sm
-      rounded-xl font-normal
-    "
-                /> */}
-              </div>
+                Explore Collections
+              </Link>
             </div>
           </div>
         </div>
-      </section>
-    </>
+      </div>
+    </section>
   );
 };
 

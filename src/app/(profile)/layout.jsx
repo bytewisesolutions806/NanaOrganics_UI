@@ -35,7 +35,7 @@ export default function ProfileLayout({ children }) {
       <Header />
 
       <main className="pt-[220px] mb-10">
-        <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 sm:px-6 lg:grid-cols-[280px_minmax(0,1fr)] lg:px-0">
+        <div className="site-shell grid grid-cols-1 gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
           <div className="hidden lg:block">
             <ProfileSidebar />
           </div>

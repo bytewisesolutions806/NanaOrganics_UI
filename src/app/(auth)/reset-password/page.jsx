@@ -1,19 +1,19 @@
-"use client";
+'use client';
 
-import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { InputOtp } from "primereact/inputotp";
-import { InputText } from "primereact/inputtext";
-import { Toast } from "primereact/toast";
+import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { InputOtp } from 'primereact/inputotp';
+import { InputText } from 'primereact/inputtext';
+import { Toast } from 'primereact/toast';
 import {
   completePasswordReset,
   resendPasswordResetOtp,
   verifyResetOtp,
-} from "@/service/AuthService";
-import useAuthStore from "@/store/AuthStore";
-import "./index.css";
+} from '@/service/AuthService';
+import useAuthStore from '@/store/AuthStore';
+import './index.css';
 
 const isStrongPassword = (value) =>
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/.test(value);
@@ -24,11 +24,11 @@ export default function ResetPassword() {
     useAuthStore();
   const toast = useRef(null);
 
-  const [otp, setOtp] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [passwordError, setPasswordError] = useState("");
-  const [confirmPasswordError, setConfirmPasswordError] = useState("");
+  const [otp, setOtp] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -36,7 +36,7 @@ export default function ResetPassword() {
 
   useEffect(() => {
     if (hasHydrated && !pendingPasswordReset) {
-      router.replace("/forgotpassword");
+      router.replace('/forgotpassword');
     }
   }, [hasHydrated, pendingPasswordReset, router]);
 
@@ -44,20 +44,20 @@ export default function ResetPassword() {
     let valid = true;
 
     if (!isStrongPassword(password)) {
-      setPasswordError("Use at least 8 characters with uppercase, lowercase, number, and symbol.");
+      setPasswordError('Use at least 8 characters with uppercase, lowercase, number, and symbol.');
       valid = false;
     } else {
-      setPasswordError("");
+      setPasswordError('');
     }
 
     if (!confirmPassword) {
-      setConfirmPasswordError("Confirm password is required.");
+      setConfirmPasswordError('Confirm password is required.');
       valid = false;
     } else if (password !== confirmPassword) {
-      setConfirmPasswordError("Passwords do not match.");
+      setConfirmPasswordError('Passwords do not match.');
       valid = false;
     } else {
-      setConfirmPasswordError("");
+      setConfirmPasswordError('');
     }
 
     return valid;
@@ -69,9 +69,9 @@ export default function ResetPassword() {
 
     if (!pendingPasswordReset.resetToken && otp.length !== 6) {
       toast.current?.show({
-        severity: "error",
-        summary: "Invalid code",
-        detail: "Enter the six-digit verification code.",
+        severity: 'error',
+        summary: 'Invalid code',
+        detail: 'Enter the six-digit verification code.',
         life: 3000,
       });
       return;
@@ -88,7 +88,7 @@ export default function ResetPassword() {
           confirmationCode: otp,
         });
         if (!verification.success || !verification.resetToken) {
-          throw new Error(verification.message || "The verification code is invalid.");
+          throw new Error(verification.message || 'The verification code is invalid.');
         }
 
         resetToken = verification.resetToken;
@@ -104,32 +104,32 @@ export default function ResetPassword() {
         newPassword: password,
       });
       if (!result.success) {
-        if (result.errorCode === "INVALID_RESET_TOKEN") {
+        if (result.errorCode === 'INVALID_RESET_TOKEN') {
           setPendingPasswordReset({
             email: pendingPasswordReset.email,
             requestedAt: pendingPasswordReset.requestedAt,
           });
-          setOtp("");
+          setOtp('');
         }
-        throw new Error(result.message || "Password reset failed.");
+        throw new Error(result.message || 'Password reset failed.');
       }
 
       toast.current?.show({
-        severity: "success",
-        summary: "Password reset successful",
-        detail: result.message || "You can now log in with your new password.",
+        severity: 'success',
+        summary: 'Password reset successful',
+        detail: result.message || 'You can now log in with your new password.',
         life: 2000,
       });
 
       setTimeout(() => {
         clearPendingPasswordReset();
-        router.replace("/login");
+        router.replace('/login');
       }, 1500);
     } catch (error) {
       toast.current?.show({
-        severity: "error",
-        summary: "Reset failed",
-        detail: error?.message || "The code is invalid or expired.",
+        severity: 'error',
+        summary: 'Reset failed',
+        detail: error?.message || 'The code is invalid or expired.',
         life: 3500,
       });
     } finally {
@@ -144,7 +144,7 @@ export default function ResetPassword() {
       setResending(true);
       const result = await resendPasswordResetOtp(pendingPasswordReset.email);
       if (!result.success) {
-        throw new Error(result.message || "Could not resend the code.");
+        throw new Error(result.message || 'Could not resend the code.');
       }
 
       setPendingPasswordReset({
@@ -153,18 +153,18 @@ export default function ResetPassword() {
         retryAfterSeconds: result.retryAfterSeconds,
         requestedAt: Date.now(),
       });
-      setOtp("");
+      setOtp('');
       toast.current?.show({
-        severity: "success",
-        summary: "Code requested",
-        detail: result.message || "A new password reset code was requested.",
+        severity: 'success',
+        summary: 'Code requested',
+        detail: result.message || 'A new password reset code was requested.',
         life: 3000,
       });
     } catch (error) {
       toast.current?.show({
-        severity: "error",
-        summary: "Resend failed",
-        detail: error?.message || "Could not resend the code.",
+        severity: 'error',
+        summary: 'Resend failed',
+        detail: error?.message || 'Could not resend the code.',
         life: 3000,
       });
     } finally {
@@ -174,12 +174,12 @@ export default function ResetPassword() {
 
   if (!hasHydrated || !pendingPasswordReset) return null;
 
-  const maskedEmail = pendingPasswordReset.email.replace(/(.{1}).+(@.+)/, "$1***$2");
+  const maskedEmail = pendingPasswordReset.email.replace(/(.{1}).+(@.+)/, '$1***$2');
   const hasResetToken = Boolean(pendingPasswordReset.resetToken);
 
   return (
     <>
-      <Toast ref={toast} position="top-right" className="h-[3rem]" />
+      <Toast ref={toast} position="top-right" />
 
       <div className="relative min-h-screen bg-white">
         <div className="relative z-10 min-h-screen grid grid-cols-1 lg:grid-cols-2">
@@ -200,7 +200,7 @@ export default function ResetPassword() {
               <h2 className="text-2xl font-bold text-center">Reset your password</h2>
               <p className="text-sm text-gray-600 text-center mt-2 mb-6">
                 {hasResetToken
-                  ? "Your code is verified. Choose a new password."
+                  ? 'Your code is verified. Choose a new password.'
                   : `We sent a six-digit code to ${maskedEmail}`}
               </p>
 
@@ -208,7 +208,7 @@ export default function ResetPassword() {
                 <div className="flex justify-center mb-6">
                   <InputOtp
                     value={otp}
-                    onChange={(event) => setOtp(event.value || "")}
+                    onChange={(event) => setOtp(event.value || '')}
                     length={6}
                     integerOnly
                   />
@@ -223,25 +223,25 @@ export default function ResetPassword() {
                   <i className="pi pi-lock absolute left-4 top-1/2 -translate-y-1/2 text-[#2c665e]" />
                   <InputText
                     id="new-password"
-                    type={showPassword ? "text" : "password"}
+                    type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(event) => {
                       setPassword(event.target.value);
-                      setPasswordError("");
+                      setPasswordError('');
                     }}
                     autoComplete="new-password"
                     placeholder="Enter a strong password"
                     className={`w-full h-[60px] pl-10 pr-10 rounded-[10px] bg-[#F5FCFB] border ${
-                      passwordError ? "border-red-500" : "border-[#cfe2e0]"
+                      passwordError ? 'border-red-500' : 'border-[#cfe2e0]'
                     }`}
                   />
                   <button
                     type="button"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
                     onClick={() => setShowPassword((visible) => !visible)}
                   >
-                    <i className={`pi ${showPassword ? "pi-eye-slash" : "pi-eye"}`} />
+                    <i className={`pi ${showPassword ? 'pi-eye-slash' : 'pi-eye'}`} />
                   </button>
                 </div>
                 {passwordError ? (
@@ -261,25 +261,25 @@ export default function ResetPassword() {
                   <i className="pi pi-lock absolute left-4 top-1/2 -translate-y-1/2 text-[#2c665e]" />
                   <InputText
                     id="confirm-password"
-                    type={showConfirmPassword ? "text" : "password"}
+                    type={showConfirmPassword ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={(event) => {
                       setConfirmPassword(event.target.value);
-                      setConfirmPasswordError("");
+                      setConfirmPasswordError('');
                     }}
                     autoComplete="new-password"
                     placeholder="Confirm your password"
                     className={`w-full h-[60px] pl-10 pr-10 rounded-[10px] bg-[#F5FCFB] border ${
-                      confirmPasswordError ? "border-red-500" : "border-[#cfe2e0]"
+                      confirmPasswordError ? 'border-red-500' : 'border-[#cfe2e0]'
                     }`}
                   />
                   <button
                     type="button"
-                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                    aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500"
                     onClick={() => setShowConfirmPassword((visible) => !visible)}
                   >
-                    <i className={`pi ${showConfirmPassword ? "pi-eye-slash" : "pi-eye"}`} />
+                    <i className={`pi ${showConfirmPassword ? 'pi-eye-slash' : 'pi-eye'}`} />
                   </button>
                 </div>
                 {confirmPasswordError && (
@@ -299,13 +299,13 @@ export default function ResetPassword() {
                     <span>Resetting password...</span>
                   </>
                 ) : (
-                  "Reset password"
+                  'Reset password'
                 )}
               </button>
 
               {!hasResetToken && (
                 <p className="text-sm text-center mt-4">
-                  Didn{"'"}t get a code?{" "}
+                  Didn{"'"}t get a code?{' '}
                   <button
                     type="button"
                     className="text-[#21252C] font-semibold disabled:text-gray-400"
@@ -319,14 +319,14 @@ export default function ResetPassword() {
                         Sending...
                       </span>
                     ) : (
-                      "Resend code"
+                      'Resend code'
                     )}
                   </button>
                 </p>
               )}
 
               <p className="text-sm text-center mt-4">
-                Remember your password?{" "}
+                Remember your password?{' '}
                 <Link href="/login" className="text-[#1EA766] font-medium">
                   Back to login
                 </Link>

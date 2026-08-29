@@ -162,7 +162,7 @@ export default function CartPage() {
 
   /* ================= UI ================= */
   return (
-    <div className="max-w-7xl mx-auto px-4 py-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div className="site-shell grid grid-cols-1 gap-8 py-10 lg:grid-cols-3">
       <Toast ref={toast} position="top-right" />
 
       {/* ================= LEFT ================= */}

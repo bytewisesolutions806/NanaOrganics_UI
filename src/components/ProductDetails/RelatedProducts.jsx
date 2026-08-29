@@ -19,7 +19,7 @@ export default function RelatedProducts({ products = [], browseLink = '/shop' })
 
   return (
     <section className="mt-20 bg-[#E6F4F2] py-16">
-      <div className="mx-auto w-[calc(100%_-_40px)] max-w-[1298px]">
+      <div className="site-shell">
         <div className="mb-7 flex flex-wrap items-end justify-between gap-5">
           <div>
             <h2

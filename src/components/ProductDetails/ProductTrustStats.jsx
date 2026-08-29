@@ -14,7 +14,7 @@ function StatCard({ Icon, value, label }) {
 
 export default function ProductTrustStats({ averageRating, totalReviews, returnWindow = 30 }) {
   return (
-    <section className="mx-auto mt-14 grid w-[calc(100%_-_40px)] max-w-[1298px] grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+    <section className="site-shell mt-14 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
       <StatCard Icon={Star} value={totalReviews > 0 ? `${averageRating.toFixed(1)}/5` : 'New'} label="Average Rating" />
       <StatCard Icon={Users} value={totalReviews.toLocaleString('en-IN')} label="Customer Reviews" />
       <StatCard Icon={Leaf} value="100%" label="Natural Ingredients" />

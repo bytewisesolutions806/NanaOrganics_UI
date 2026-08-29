@@ -1,14 +1,14 @@
-"use client";
-import { InputText } from "primereact/inputtext";
-import { Toast } from "primereact/toast";
-import { useRouter } from "next/navigation";
-import { useState, useRef } from "react";
-import Image from "next/image";
-import Link from "next/link";
-import { signupUser } from "@/service/AuthService";
-import useAuthStore from "@/store/AuthStore";
-import { Checkbox } from "primereact/checkbox";
-import "./index.css";
+'use client';
+import { InputText } from 'primereact/inputtext';
+import { Toast } from 'primereact/toast';
+import { useRouter } from 'next/navigation';
+import { useState, useRef } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { signupUser } from '@/service/AuthService';
+import useAuthStore from '@/store/AuthStore';
+import { Checkbox } from 'primereact/checkbox';
+import './index.css';
 
 export default function Signup() {
   const { setPendingVerification } = useAuthStore.getState();
@@ -16,65 +16,62 @@ export default function Signup() {
   const router = useRouter();
 
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState("");
-  const [email, setEmail] = useState("");
+  const [showConfirmPassword, setShowConfirmPassword] = useState('');
+  const [email, setEmail] = useState('');
   const [emailError, setEmailError] = useState(false);
-  const [password, setPassword] = useState("");
-  const [passwordError, setPasswordError] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [confirmPasswordError, setConfirmPasswordError] = useState("");
-  const [fullName, setFullName] = useState("");
-  const [fullNameError, setFullNameError] = useState("");
+  const [password, setPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [fullNameError, setFullNameError] = useState('');
   const toast = useRef(null);
   const [loading, setLoading] = useState(false);
   const [agree, setAgree] = useState(false);
 
- 
-
-  const isValidPassword = (value) =>
-    /^(?=.*[a-z])(?=.*[A-Z]).{8,}$/.test(value);
+  const isValidPassword = (value) => /^(?=.*[a-z])(?=.*[A-Z]).{8,}$/.test(value);
 
   const handleSignup = async () => {
     let hasError = false;
 
     // ✅ RESET ERRORS
-    setEmailError("");
-    setPasswordError("");
-    setConfirmPasswordError("");
-    setFullNameError("");
+    setEmailError('');
+    setPasswordError('');
+    setConfirmPasswordError('');
+    setFullNameError('');
 
     // ✅ FULL NAME
     if (!fullName.trim()) {
-      setFullNameError("Name is Required");
+      setFullNameError('Name is Required');
       hasError = true;
     }
 
     // ✅ EMAIL
     if (!email) {
-      setEmailError("Email is required");
+      setEmailError('Email is required');
       hasError = true;
     } else if (!/^\S+@\S+\.\S+$/.test(email)) {
-      setEmailError("Enter a valid email");
+      setEmailError('Enter a valid email');
       hasError = true;
     }
 
     // ✅ PASSWORD
     if (!password) {
-      setPasswordError("Password is required");
+      setPasswordError('Password is required');
       hasError = true;
     } else if (!isValidPassword(password)) {
       setPasswordError(
-        "Password must be at least 8 characters with 1 uppercase & 1 lowercase letter"
+        'Password must be at least 8 characters with 1 uppercase & 1 lowercase letter'
       );
       hasError = true;
     }
 
     // ✅ CONFIRM PASSWORD
     if (!confirmPassword) {
-      setConfirmPasswordError("Please confirm your password");
+      setConfirmPasswordError('Please confirm your password');
       hasError = true;
     } else if (password !== confirmPassword) {
-      setConfirmPasswordError("Passwords do not match");
+      setConfirmPasswordError('Passwords do not match');
       hasError = true;
     }
 
@@ -91,7 +88,7 @@ export default function Signup() {
       });
 
       if (!res.success) {
-        throw new Error(res.message || "signup Failed");
+        throw new Error(res.message || 'signup Failed');
       }
 
       if (res.success) {
@@ -101,18 +98,18 @@ export default function Signup() {
           retryAfterSeconds: res.retryAfterSeconds,
         });
 
-        router.push("/verify-otp"); // ✅ redirect
+        router.push('/verify-otp'); // ✅ redirect
         return;
       }
 
       // ✅ REDIRECT
-      router.push("/");
+      router.push('/');
     } catch (err) {
-      console.log("Signup error:", err);
+      console.log('Signup error:', err);
       toast.current?.show({
-        severity: "error",
-        summary: "signup Failed",
-        detail: err?.message || "Something went wrong",
+        severity: 'error',
+        summary: 'signup Failed',
+        detail: err?.message || 'Something went wrong',
         life: 3000,
       });
     } finally {
@@ -122,22 +119,7 @@ export default function Signup() {
 
   return (
     <>
-     <Toast
-        ref={toast}
-        position="top-right"
-        pt={{
-          message: ({ props }) => ({
-            className: `
-              rounded-xl px-4 py-3 text-sm font-medium
-              ${props.severity === "success" && "bg-[#E6F4F2] text-[#1EA766]"}
-              ${props.severity === "error" && "bg-red-50 text-blue-700"}
-              ${props.severity === "warn" && "bg-yellow-50 text-yellow-700"}
-              ${props.severity === "info" && "bg-blue-50 text-blue-600"}
-            `,
-          }),
-        }}
-      />
-
+      <Toast ref={toast} position="top-right" />
 
       <div className="relative min-h-screen bg-white">
         {/* GRID WRAPPER (fixes layout) */}
@@ -159,13 +141,10 @@ export default function Signup() {
                 </Link>
               </div>
 
-              <h2 className="text-2xl font-bold text-center">
-                Start your Journey
-              </h2>
+              <h2 className="text-2xl font-bold text-center">Start your Journey</h2>
 
               <p className="text-sm text-gray-600 text-center mt-2 mb-6">
-                Signup to get full access to your dashboard, tools, and
-                resources
+                Signup to get full access to your dashboard, tools, and resources
               </p>
 
               {/* Full Name */}
@@ -180,18 +159,12 @@ export default function Signup() {
                     className={`
         w-full h-[60px] pl-10 rounded-[10px] bg-[#F5FCFB]
         border
-        ${
-          fullNameError
-            ? "border-red-500 focus:border-red-500"
-            : "border-[#cfe2e0]"
-        }
+        ${fullNameError ? 'border-red-500 focus:border-red-500' : 'border-[#cfe2e0]'}
       `}
                   />
                 </div>
                 {/* ✅ ERROR TEXT BELOW INPUT */}
-                {fullNameError && (
-                  <p className="text-xs text-red-500 mt-1">{fullNameError}</p>
-                )}
+                {fullNameError && <p className="text-xs text-red-500 mt-1">{fullNameError}</p>}
               </div>
 
               {/* Email */}
@@ -209,25 +182,19 @@ export default function Signup() {
                     required
                     onChange={(e) => {
                       setEmail(e.target.value);
-                      setEmailError("");
+                      setEmailError('');
                     }}
                     keyfilter="email"
                     placeholder="Enter your email address"
                     className={`
         w-full h-[60px] pl-10 rounded-[10px] bg-[#F5FCFB]
         border
-        ${
-          emailError
-            ? "border-red-500 focus:border-red-500"
-            : "border-[#cfe2e0]"
-        }
+        ${emailError ? 'border-red-500 focus:border-red-500' : 'border-[#cfe2e0]'}
       `}
                   />
                 </div>
 
-                {emailError && (
-                  <p className="text-xs text-red-500 mt-1">{emailError}</p>
-                )}
+                {emailError && <p className="text-xs text-red-500 mt-1">{emailError}</p>}
               </div>
 
               {/* Password */}
@@ -243,18 +210,14 @@ export default function Signup() {
 
                   {/* Input */}
                   <InputText
-                    type={showPassword ? "text" : "password"}
+                    type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Enter Strong Password"
                     className={`
         w-full h-[60px] pl-10 pr-10 rounded-[10px] bg-[#F5FCFB]
         border
-        ${
-          passwordError
-            ? "border-red-500 focus:border-red-500"
-            : "border-[#cfe2e0]"
-        }
+        ${passwordError ? 'border-red-500 focus:border-red-500' : 'border-[#cfe2e0]'}
       `}
                   />
 
@@ -263,15 +226,9 @@ export default function Signup() {
                     className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-gray-500 hover:text-gray-700"
                     onClick={() => setShowPassword(!showPassword)}
                   >
-                    <i
-                      className={`pi ${
-                        showPassword ? "pi-eye-slash" : "pi-eye"
-                      }`}
-                    />
+                    <i className={`pi ${showPassword ? 'pi-eye-slash' : 'pi-eye'}`} />
                   </div>
-                  {passwordError && (
-                    <p className="text-xs text-red-500 mt-1">{passwordError}</p>
-                  )}
+                  {passwordError && <p className="text-xs text-red-500 mt-1">{passwordError}</p>}
                 </div>
 
                 {/* ✅ Helper text OUTSIDE relative container */}
@@ -292,18 +249,14 @@ export default function Signup() {
 
                   {/* Input */}
                   <InputText
-                    type={showConfirmPassword ? "text" : "password"}
+                    type={showConfirmPassword ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Confirm your password"
                     className={`
         w-full h-[60px] pl-10 pr-10 rounded-[10px] bg-[#F5FCFB]
         border
-        ${
-          confirmPasswordError
-            ? "border-red-500 focus:border-red-500"
-            : "border-[#cfe2e0]"
-        }
+        ${confirmPasswordError ? 'border-red-500 focus:border-red-500' : 'border-[#cfe2e0]'}
       `}
                   />
 
@@ -312,17 +265,11 @@ export default function Signup() {
                     className="absolute inset-y-0 right-4 flex items-center cursor-pointer text-gray-500 hover:text-gray-700"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
-                    <i
-                      className={`pi ${
-                        showConfirmPassword ? "pi-eye-slash" : "pi-eye"
-                      }`}
-                    />
+                    <i className={`pi ${showConfirmPassword ? 'pi-eye-slash' : 'pi-eye'}`} />
                   </div>
                 </div>
                 {confirmPasswordError && (
-                  <p className="text-xs text-red-500 mt-1">
-                    {confirmPasswordError}
-                  </p>
+                  <p className="text-xs text-red-500 mt-1">{confirmPasswordError}</p>
                 )}
               </div>
 
@@ -349,10 +296,10 @@ export default function Signup() {
     w-full h-[46px] rounded-lg font-semibold transition flex items-center justify-center gap-2
     ${
       agree && !loading
-        ? "bg-green-600 hover:bg-green-700 text-white cursor-pointer"
+        ? 'bg-green-600 hover:bg-green-700 text-white cursor-pointer'
         : loading
-        ? "bg-green-600 text-white cursor-wait opacity-75"
-        : "bg-gray-300 text-gray-500 cursor-not-allowed"
+          ? 'bg-green-600 text-white cursor-wait opacity-75'
+          : 'bg-gray-300 text-gray-500 cursor-not-allowed'
     }
   `}
               >
@@ -362,17 +309,17 @@ export default function Signup() {
                     <span>Creating account...</span>
                   </>
                 ) : (
-                  "Create Account"
+                  'Create Account'
                 )}
               </button>
 
               <p className="text-sm text-center mt-4">
                 Already have an account?
                 <span
-                  onClick={() => router.push("/login")}
+                  onClick={() => router.push('/login')}
                   className="text-green-600 font-medium cursor-pointer"
                 >
-                  {" "}
+                  {' '}
                   Login
                 </span>
               </p>

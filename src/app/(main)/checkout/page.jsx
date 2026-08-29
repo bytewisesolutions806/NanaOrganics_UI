@@ -598,7 +598,7 @@ export default function CheckoutPage() {
 
   return (
     <>
-      <div className="max-w-7xl mx-auto px-4 mt-6">
+      <div className="site-shell mt-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-semibold text-gray-900">Checkout</h1>
           <button
@@ -623,7 +623,7 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="site-shell grid grid-cols-1 gap-8 py-6 lg:grid-cols-3">
         <div className="lg:col-span-2 bg-white rounded-2xl border border-[#E6F4F2] p-6">
           {step === 1 && (
             <>

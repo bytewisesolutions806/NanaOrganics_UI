@@ -90,7 +90,7 @@ export default function ProductClient({
 
   return (
     <div style={{ fontFamily: '"Plus Jakarta Sans", Arial, sans-serif' }}>
-      <div className="mx-auto mt-10 w-[calc(100%_-_40px)] max-w-[1298px]">
+      <div className="site-shell mt-10">
         <ProductBreadcrumb
           category={category.handle}
           categoryName={category.name}
@@ -126,7 +126,7 @@ export default function ProductClient({
         returnWindow={productData?.returns_policy?.window_days || 30}
       />
 
-      <div className="mx-auto w-[calc(100%_-_40px)] max-w-[1298px]">
+      <div className="site-shell">
         <ProductCustomerReviews productId={productData?.id} onStatsChange={setReviewsSummary} />
       </div>
 

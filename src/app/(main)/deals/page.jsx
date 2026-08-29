@@ -14,7 +14,7 @@ export default async function DealsPage() {
   const products = deals?.products || [];
 
   return (
-    <main className="mx-auto min-h-[55vh] w-full max-w-[1440px] px-4 py-8 sm:px-6 lg:px-10 lg:py-12">
+    <main className="site-shell min-h-[55vh] py-8 lg:py-12">
       <nav className="mb-6 flex items-center gap-2 text-sm text-gray-500" aria-label="Breadcrumb">
         <Link href="/" className="transition-colors hover:text-[#1EA766]">
           Home

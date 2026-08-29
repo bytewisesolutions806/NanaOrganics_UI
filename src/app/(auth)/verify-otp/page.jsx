@@ -1,20 +1,20 @@
-"use client";
-import Image from "next/image";
-import { Toast } from "primereact/toast";
-import { useRouter } from "next/navigation";
-import { useEffect, useState, useRef } from "react";
-import Link from "next/link";
-import { InputOtp } from "primereact/inputotp";
-import useAuthStore from "@/store/AuthStore";
-import { resendSignupOtp, verifyOtp } from "@/service/AuthService";
-import "./index.css";
+'use client';
+import Image from 'next/image';
+import { Toast } from 'primereact/toast';
+import { useRouter } from 'next/navigation';
+import { useEffect, useState, useRef } from 'react';
+import Link from 'next/link';
+import { InputOtp } from 'primereact/inputotp';
+import useAuthStore from '@/store/AuthStore';
+import { resendSignupOtp, verifyOtp } from '@/service/AuthService';
+import './index.css';
 
 export default function Verifyotp() {
   const router = useRouter();
 
   const { hasHydrated, pendingVerification } = useAuthStore();
 
-  const [otp, setOtp] = useState("");
+  const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const toast = useRef(null);
@@ -30,13 +30,13 @@ export default function Verifyotp() {
       });
 
       if (!res.success) {
-        throw new Error(res.message || "Invalid OTP");
+        throw new Error(res.message || 'Invalid OTP');
       }
 
       toast.current?.show({
-        severity: "success",
-        summary: "OTP Verified",
-        detail: "Verification successful. Redirecting to login...",
+        severity: 'success',
+        summary: 'OTP Verified',
+        detail: 'Verification successful. Redirecting to login...',
         life: 2000,
       });
 
@@ -44,15 +44,15 @@ export default function Verifyotp() {
       useAuthStore.getState().setPendingVerification(null);
 
       setTimeout(() => {
-        router.replace("/login");
+        router.replace('/login');
       }, 2000);
     } catch (err) {
-      setOtp("");
+      setOtp('');
 
       toast.current?.show({
-        severity: "error",
-        summary: "Verification Failed",
-        detail: err?.message || "Invalid or expired OTP",
+        severity: 'error',
+        summary: 'Verification Failed',
+        detail: err?.message || 'Invalid or expired OTP',
         life: 3000,
       });
     } finally {
@@ -66,7 +66,7 @@ export default function Verifyotp() {
       setResending(true);
       const res = await resendSignupOtp(pendingVerification.email);
       if (!res.success) {
-        throw new Error(res.message || "Could not resend the code");
+        throw new Error(res.message || 'Could not resend the code');
       }
       useAuthStore.getState().setPendingVerification({
         ...pendingVerification,
@@ -74,16 +74,16 @@ export default function Verifyotp() {
         retryAfterSeconds: res.retryAfterSeconds,
       });
       toast.current?.show({
-        severity: "success",
-        summary: "Code Sent",
-        detail: res.message || "A new verification code was sent.",
+        severity: 'success',
+        summary: 'Code Sent',
+        detail: res.message || 'A new verification code was sent.',
         life: 3000,
       });
     } catch (err) {
       toast.current?.show({
-        severity: "error",
-        summary: "Resend Failed",
-        detail: err?.message || "Could not resend the code",
+        severity: 'error',
+        summary: 'Resend Failed',
+        detail: err?.message || 'Could not resend the code',
         life: 3000,
       });
     } finally {
@@ -93,7 +93,7 @@ export default function Verifyotp() {
 
   useEffect(() => {
     if (hasHydrated && !pendingVerification) {
-      router.replace("/signup");
+      router.replace('/signup');
     }
   }, [hasHydrated, pendingVerification, router]);
 
@@ -101,11 +101,11 @@ export default function Verifyotp() {
 
   const maskedEmail =
     pendingVerification.verificationInfo?.destination ||
-    pendingVerification.email.replace(/(.{1}).+(@.+)/, "$1***$2");
+    pendingVerification.email.replace(/(.{1}).+(@.+)/, '$1***$2');
 
   return (
     <>
-      <Toast ref={toast} position="top-right" className="h-[3rem]" />
+      <Toast ref={toast} position="top-right" />
 
       <div className="relative min-h-screen bg-white">
         {/* GRID WRAPPER (fixes layout) */}
@@ -130,7 +130,7 @@ export default function Verifyotp() {
               <h2 className="text-2xl font-bold text-center">Start your Journey</h2>
 
               <p className="text-sm text-gray-600 text-center mt-2 mb-6">
-                We sent a 6 digit code to{" "}
+                We sent a 6 digit code to{' '}
                 <span className="font-medium text-gray-800">{maskedEmail}</span>
               </p>
 
@@ -151,10 +151,10 @@ export default function Verifyotp() {
                 aria-busy={loading}
                 className={`w-full h-[46px] rounded-lg font-semibold transition flex items-center justify-center gap-2 ${
                   otp.length === 6 && !loading
-                    ? "bg-[#1EA766] text-white cursor-pointer"
+                    ? 'bg-[#1EA766] text-white cursor-pointer'
                     : loading
-                    ? "bg-[#1EA766] text-white cursor-wait opacity-75"
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      ? 'bg-[#1EA766] text-white cursor-wait opacity-75'
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
               >
                 {loading ? (
@@ -163,7 +163,7 @@ export default function Verifyotp() {
                     <span>Verifying...</span>
                   </>
                 ) : (
-                  "Verify"
+                  'Verify'
                 )}
               </button>
 
@@ -184,7 +184,7 @@ export default function Verifyotp() {
                       Sending...
                     </span>
                   ) : (
-                    " Click to Resend"
+                    ' Click to Resend'
                   )}
                 </button>
               </p>
@@ -194,9 +194,9 @@ export default function Verifyotp() {
                 Don{"'"}t have an account?
                 <span
                   className="text-[#1EA766] font-medium cursor-pointer"
-                  onClick={() => router.push("/signup")}
+                  onClick={() => router.push('/signup')}
                 >
-                  {" "}
+                  {' '}
                   Sign up
                 </span>
               </p>

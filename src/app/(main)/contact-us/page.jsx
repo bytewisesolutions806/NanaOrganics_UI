@@ -123,12 +123,12 @@ export default function ContactUs() {
 
   return (
     <>
-      <section className="mb-10">
+      <section className="site-shell mb-10">
         <Gallery />
       </section>
 
       <section className="relative mt-2 overflow-visible">
-        <div className="relative mx-auto w-full p-5 pb-28 md:p-10 md:pb-40 lg:max-w-7xl">
+        <div className="site-shell relative py-5 pb-28 md:py-10 md:pb-40">
           <div className="grid grid-cols-1 gap-10 rounded-2xl p-6 md:grid-cols-2 md:p-10">
             <div className="order-1">
               <h2 className="mb-2 text-3xl font-semibold text-gray-900">Contact Information</h2>

@@ -9,7 +9,7 @@ import TruckImage from '@/assets/images/TruckImage.png';
 
 export default function WhyChooseNana() {
   return (
-    <div className="relative max-w-7xl mx-auto px-4">
+    <div className="site-shell relative">
       <div className="relative w-full lg:h-[280px] rounded-2xl overflow-hidden">
         {/* BACKGROUND IMAGE */}
         <Image

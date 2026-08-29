@@ -104,7 +104,7 @@ export default function ShopByCategory({ initialCategories = [] }) {
   };
 
   return (
-    <section className="w-full p-5 md:p-10 lg:max-w-7xl mx-auto relative">
+    <section className="site-shell relative py-5 md:py-10">
       {/* Header */}
       <div className="mb-8 flex items-center justify-between gap-4">
         <div>

@@ -149,10 +149,10 @@ export default function HomepageVideo({ section: initialSection }) {
   return (
     <section
       ref={sectionRef}
-      className="my-10 overflow-hidden px-4 sm:my-14 sm:px-6 lg:px-10"
+      className="my-10 overflow-hidden sm:my-14"
       aria-labelledby="homepage-video-title"
     >
-      <div className="mx-auto max-w-[1300px]">
+      <div className="site-shell">
         <div className="mb-6 text-center sm:mb-8">
           <h2
             id="homepage-video-title"

@@ -32,7 +32,7 @@ export default function ShopCategoryCarousel({
   const nextClass = 'shop-category-next';
 
   return (
-    <section className="relative mx-auto w-full max-w-7xl px-5 md:px-10">
+    <section className="site-shell relative">
       <div className="mb-5 max-w-[636px] md:mb-6">
         <h1
           className="text-2xl font-semibold leading-tight text-[#21252C] sm:text-3xl"
@@ -83,7 +83,7 @@ export default function ShopCategoryCarousel({
               <SwiperSlide key={category.id} className="h-auto px-1">
                 <Link
                   href={`${basePath}/${category.slug}`.replace(/\/+/g, '/')}
-                  className="group mx-auto flex h-[250px] min-h-[250px] w-full max-w-[200px] flex-col overflow-hidden rounded-2xl border border-transparent bg-[#E6F4F2] transition-[background-color,border-color,box-shadow] duration-200 hover:border-[rgba(44,102,94,0.24)] hover:bg-white hover:shadow-[0_12px_28px_rgba(35,83,76,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2C665E] focus-visible:ring-offset-2 motion-reduce:transition-none"
+                  className="group mx-auto flex h-[250px] min-h-[250px] w-full max-w-[200px] flex-col overflow-hidden rounded-2xl border border-transparent bg-[#E6F4F2] shadow-none transition-[background-color,border-color] duration-200 hover:border-[rgba(44,102,94,0.24)] hover:bg-white hover:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2C665E] focus-visible:ring-offset-2 motion-reduce:transition-none"
                 >
                   <span className="relative mx-auto mt-[10px] block h-[170px] w-[calc(100%-20px)] shrink-0 overflow-hidden rounded-xl bg-[#E6F4F2]">
                     <Image

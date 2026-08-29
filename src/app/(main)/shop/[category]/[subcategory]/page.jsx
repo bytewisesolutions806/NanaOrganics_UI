@@ -55,7 +55,7 @@ export default async function SubCategoryPage({ params, searchParams }) {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 md:px-8 lg:px-16 py-10">
+    <div className="site-shell py-10">
       {/* ================= BREADCRUMB ================= */}
       <ShopBreadcrumb
         category={subcategoryData.parent_category.handle}
