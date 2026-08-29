@@ -135,25 +135,27 @@ export default function HomePageClient({ initialHomeData, initialCategories }) {
         <WhyChooseNana />
       </section>
 
-      <section className="customer-reviews-section relative my-10 overflow-hidden bg-[#EAF6F3]">
-        <Image
-          src="/what_customer_says.svg"
-          alt=""
-          aria-hidden="true"
-          fill
-          sizes="100vw"
-          className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-80"
-        />
-        <div className="relative z-10">
-          <h2
-            className="customer-reviews-heading px-4 text-center font-semibold leading-none text-[#20272A]"
-            style={{ fontFamily: '"Playfair Display", Georgia, serif' }}
-          >
-            What Our Customers Say
-          </h2>
-          <ReviewCard reviews={testimonials} loading={loading} />
-        </div>
-      </section>
+      {testimonials.length > 0 ? (
+        <section className="customer-reviews-section relative my-10 overflow-hidden bg-[#EAF6F3]">
+          <Image
+            src="/what_customer_says.svg"
+            alt=""
+            aria-hidden="true"
+            fill
+            sizes="100vw"
+            className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-80"
+          />
+          <div className="relative z-10">
+            <h2
+              className="customer-reviews-heading px-4 text-center font-semibold leading-none text-[#20272A]"
+              style={{ fontFamily: '"Playfair Display", Georgia, serif' }}
+            >
+              What Our Customers Say
+            </h2>
+            <ReviewCard reviews={testimonials} loading={loading} />
+          </div>
+        </section>
+      ) : null}
 
       <section className="mb-10">
         <ExploreOrganicOfferings />
