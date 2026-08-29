@@ -30,11 +30,11 @@ export default function ProfileLayout({ children }) {
   if (!isAuthenticated) return null;
 
   return (
-    <>
+    <div className="flex min-h-screen flex-col">
       <TopBanner />
       <Header />
 
-      <main className="pt-[220px] mb-10">
+      <main className="flex-1 pb-10 pt-[220px]">
         <div className="site-shell grid grid-cols-1 gap-6 lg:grid-cols-[280px_minmax(0,1fr)]">
           <div className="hidden lg:block">
             <ProfileSidebar />
@@ -45,6 +45,6 @@ export default function ProfileLayout({ children }) {
       </main>
 
       <Footer />
-    </>
+    </div>
   );
 }
