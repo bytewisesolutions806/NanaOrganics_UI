@@ -109,9 +109,23 @@ function mapTestimonial(review) {
   };
 }
 
+export const getDiscoveryData = async ({
+  take = 8,
+  codes,
+  recentlyViewedSlugs = [],
+} = {}) => {
+  const sections = await getHomepageProductSections({
+    take,
+    codes,
+    recentlyViewedSlugs,
+  });
+
+  return sections.map(mapSection);
+};
+
 export const getHomeData = async () => {
-  const [sections, reviews, homepageVideo] = await Promise.all([
-    getHomepageProductSections({
+  const [collections, reviews, homepageVideo] = await Promise.all([
+    getDiscoveryData({
       take: 8,
       recentlyViewedSlugs: getRecentlyViewedProductSlugs(),
     }),
@@ -124,7 +138,7 @@ export const getHomeData = async () => {
   return {
     success: true,
     data: {
-      collections: sections.map(mapSection),
+      collections,
       homepageVideo: homepageVideo?.videos?.length
         ? {
             id: String(homepageVideo.id),

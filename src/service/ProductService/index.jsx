@@ -1,6 +1,6 @@
 import {
   getCollectionBySlug,
-  getProductVariantOriginalPrices,
+  getCollectionProducts,
   searchCollectionProducts,
 } from "@/graphql/queries/collections";
 import { DEFAULT_IMAGE } from '@/lib/defaultImage';
@@ -15,10 +15,10 @@ function getSearchPrice(price) {
   return price.value;
 }
 
-function toProductCards(items = [], originalPriceByVariantId = new Map()) {
+function toProductCards(items = []) {
   return items.map((item) => {
     const price = money(getSearchPrice(item.priceWithTax));
-    const configuredOriginalPrice = money(originalPriceByVariantId.get(String(item.productVariantId)));
+    const configuredOriginalPrice = money(item.offerPricing?.originalPrice);
     const originalPrice = configuredOriginalPrice > price ? configuredOriginalPrice : price;
     const thumbnail =
       item.productAsset?.preview ||
@@ -58,6 +58,73 @@ function toProductCards(items = [], originalPriceByVariantId = new Map()) {
       ],
     };
   });
+}
+
+function collectionPath(collection) {
+  const breadcrumbs = (collection?.breadcrumbs || []).filter(
+    (item) => item.slug !== "__root_collection__" && item.name !== "__root_collection__",
+  );
+  const parent = breadcrumbs[0] || collection?.parent || collection;
+  const child = breadcrumbs.at(-1) || collection;
+  return { parent, child };
+}
+
+function toRelatedProductCards(collection, excludedSlug, limit) {
+  const { parent, child } = collectionPath(collection);
+  const products = new Map();
+
+  for (const item of collection?.productVariants?.items || []) {
+    const product = item.product;
+    if (!product || product.slug === excludedSlug) continue;
+
+    if (!products.has(product.id)) {
+      products.set(product.id, {
+        id: product.id,
+        productId: product.id,
+        handle: product.slug,
+        slug: product.slug,
+        title: product.name,
+        description: product.description || "",
+        thumbnail:
+          product.featuredAsset?.preview ||
+          product.featuredAsset?.source ||
+          item.featuredAsset?.preview ||
+          item.featuredAsset?.source ||
+          DEFAULT_IMAGE,
+        rating: 0,
+        reviews_count: 0,
+        parent_category: {
+          id: parent?.id,
+          name: parent?.name || "Shop",
+          handle: parent?.slug || "shop",
+        },
+        subcategory: {
+          id: child?.id,
+          name: child?.name || collection.name,
+          handle: child?.slug || collection.slug,
+        },
+        variants: [],
+      });
+    }
+
+    const price = money(item.priceWithTax ?? item.price);
+    const configuredOriginalPrice = money(item.offerPricing?.originalPrice);
+    const originalPrice = configuredOriginalPrice > price ? configuredOriginalPrice : price;
+    products.get(product.id).variants.push({
+      id: item.id,
+      title: item.options?.map((option) => option.name).join(" / ") || item.name,
+      label: item.options?.map((option) => option.name).join(" / ") || item.name,
+      sku: item.sku,
+      price,
+      original_price: originalPrice,
+      discount:
+        originalPrice > price ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0,
+      currency: item.currencyCode,
+      in_stock: item.stockLevel !== "OUT_OF_STOCK",
+    });
+  }
+
+  return [...products.values()].filter((product) => product.variants.length > 0).slice(0, limit);
 }
 
 function groupAvailableFacets(items = []) {
@@ -146,16 +213,7 @@ export const getProductsBySubcategory = async ({
 
   const list = searchResult?.productResults || { items: [], totalItems: 0 };
   const parent = collection.breadcrumbs?.at(-2);
-  const originalPrices = await getProductVariantOriginalPrices(
-    list.items.map((item) => item.productId),
-  );
-  const originalPriceByVariantId = new Map(
-    originalPrices.map((variant) => [
-      String(variant.id),
-      variant.offerPricing?.originalPrice,
-    ]),
-  );
-  const products = toProductCards(list.items, originalPriceByVariantId);
+  const products = toProductCards(list.items);
   const totalPages = Math.max(1, Math.ceil(list.totalItems / limit));
 
   return {
@@ -190,6 +248,23 @@ export const getProductsBySubcategory = async ({
         { value: "price_asc", label: "Price: Low to High" },
         { value: "price_desc", label: "Price: High to Low" },
       ],
+      collectionDetails: collection,
     },
   };
+};
+
+export const getRelatedProductsBySubcategory = async ({
+  subcategoryHandle,
+  excludedSlug,
+  limit = 6,
+} = {}) => {
+  if (!subcategoryHandle) return [];
+
+  // Fetch extra variants because a product can own more than one variant.
+  const collection = await getCollectionProducts(subcategoryHandle, {
+    take: Math.max(limit * 4, 12),
+  });
+  if (!collection) return [];
+
+  return toRelatedProductCards(collection, excludedSlug, limit);
 };

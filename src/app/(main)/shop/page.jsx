@@ -2,10 +2,17 @@ import ProductSlider from '@/components/ProductSlider';
 import ExploreOrganicOfferings from '@/components/BannerOrganic';
 import NaturePromoBanner from '@/components/ShopDiscovery/NaturePromoBanner';
 import ShopCategoryCarousel from '@/components/ShopDiscovery/ShopCategoryCarousel';
-import { getAllCollections } from '@/graphql/queries/collections';
-import { getHomeData } from '@/service/HomeService';
+import { getCachedCategories, getCachedDiscovery } from '@/lib/publicCatalogData';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 300;
+
+const SHOP_DISCOVERY_CODES = [
+  'deals',
+  'trending',
+  'featured',
+  'new-arrivals',
+  'best-sellers',
+];
 
 function findSection(collections, ...handles) {
   return handles
@@ -15,24 +22,19 @@ function findSection(collections, ...handles) {
 
 export default async function ShopPage() {
   const [categoryResult, discoveryResult] = await Promise.allSettled([
-    getAllCollections({
-      topLevelOnly: true,
-      skip: 0,
-      take: 100,
-      sort: { position: 'ASC' },
-    }),
-    getHomeData(),
+    getCachedCategories(),
+    getCachedDiscovery(SHOP_DISCOVERY_CODES),
   ]);
 
   const categories =
-    categoryResult.status === 'fulfilled' ? categoryResult.value?.items || [] : [];
+    categoryResult.status === 'fulfilled' ? categoryResult.value || [] : [];
   const categoryError =
     categoryResult.status === 'rejected'
       ? categoryResult.reason?.message || 'Could not load categories.'
       : '';
   const collections =
     discoveryResult.status === 'fulfilled'
-      ? discoveryResult.value?.data?.collections || []
+      ? discoveryResult.value || []
       : [];
   const discoveryError =
     discoveryResult.status === 'rejected'

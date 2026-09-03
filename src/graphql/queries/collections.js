@@ -399,6 +399,11 @@ export const SEARCH_COLLECTION_PRODUCTS = gql`
         sku
         currencyCode
         facetValueIds
+        offerPricing {
+          originalPrice
+          offerPercentage
+          sellingPrice
+        }
         priceWithTax {
           __typename
           ... on SinglePrice {
@@ -423,23 +428,6 @@ export const SEARCH_COLLECTION_PRODUCTS = gql`
             id
             name
             code
-          }
-        }
-      }
-    }
-  }
-`;
-
-export const GET_PRODUCT_VARIANT_ORIGINAL_PRICES = gql`
-  query GetProductVariantOriginalPrices($options: ProductListOptions) {
-    products(options: $options) {
-      items {
-        variants {
-          id
-          offerPricing {
-            originalPrice
-            offerPercentage
-            sellingPrice
           }
         }
       }
@@ -517,18 +505,4 @@ export async function getProductDetails(slug) {
 
 export async function searchCollectionProducts(input, filterInput) {
   return shopApiRequest(SEARCH_COLLECTION_PRODUCTS, { input, filterInput });
-}
-
-export async function getProductVariantOriginalPrices(productIds = []) {
-  const uniqueIds = [...new Set(productIds.filter(Boolean).map(String))];
-  if (uniqueIds.length === 0) return [];
-
-  const data = await shopApiRequest(GET_PRODUCT_VARIANT_ORIGINAL_PRICES, {
-    options: {
-      take: uniqueIds.length,
-      filter: { id: { in: uniqueIds } },
-    },
-  });
-
-  return (data.products?.items || []).flatMap((product) => product.variants || []);
 }

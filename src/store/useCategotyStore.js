@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { getCategories, getSubcategoriesByCategory } from '@/service/categoryService';
 
+const CATEGORY_TTL_MS = 5 * 60 * 1000;
+
 const useCategoryStore = create((set, get) => ({
   categories: [],
   megaMenu: [],
@@ -9,22 +11,37 @@ const useCategoryStore = create((set, get) => ({
   loading: false,
   error: null,
   fetched: false,
+  fetchedAt: 0,
+
+  hydrateCategories: (categories = []) => {
+    if (!Array.isArray(categories) || categories.length === 0) return;
+    set({
+      categories,
+      loading: false,
+      error: null,
+      fetched: true,
+      fetchedAt: Date.now(),
+    });
+  },
 
   // ================= FETCH ALL CATEGORIES =================
   fetchCategories: async (force = false) => {
-    const { fetched, categories, loading } = get();
+    const { fetched, fetchedAt, categories, loading } = get();
 
     if (loading) return;
 
-    if (!force && fetched && categories.length > 0) {
-      console.log('CategoryStore - using cached categories');
+    if (
+      !force &&
+      fetched &&
+      categories.length > 0 &&
+      Date.now() - fetchedAt < CATEGORY_TTL_MS
+    ) {
       return;
     }
 
     set({
       loading: true,
       error: null,
-      ...(force ? { categories: [], megaMenu: [] } : {}),
     });
 
     try {
@@ -35,9 +52,8 @@ const useCategoryStore = create((set, get) => ({
         megaMenu: response.data?.mega_menu?.items || [],
         loading: false,
         fetched: true,
+        fetchedAt: Date.now(),
       });
-
-      console.log('CategoryStore - categories fetched & cached');
     } catch (err) {
       console.error('CategoryStore - fetch failed:', err);
       set({
@@ -89,6 +105,7 @@ const useCategoryStore = create((set, get) => ({
       loading: false,
       error: null,
       fetched: false,
+      fetchedAt: 0,
     }),
 }));
 

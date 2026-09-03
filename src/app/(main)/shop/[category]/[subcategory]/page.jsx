@@ -2,7 +2,7 @@ import { notFound, redirect } from 'next/navigation';
 import ShopBreadcrumb from '@/components/ProductBreadcrumb';
 import Filters from '@/components/Filters';
 import ProductGrid from '@/components/ProductGrid';
-import { getProductsBySubcategory } from '@/service/ProductService';
+import { getCachedProductList } from '@/lib/publicCatalogData';
 import { ArrowDownWideNarrow } from 'lucide-react';
 import MobileFilterTrigger from '@/components/MobileFilterTrigger';
 import CategoryFilter from '@/components/Filters/CategoryFilter';
@@ -26,7 +26,7 @@ export default async function SubCategoryPage({ params, searchParams }) {
     .map((values) => values.filter(Boolean));
 
   // ✅ Call backend API using subcategory handle
-  const response = await getProductsBySubcategory({
+  const response = await getCachedProductList({
     subcategoryHandle: subcategory,
     page,
     limit: 20,

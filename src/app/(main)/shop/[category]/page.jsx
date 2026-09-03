@@ -4,11 +4,17 @@ import ExploreOrganicOfferings from "@/components/BannerOrganic";
 import ProductSlider from "@/components/ProductSlider";
 import NaturePromoBanner from "@/components/ShopDiscovery/NaturePromoBanner";
 import ShopCategoryCarousel from "@/components/ShopDiscovery/ShopCategoryCarousel";
-import { getCollectionBySlug } from "@/graphql/queries/collections";
-import { getHomeData } from "@/service/HomeService";
-import { getProductsBySubcategory } from "@/service/ProductService";
+import { getCachedDiscovery, getCachedProductList } from "@/lib/publicCatalogData";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 300;
+
+const CATEGORY_DISCOVERY_CODES = [
+  "deals",
+  "trending",
+  "featured",
+  "new-arrivals",
+  "best-sellers",
+];
 
 function isRootBreadcrumb(item) {
   return item.slug === "__root_collection__" || item.name === "__root_collection__";
@@ -26,18 +32,20 @@ function findSection(collections, ...handles) {
 
 export default async function CategoryPage({ params }) {
   const { category } = await params;
-  const categoryData = await getCollectionBySlug(category);
-
-  if (!categoryData) notFound();
 
   const [productResult, discoveryResult] = await Promise.allSettled([
-    getProductsBySubcategory({
-      subcategoryHandle: categoryData.slug,
+    getCachedProductList({
+      subcategoryHandle: category,
       page: 1,
       limit: 12,
     }),
-    getHomeData(),
+    getCachedDiscovery(CATEGORY_DISCOVERY_CODES),
   ]);
+
+  const productResponse =
+    productResult.status === "fulfilled" ? productResult.value : null;
+  const categoryData = productResponse?.data?.collectionDetails;
+  if (!productResponse?.success || !categoryData) notFound();
 
   const hierarchy = (categoryData.breadcrumbs || []).filter(
     (item) => !isRootBreadcrumb(item)
@@ -52,12 +60,12 @@ export default async function CategoryPage({ params }) {
 
   const subcategories = categoryData.children || [];
   const categoryProducts =
-    productResult.status === "fulfilled" && productResult.value?.success
-      ? productResult.value.data?.products || []
+    productResponse?.success
+      ? productResponse.data?.products || []
       : [];
   const collections =
     discoveryResult.status === "fulfilled"
-      ? discoveryResult.value?.data?.collections || []
+      ? discoveryResult.value || []
       : [];
   const bestDeals = findSection(collections, "deals", "trending", "featured");
   const relatedProducts =

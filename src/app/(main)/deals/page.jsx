@@ -1,16 +1,16 @@
 import Link from 'next/link';
 import CardProduct from '@/components/CardProduct';
-import { getDealsData } from '@/service/DealsService';
+import { getCachedDeals } from '@/lib/publicCatalogData';
 
 export const metadata = {
   title: 'Deal of the Week | Nana Organics',
   description: 'Shop all Nana Organics products selected for this week’s deals.',
 };
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export default async function DealsPage() {
-  const deals = await getDealsData();
+  const deals = await getCachedDeals();
   const products = deals?.products || [];
 
   return (

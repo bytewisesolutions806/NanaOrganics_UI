@@ -19,7 +19,7 @@ import Sidebar from './sidebar';
 import { DEFAULT_IMAGE } from '@/lib/defaultImage';
 import { fetchProfileApi } from '@/service/ProfileService';
 
-const Header = () => {
+const Header = ({ initialCategories = [] }) => {
   const { customer, isAuthenticated, hasHydrated, cartId: authCartId, setCustomer } = useAuthStore();
   const profileSyncCustomerId = useRef(null);
   const storeCartId = useCartStore((state) => state.cartId);
@@ -87,15 +87,20 @@ const Header = () => {
   const cartCount = useCartStore((state) => state.itemCount);
 
   // Load Categories for Dynamic Dropdown
-  const categories = useCategoryStore((state) => state.categories);
+  const storedCategories = useCategoryStore((state) => state.categories);
   const loading = useCategoryStore((state) => state.loading);
   const fetchCategories = useCategoryStore((state) => state.fetchCategories);
+  const hydrateCategories = useCategoryStore((state) => state.hydrateCategories);
+
+  useEffect(() => {
+    hydrateCategories(initialCategories);
+  }, [hydrateCategories, initialCategories]);
+
+  const categories = storedCategories.length > 0 ? storedCategories : initialCategories;
 
   const handleShopByCategoryOpen = (index) => {
     if (dropdownOpenDesktop !== index) {
-      // Category data is server state. Refresh it when the menu opens so removed
-      // collections cannot linger in the header from an older browser session.
-      fetchCategories(true);
+      fetchCategories();
     }
     setDropdownOpenDesktop(dropdownOpenDesktop === index ? null : index);
   };
