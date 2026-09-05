@@ -43,9 +43,7 @@ export default function CartPage() {
     let cancelled = false;
     (async () => {
       if (!hasHydrated) return;
-      if (isAuthenticated) {
-        await fetchCart();
-      }
+      await fetchCart();
       if (!cancelled) setCartReady(true);
     })();
     return () => {

@@ -79,14 +79,6 @@ const useCartStore = create((set, get) => ({
     // ADD TO CART
     // ======================
     addToCart: async({ variant_id, quantity }) => {
-        // Check for the user is logged in or not
-
-        const { isAuthenticated } = useAuthStore.getState();
-        if (!isAuthenticated) {
-            window.location.href = '/login'
-            return
-        }
-
         // 🛑 prevent double-click / parallel add
         if (get().addingVariantId) return;
 

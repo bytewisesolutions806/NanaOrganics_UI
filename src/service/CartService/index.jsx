@@ -535,6 +535,34 @@ export const removeCouponApi = async (couponCode) => {
   return mapOrder(order);
 };
 
+/** Attach contact details to the anonymous session's order without creating a login. */
+export const setGuestCustomerApi = async (input) => {
+  await ensureActiveOrderAddingItemsApi();
+  const data = await shopApiRequest(`
+    mutation SetGuestCustomer($input: CreateCustomerInput!) {
+      setCustomerForOrder(input: $input) {
+        __typename
+        ... on Order { id }
+        ... on ErrorResult { errorCode message }
+      }
+    }
+  `, {
+    input: {
+      emailAddress: input.email.trim(),
+      firstName: input.first_name.trim(),
+      lastName: input.last_name.trim(),
+      phoneNumber: input.phone.trim(),
+    },
+  });
+  const result = data.setCustomerForOrder;
+  // Cookie authentication may finish recovering after the checkout first renders.
+  if (result?.__typename === "AlreadyLoggedInError") return;
+  if (result?.__typename === "EmailAddressConflictError") {
+    throw new Error("This email belongs to an existing account. Please sign in to continue with this email, or use a different email for guest checkout.");
+  }
+  unwrapOrder(result, "Save checkout contact details");
+};
+
 export const saveShippingAddress = async (input) => {
   await ensureActiveOrderAddingItemsApi();
   const address = {
@@ -606,7 +634,7 @@ export const createStripePaymentIntentApi = async () => {
   if (!activeCart.items.length) throw new Error("Your active order is empty.");
   if (!activeCart.checkout_ready?.has_customer) {
     throw new Error(
-      "The active order is not attached to your customer account. Sign out, sign in again, and retry checkout."
+      "Enter your contact details in the shipping step before continuing to payment."
     );
   }
   if (!activeCart.checkout_ready?.has_shipping_method) {
@@ -698,7 +726,7 @@ export const placeOrderApi = async ({ address, shippingMethodId } = {}) => {
     if (!activeCart.items.length) throw new Error("Your active order is empty.");
     if (!activeCart.checkout_ready?.has_customer) {
       throw new Error(
-        "The active order is not attached to your customer account. Sign out, sign in again, and retry checkout."
+        "Enter your contact details in the shipping step before continuing to payment."
       );
     }
     if (!activeCart.checkout_ready?.has_shipping_method) {

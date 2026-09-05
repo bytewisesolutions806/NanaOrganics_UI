@@ -6,6 +6,7 @@ import Image from "next/image";
 import useCartStore from "@/store/useCartStore";
 import {
   saveShippingAddress,
+  setGuestCustomerApi,
   fetchShippingOptionsApi,
   addShippingMethodApi,
   initPaymentApi,
@@ -78,10 +79,7 @@ export default function CheckoutPage() {
   useEffect(() => {
     setMounted(true);
     if (typeof window === "undefined") return;
-    const cartId = sessionStorage.getItem("cart_id");
-    if (cartId || isAuthenticated) {
-      fetchCart();
-    }
+    fetchCart();
     // Vendure needs the active order address before calculating shipping quotes.
   }, [fetchCart, isAuthenticated]);
 
@@ -186,6 +184,10 @@ export default function CheckoutPage() {
       postal_code: address.zip.trim(),
       country_code: (address.country || "us").toLowerCase(),
     };
+
+    if (!isAuthenticated) {
+      await setGuestCustomerApi(payload);
+    }
 
     const addressRes = await saveShippingAddress(payload);
     if (!addressRes?.success) {
@@ -448,7 +450,7 @@ export default function CheckoutPage() {
       const order = result.order;
 
       try {
-        await useOrdersStore.getState().fetchOrders();
+        if (isAuthenticated) await useOrdersStore.getState().fetchOrders();
       } catch (refreshError) {
         console.warn("Could not refresh My Orders after Stripe payment", refreshError);
       }
@@ -472,7 +474,7 @@ export default function CheckoutPage() {
       setPaymentError(
         error?.response?.data?.message ||
           error?.message ||
-          "Your payment may have completed, but order confirmation is delayed. Please check My Orders before retrying."
+          "Your payment may have completed, but order confirmation is delayed. Please contact support with your order reference before retrying."
       );
       setPlacingOrder(false);
     }
@@ -509,7 +511,7 @@ export default function CheckoutPage() {
       // Make the newly placed order available immediately when the customer
       // opens My Orders. A failure here must not invalidate a completed order.
       try {
-        await useOrdersStore.getState().fetchOrders();
+        if (isAuthenticated) await useOrdersStore.getState().fetchOrders();
       } catch (refreshError) {
         console.warn("Could not refresh My Orders after checkout", refreshError);
       }
@@ -609,6 +611,12 @@ export default function CheckoutPage() {
             ← Back to Cart
           </button>
         </div>
+
+        {!isAuthenticated && (
+          <p className="mt-4 text-sm text-gray-600">
+            Checking out as a guest. No account is required. Enter your email for order updates.
+          </p>
+        )}
 
         <div className="flex items-center gap-3 mt-4">
           <StepBadge

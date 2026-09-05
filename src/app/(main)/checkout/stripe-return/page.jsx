@@ -7,11 +7,13 @@ import { stripePromise, stripePublishableKey } from "@/lib/stripe";
 import { waitForStripeOrderApi } from "@/service/CartService";
 import useCartStore from "@/store/useCartStore";
 import useOrdersStore from "@/store/useOrdersStore";
+import useAuthStore from "@/store/AuthStore";
 
 function StripeReturnContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const resetCart = useCartStore((state) => state.resetCart);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [error, setError] = useState("");
 
   const clientSecret = searchParams.get("payment_intent_client_secret");
@@ -57,7 +59,9 @@ function StripeReturnContent() {
         if (cancelled) return;
 
         try {
-          await useOrdersStore.getState().fetchOrders();
+          if (useAuthStore.getState().isAuthenticated) {
+            await useOrdersStore.getState().fetchOrders();
+          }
         } catch (refreshError) {
           console.warn("Could not refresh My Orders after Stripe payment", refreshError);
         }
@@ -82,7 +86,7 @@ function StripeReturnContent() {
         if (!cancelled) {
           setError(
             verificationError?.message ||
-              "We could not verify the Stripe payment. Check My Orders before retrying.",
+              "We could not verify the Stripe payment. Contact support with your order reference before retrying.",
           );
         }
       }
@@ -112,10 +116,10 @@ function StripeReturnContent() {
           </button>
           <button
             type="button"
-            onClick={() => router.push("/my-orders")}
+            onClick={() => router.push(isAuthenticated ? "/my-orders" : "/contact-us")}
             className="rounded-xl border border-[#1EA766] px-5 py-3 font-semibold text-[#1EA766]"
           >
-            Check My Orders
+            {isAuthenticated ? "Check My Orders" : "Contact Support"}
           </button>
         </div>
       </div>

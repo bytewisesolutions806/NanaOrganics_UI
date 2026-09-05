@@ -4,6 +4,7 @@ import { AlertCircle, CheckCircle, Clock3 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
+import useAuthStore from "@/store/AuthStore";
 import { fetchOrderByCodeApi } from "@/service/CartService";
 
 function formatMoney(amount, currencyCode) {
@@ -21,6 +22,7 @@ function formatMoney(amount, currencyCode) {
 
 function SuccessContent() {
   const searchParams = useSearchParams();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const displayId = searchParams.get("display_id");
   const orderId = searchParams.get("order_id");
   const total = searchParams.get("total");
@@ -158,12 +160,17 @@ function SuccessContent() {
         )}
 
         <div className="mt-6 flex flex-col gap-3">
-          <Link
+          {isAuthenticated && <Link
             href="/my-orders"
             className="flex h-12 w-full items-center justify-center rounded-lg border border-[#1EA766] bg-[#1EA766] px-5 text-base font-semibold leading-none text-white transition-colors hover:border-[#188A55] hover:bg-[#188A55] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1EA766] focus-visible:ring-offset-2"
           >
             View My Orders
-          </Link>
+          </Link>}
+          {!isAuthenticated && (
+            <p className="text-sm text-gray-600">
+              Keep your order reference for any questions about your guest order.
+            </p>
+          )}
           <Link
             href="/"
             className="flex h-12 w-full items-center justify-center rounded-lg border border-[#1EA766] bg-white px-5 text-base font-semibold leading-none text-[#1EA766] transition-colors hover:bg-[#F1F8F7] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1EA766] focus-visible:ring-offset-2"
