@@ -71,8 +71,8 @@ is_placeholder() {
 
 INVALID_ENV_KEYS=()
 for key in \
-    NEXT_PUBLIC_API_BASE_URL \
-    NEXT_PUBLIC_VENDURE_SHOP_API_URL \
+    VENDURE_SHOP_API_URL \
+    NEXT_PUBLIC_VENDURE_API_URL \
     NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY; do
     value="$(env_value "$key")"
     if is_placeholder "$value"; then
