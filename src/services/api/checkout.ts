@@ -206,9 +206,9 @@ export async function removeCoupon(couponCode: string) {
 
 export async function setCheckoutCustomer(contact: CheckoutContact) {
   await ensureAddingItems();
-  const data = await request<{ setCustomerForOrder: OrderResult }>(`${ORDER_FRAGMENT} mutation SetCheckoutCustomer($input: CreateCustomerInput!) { setCustomerForOrder(input: $input) { __typename ... on Order { ...CheckoutOrder } ... on ErrorResult { errorCode message } } }`, { input: contact });
-  if (data.setCustomerForOrder.__typename === "AlreadyLoggedInError") return getActiveOrder();
-  if (data.setCustomerForOrder.__typename === "EmailAddressConflictError") throw new Error("This email belongs to an existing account. Sign in to continue or use another email for guest checkout.");
+  const data = await request<{ setCustomerForOrder: OrderResult | null }>(`${ORDER_FRAGMENT} mutation SetCheckoutCustomer($input: CreateCustomerInput!) { setCustomerForOrder(input: $input) { __typename ... on Order { ...CheckoutOrder } ... on ErrorResult { errorCode message } } }`, { input: contact });
+  if (data.setCustomerForOrder?.__typename === "AlreadyLoggedInError") return getActiveOrder();
+  if (data.setCustomerForOrder?.__typename === "EmailAddressConflictError") throw new Error("This email belongs to an existing account. Sign in to continue or use another email for guest checkout.");
   return orderResult(data.setCustomerForOrder, "Save contact details");
 }
 

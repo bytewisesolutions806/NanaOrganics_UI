@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:guest-checkout": "node scripts/test-guest-checkout.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
