@@ -1,12 +1,12 @@
 import { Suspense } from "react";
-import Image from "next/image";
 import Link from "next/link";
-import { Leaf } from "lucide-react";
 import { notFound } from "next/navigation";
 
-import { HomeProductSection } from "@/components/home/home-product-section";
+import { ShopCategoryListing } from "@/components/shop/shop-category-listing";
+import { SubcategoryCarousel } from "@/components/shop/subcategory-carousel";
 import {
   getStorefrontBrands,
+  getStorefrontCategories,
   getStorefrontCategory,
 } from "@/services/api/storefront";
 
@@ -23,16 +23,19 @@ async function ShopCategoryContent({
   params,
   searchParams,
 }: ShopCategoryPageProps) {
-  const [{ category: categorySlug }, query, brands] = await Promise.all([
-    params,
-    searchParams,
-    getStorefrontBrands(),
-  ]);
+  const [{ category: categorySlug }, query, brands, allCategories] =
+    await Promise.all([
+      params,
+      searchParams,
+      getStorefrontBrands(),
+      getStorefrontCategories(),
+    ]);
   const selectedBrand =
     brands.find((brand) => brand.slug === requestedBrandFrom(query.brand)) ??
     brands.find((brand) => brand.featured) ??
     brands[0];
-  const brandSlug = selectedBrand?.slug ?? requestedBrandFrom(query.brand) ?? "";
+  const brandSlug =
+    selectedBrand?.slug ?? requestedBrandFrom(query.brand) ?? "";
   const categoryData = await getStorefrontCategory(categorySlug);
 
   if (!categoryData) notFound();
@@ -101,8 +104,11 @@ async function ShopCategoryContent({
         </header>
 
         {category.children.length ? (
-          <section className="mt-8 sm:mt-10" aria-labelledby="subcategories-heading">
-            <div className="mb-5">
+          <section
+            className="mt-8 sm:mt-10"
+            aria-labelledby="subcategories-heading"
+          >
+            {/* <div className="mb-5">
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#66846c]">
                 Explore the range
               </p>
@@ -112,79 +118,23 @@ async function ShopCategoryContent({
               >
                 Shop by subcategory
               </h2>
-            </div>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
-              {category.children
-                .slice()
-                .sort(
-                  (left, right) =>
-                    left.position - right.position ||
-                    left.name.localeCompare(right.name),
-                )
-                .map((child) => {
-                  const image =
-                    child.featuredAsset?.preview ??
-                    child.featuredAsset?.source;
-
-                  return (
-                    <Link
-                      key={child.id}
-                      href={`/shop/${encodeURIComponent(category.slug)}/${encodeURIComponent(child.slug)}${brandQuery}`}
-                      className="group overflow-hidden rounded-2xl border border-[#dfe8df] bg-white shadow-[0_10px_30px_rgba(40,72,49,0.06)] transition hover:-translate-y-1 hover:shadow-[0_14px_35px_rgba(40,72,49,0.12)]"
-                    >
-                      <div className="relative aspect-[4/3] overflow-hidden bg-[#edf2e9]">
-                        {image ? (
-                          <Image
-                            src={image}
-                            alt=""
-                            fill
-                            unoptimized
-                            sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 25vw"
-                            className="object-cover transition duration-500 group-hover:scale-105"
-                          />
-                        ) : (
-                          <div className="grid size-full place-items-center text-[#5d8c66]">
-                            <Leaf className="size-10" aria-hidden="true" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="p-4">
-                        <h3 className="font-semibold text-[#21392a]">
-                          {child.name}
-                        </h3>
-                        <p className="mt-1 text-xs text-[#708077]">
-                          {child.productVariantCount} products
-                        </p>
-                      </div>
-                    </Link>
-                  );
-                })}
-            </div>
+            </div> */}
+            <SubcategoryCarousel category={category} brandQuery={brandQuery} />
           </section>
         ) : null}
 
-      </div>
-      {products.length ? (
-        <HomeProductSection
-          section={{
-            code: `related-${category.slug}`,
-            title: "Related products",
-            products: products.slice(0, 8),
-          }}
+        <ShopCategoryListing
+          key={category.slug}
+          category={category}
+          categories={allCategories}
+          products={products}
+          facets={categoryData.facets}
           brandSlug={brandSlug}
-          eyebrow=""
-          showViewAll={false}
+          paginationSlug={category.slug}
+          totalItems={categoryData.totalItems}
+          title={`All ${category.name} products`}
         />
-      ) : (
-        <section className="mt-10 border-y border-[#dfe8df] bg-white px-5 py-14 text-center">
-          <h2 className="font-serif text-2xl font-semibold text-[#203428]">
-            Related products
-          </h2>
-          <p className="mt-2 text-sm text-[#68756d]">
-            No products are available in this category yet.
-          </p>
-        </section>
-      )}
+      </div>
     </main>
   );
 }

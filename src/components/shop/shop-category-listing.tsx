@@ -2,7 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useId, useMemo, useState, type ReactNode } from "react";
-import { ChevronDown, SlidersHorizontal, X } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
 
 import { HomeProductCard } from "@/components/home/home-product-section";
 import type {
@@ -20,11 +26,13 @@ interface ShopCategoryListingProps {
   facets: StorefrontFacetValue[];
   brandSlug: string;
   selectedSubcategorySlug?: string;
+  paginationSlug?: string;
   title?: string;
   totalItems?: number;
 }
 
 type SortOrder = "recommended" | "price-low" | "price-high" | "name";
+const PRODUCTS_PER_PAGE = 12;
 
 function getProductPrice(product: StoreProduct) {
   const prices = product.variants
@@ -453,9 +461,14 @@ export function ShopCategoryListing({
   facets,
   brandSlug,
   selectedSubcategorySlug,
+  paginationSlug,
   title = "Related products",
   totalItems,
 }: ShopCategoryListingProps) {
+  const [loadedProducts, setLoadedProducts] = useState(products);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isLoadingPage, setIsLoadingPage] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
   const [selectedFacets, setSelectedFacets] = useState<Set<string>>(
     () => new Set(),
   );
@@ -490,7 +503,7 @@ export function ShopCategoryListing({
   }, [mobileFiltersOpen]);
 
   const priceBounds = useMemo(() => {
-    const prices = products
+    const prices = loadedProducts
       .flatMap((product) =>
         product.variants.flatMap((variant) => {
           const range = getVariantPriceRange(variant);
@@ -502,7 +515,7 @@ export function ShopCategoryListing({
     return prices.length
       ? { min: Math.min(...prices), max: Math.max(...prices) }
       : { min: 0, max: 0 };
-  }, [products]);
+  }, [loadedProducts]);
   const selectedPrice = priceRange
     ? {
         min: Math.min(
@@ -519,18 +532,18 @@ export function ShopCategoryListing({
     () =>
       [
         ...new Set(
-          products.flatMap((product) =>
+          loadedProducts.flatMap((product) =>
             product.variants.flatMap(getVariantOptionValues),
           ),
         ),
       ].sort((left, right) => left.localeCompare(right)),
-    [products],
+    [loadedProducts],
   );
   const discountOptions = useMemo(
     () =>
       [
         ...new Set(
-          products.flatMap((product) =>
+          loadedProducts.flatMap((product) =>
             product.variants
               .map((variant) => variant.offerPricing?.offerPercentage)
               .filter(
@@ -540,9 +553,9 @@ export function ShopCategoryListing({
           ),
         ),
       ].sort((left, right) => right - left),
-    [products],
+    [loadedProducts],
   );
-  const hasStockData = products.some((product) =>
+  const hasStockData = loadedProducts.some((product) =>
     product.variants.some((variant) => variant.stockLevel !== "UNKNOWN"),
   );
 
@@ -580,7 +593,7 @@ export function ShopCategoryListing({
 
   const filteredProducts = useMemo(() => {
     const selectedFacetIds = [...selectedFacets];
-    const results = products.filter((product) => {
+    const results = loadedProducts.filter((product) => {
       const variants = product.variants;
       const hasMatchingVariant = variants.some((variant) => {
         const stockMatches =
@@ -642,7 +655,7 @@ export function ShopCategoryListing({
   }, [
     facetGroups,
     inStockOnly,
-    products,
+    loadedProducts,
     selectedDiscounts,
     selectedFacets,
     selectedPrice.max,
@@ -684,6 +697,50 @@ export function ShopCategoryListing({
     setSelectedSizes(new Set());
     setSelectedDiscounts(new Set());
     setInStockOnly(false);
+  }
+
+  const pageCount = Math.ceil((totalItems ?? loadedProducts.length) / PRODUCTS_PER_PAGE);
+  const firstVisiblePage = Math.max(1, Math.min(currentPage - 2, pageCount - 4));
+  const visiblePages = Array.from(
+    { length: Math.min(5, pageCount) },
+    (_, index) => firstVisiblePage + index,
+  );
+
+  async function loadPage(page: number) {
+    if (
+      !paginationSlug ||
+      isLoadingPage ||
+      page < 1 ||
+      page > pageCount ||
+      page === currentPage
+    ) {
+      return;
+    }
+
+    setIsLoadingPage(true);
+    setLoadMoreError(null);
+    try {
+      const params = new URLSearchParams({
+        collectionSlug: paginationSlug,
+        skip: String((page - 1) * PRODUCTS_PER_PAGE),
+      });
+      const response = await fetch(
+        `/api/storefront/category-products?${params.toString()}`,
+      );
+      if (!response.ok) {
+        throw new Error("Category products could not be loaded.");
+      }
+
+      const result: { items: StoreProduct[]; totalItems: number } =
+        await response.json();
+      setLoadedProducts(result.items);
+      setCurrentPage(page);
+    } catch (error) {
+      console.error("Failed to load category product page.", error);
+      setLoadMoreError("Products could not be loaded. Please try again.");
+    } finally {
+      setIsLoadingPage(false);
+    }
   }
 
   const isPriceFiltered =
@@ -742,10 +799,23 @@ export function ShopCategoryListing({
           <h2 className="font-serif text-2xl font-semibold text-[#203428] sm:text-3xl">
             {title}
           </h2>
-              <p className="mt-1 text-sm text-[#68756d]">
-                Showing {filteredProducts.length}
-                {totalItems !== undefined ? ` of ${totalItems}` : ""} products
-              </p>
+          <p className="mt-1 text-sm text-[#68756d]">
+            Showing{" "}
+            {loadedProducts.length
+              ? (currentPage - 1) * PRODUCTS_PER_PAGE + 1
+              : 0}
+            –
+            {Math.min(
+              currentPage * PRODUCTS_PER_PAGE,
+              totalItems ?? loadedProducts.length,
+            )}{" "}
+            of {totalItems ?? loadedProducts.length} products
+          </p>
+          {hasFilters ? (
+            <p className="mt-1 text-xs text-[#68756d]">
+              Showing {filteredProducts.length} matching products on this page.
+            </p>
+          ) : null}
         </div>
         <label className="flex items-center gap-2 text-sm text-[#657168]">
           <span className="hidden sm:inline">Sort by</span>
@@ -851,7 +921,9 @@ export function ShopCategoryListing({
           ) : (
             <div className="rounded-xl border border-[#dce6dd] bg-white px-5 py-14 text-center">
               <p className="text-base font-medium text-[#35463a]">
-                No products match these filters.
+                {loadedProducts.length < (totalItems ?? loadedProducts.length)
+                  ? "No loaded products match these filters yet."
+                  : "No products match these filters."}
               </p>
               <button
                 type="button"
@@ -863,6 +935,58 @@ export function ShopCategoryListing({
               </button>
             </div>
           )}
+          {paginationSlug && pageCount > 1 ? (
+            <nav
+              aria-label="Product pages"
+              className="mt-8 flex flex-wrap items-center justify-center gap-2"
+            >
+              {loadMoreError ? (
+                <p role="alert" className="w-full text-center text-sm text-red-700">
+                  {loadMoreError}
+                </p>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => void loadPage(currentPage - 1)}
+                disabled={currentPage === 1 || isLoadingPage}
+                aria-label="Previous page"
+                className="grid size-10 place-items-center rounded-lg border border-[#d6e1d8] bg-white text-[#315f48] transition-colors hover:bg-[#eff6f0] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <ChevronLeft className="size-4" aria-hidden="true" />
+              </button>
+              {visiblePages.map((page) => (
+                <button
+                  key={page}
+                  type="button"
+                  onClick={() => void loadPage(page)}
+                  disabled={isLoadingPage || page === currentPage}
+                  aria-label={`Page ${page}`}
+                  aria-current={page === currentPage ? "page" : undefined}
+                  className={`grid size-10 place-items-center rounded-lg border text-sm font-semibold transition-colors disabled:cursor-default ${
+                    page === currentPage
+                      ? "border-[#315f48] bg-[#315f48] text-white"
+                      : "border-[#d6e1d8] bg-white text-[#315f48] hover:bg-[#eff6f0]"
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => void loadPage(currentPage + 1)}
+                disabled={currentPage === pageCount || isLoadingPage}
+                aria-label="Next page"
+                className="grid size-10 place-items-center rounded-lg border border-[#d6e1d8] bg-white text-[#315f48] transition-colors hover:bg-[#eff6f0] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <ChevronRight className="size-4" aria-hidden="true" />
+              </button>
+              {isLoadingPage ? (
+                <span className="sr-only" role="status">
+                  Loading products
+                </span>
+              ) : null}
+            </nav>
+          ) : null}
         </div>
       </div>
     </section>

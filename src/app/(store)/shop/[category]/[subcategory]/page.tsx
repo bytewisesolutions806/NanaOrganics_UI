@@ -48,7 +48,7 @@ async function ShopSubcategoryContent({
 
   if (!parentCategory || !subcategory) notFound();
 
-  const categoryData = await getStorefrontCategory(subcategorySlug, 100);
+  const categoryData = await getStorefrontCategory(subcategorySlug);
   if (!categoryData) notFound();
 
   const brandQuery = brandSlug ? `?brand=${encodeURIComponent(brandSlug)}` : "";
@@ -94,6 +94,7 @@ async function ShopSubcategoryContent({
         </header>
 
         <ShopCategoryListing
+          key={subcategorySlug}
           category={{
             ...parentCategory,
             description: categoryData.category.description,
@@ -103,6 +104,8 @@ async function ShopSubcategoryContent({
           facets={categoryData.facets}
           brandSlug={brandSlug}
           selectedSubcategorySlug={subcategorySlug}
+          paginationSlug={subcategorySlug}
+          totalItems={categoryData.totalItems}
           title={`${subcategory.name} products`}
         />
       </div>

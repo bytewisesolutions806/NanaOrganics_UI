@@ -384,10 +384,10 @@ export function HomeProductCard({
           </div>
         ) : null}
 
-        <div className="mt-auto flex items-center gap-2.5 pt-3">
+        <div className="mt-auto flex items-center gap-2 pt-3">
           <div
             aria-label="Quantity"
-            className="flex w-[122px] shrink-0 items-center justify-between"
+            className="flex w-[108px] shrink-0 items-center justify-between"
           >
             <button
               type="button"
@@ -397,7 +397,7 @@ export function HomeProductCard({
               }}
               disabled={quantity === 1 || cartPending}
               aria-label="Decrease quantity"
-              className="grid size-8 place-items-center rounded-full border border-[#a8c0b0] bg-white text-[#315f48] shadow-[0_1px_3px_rgba(35,75,52,0.06)] transition-colors hover:border-[#315f48] hover:bg-[#f1f7f2] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#68bd45] focus-visible:ring-offset-2"
+              className="grid size-7 place-items-center rounded-full border border-[#a8c0b0] bg-white text-[#315f48] shadow-[0_1px_3px_rgba(35,75,52,0.06)] transition-colors hover:border-[#315f48] hover:bg-[#f1f7f2] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#68bd45] focus-visible:ring-offset-2"
             >
               <Minus
                 className="size-3.5"
@@ -406,7 +406,7 @@ export function HomeProductCard({
               />
             </button>
             <output
-              className="min-w-9 text-center text-[14px] font-semibold tabular-nums tracking-[0.03em] text-[#35433a]"
+              className="min-w-8 text-center text-[13px] font-semibold tabular-nums tracking-[0.03em] text-[#35433a]"
               aria-live="polite"
               aria-atomic="true"
             >
@@ -420,7 +420,7 @@ export function HomeProductCard({
               }}
               disabled={quantity === 99 || cartPending}
               aria-label="Increase quantity"
-              className="grid size-8 place-items-center rounded-full border border-[#315f48] bg-white text-[#315f48] shadow-[0_1px_3px_rgba(35,75,52,0.06)] transition-colors hover:bg-[#315f48] hover:text-white disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#68bd45] focus-visible:ring-offset-2"
+              className="grid size-7 place-items-center rounded-full border border-[#315f48] bg-white text-[#315f48] shadow-[0_1px_3px_rgba(35,75,52,0.06)] transition-colors hover:bg-[#315f48] hover:text-white disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#68bd45] focus-visible:ring-offset-2"
             >
               <Plus className="size-3.5" strokeWidth={1.8} aria-hidden="true" />
             </button>
@@ -430,7 +430,7 @@ export function HomeProductCard({
             type="button"
             onClick={() => void addToCart()}
             disabled={!selectedVariant || !inStock || cartPending}
-            className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center whitespace-nowrap rounded-md bg-[#2d6048] px-2.5 text-[13px] font-medium text-white shadow-[0_4px_10px_rgba(35,75,52,0.15)] transition hover:bg-[#234e3a] disabled:cursor-not-allowed disabled:bg-[#9aa9a0] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#315f48] focus-visible:ring-offset-2"
+            className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center whitespace-nowrap rounded-md bg-[#2d6048] px-1.5 text-[12px] font-semibold text-white shadow-[0_4px_10px_rgba(35,75,52,0.15)] transition hover:bg-[#234e3a] disabled:cursor-not-allowed disabled:bg-[#9aa9a0] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#315f48] focus-visible:ring-offset-2 sm:px-2 sm:text-[13px]"
           >
             {cartPending
               ? "Adding..."

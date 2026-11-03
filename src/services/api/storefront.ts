@@ -316,27 +316,30 @@ const STOREFRONT_CATEGORY_SEARCH_QUERY = /* GraphQL */ `
 `;
 
 const PRODUCT_CATEGORY_PRODUCTS_QUERY = /* GraphQL */ `
-  query ProductCategoryProducts($collectionSlug: String!, $take: Int!) {
-    productCategoryProducts(collectionSlug: $collectionSlug, take: $take) {
-      id
-      name
-      slug
-      description
-      featuredAsset { id name preview source mimeType }
-      variants {
+  query ProductCategoryProducts($collectionSlug: String!, $take: Int!, $skip: Int!) {
+    productCategoryProducts(collectionSlug: $collectionSlug, take: $take, skip: $skip) {
+      totalItems
+      items {
         id
         name
-        currencyCode
-        priceWithTax
-        stockLevel
-        options { id name code }
-        customFields { isPopular }
-        offerPricing { originalPrice offerPercentage sellingPrice }
-      }
-      facetValues {
-        id
-        name
-        facet { id name }
+        slug
+        description
+        featuredAsset { id name preview source mimeType }
+        variants {
+          id
+          name
+          currencyCode
+          priceWithTax
+          stockLevel
+          options { id name code }
+          customFields { isPopular }
+          offerPricing { originalPrice offerPercentage sellingPrice }
+        }
+        facetValues {
+          id
+          name
+          facet { id name }
+        }
       }
     }
   }
@@ -431,14 +434,27 @@ async function requestStoreApi<T>(
     },
   });
 
-  if (!response.ok) {
-    throw new Error(`Vendure Shop API returned HTTP ${response.status}.`);
+  const responseBody = await response.text();
+  let payload: GraphQlResponse<T>;
+  try {
+    payload = JSON.parse(responseBody) as GraphQlResponse<T>;
+  } catch {
+    throw new Error(
+      `Vendure Shop API returned HTTP ${response.status} with an invalid JSON response.`,
+    );
   }
 
-  const payload = (await response.json()) as GraphQlResponse<T>;
-
   if (payload.errors?.length) {
-    throw new Error(payload.errors.map((error) => error.message).join(";"));
+    const details = payload.errors.map((error) => error.message).join("; ");
+    throw new Error(
+      response.ok
+        ? details
+        : `Vendure Shop API returned HTTP ${response.status}: ${details}`,
+    );
+  }
+
+  if (!response.ok) {
+    throw new Error(`Vendure Shop API returned HTTP ${response.status}.`);
   }
 
   if (!payload.data) {
@@ -707,7 +723,7 @@ export async function searchStorefrontProducts(
 
 export async function getStorefrontCategory(
   slug: string,
-  take = 8,
+  take = 12,
 ): Promise<StorefrontCategoryPageData | null> {
   const { collection } = await requestStoreApi<{
     collection: StorefrontCategoryPageData["category"] | null;
@@ -759,9 +775,14 @@ export async function getStorefrontCategory(
       },
       60,
     ),
-    requestStoreApi<{ productCategoryProducts: StoreProduct[] }>(
+    requestStoreApi<{
+      productCategoryProducts: {
+        items: StoreProduct[];
+        totalItems: number;
+      };
+    }>(
       PRODUCT_CATEGORY_PRODUCTS_QUERY,
-      { collectionSlug: slug, take },
+      { collectionSlug: slug, take, skip: 0 },
       60,
     ),
   ]);
@@ -781,7 +802,7 @@ export async function getStorefrontCategory(
       featuredAsset: normalizeAsset(child.featuredAsset),
     })),
   };
-  const products: StoreProduct[] = productCategoryProducts;
+  const products: StoreProduct[] = productCategoryProducts.items;
   return {
     category: categoryWithCounts,
     products: products.map((product) => ({
@@ -792,7 +813,32 @@ export async function getStorefrontCategory(
       ...facetValue,
       count,
     })),
-    totalItems: searchResults.totalItems,
+    totalItems: productCategoryProducts.totalItems,
+  };
+}
+
+export async function getStorefrontCategoryProducts(
+  collectionSlug: string,
+  skip: number,
+  take = 12,
+): Promise<{ items: StoreProduct[]; totalItems: number }> {
+  const { productCategoryProducts } = await requestStoreApi<{
+    productCategoryProducts: {
+      items: StoreProduct[];
+      totalItems: number;
+    };
+  }>(
+    PRODUCT_CATEGORY_PRODUCTS_QUERY,
+    { collectionSlug, take, skip },
+    60,
+  );
+
+  return {
+    ...productCategoryProducts,
+    items: productCategoryProducts.items.map((product) => ({
+      ...product,
+      featuredAsset: normalizeAsset(product.featuredAsset),
+    })),
   };
 }
 
