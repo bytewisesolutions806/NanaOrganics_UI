@@ -11,6 +11,8 @@ import {
 } from "@/components/home/home-discovery-sections";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { BenefitsFooter } from "@/components/layout/benefits-footer";
+import { NanaDifferenceBanner } from "@/components/layout/nana-difference-banner";
 import { HomeMarketingSections } from "@/components/home/home-marketing-sections";
 import {
   getBrandHomepage,
@@ -91,7 +93,9 @@ async function HomeContent({ searchParams }: HomePageProps) {
             The storefront is temporarily unavailable. Please try again shortly.
           </p>
         </main>
-        <SiteFooter />
+        <BenefitsFooter benefits={<NanaDifferenceBanner />}>
+          <SiteFooter />
+        </BenefitsFooter>
       </>
     );
   }
@@ -163,7 +167,9 @@ async function HomeContent({ searchParams }: HomePageProps) {
           </>
         )}
       </main>
-      <SiteFooter />
+      <BenefitsFooter benefits={<NanaDifferenceBanner />}>
+        <SiteFooter />
+      </BenefitsFooter>
     </>
   );
 }

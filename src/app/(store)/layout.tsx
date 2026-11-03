@@ -2,6 +2,8 @@ import { Suspense } from "react";
 
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { BenefitsFooter } from "@/components/layout/benefits-footer";
+import { NanaDifferenceBanner } from "@/components/layout/nana-difference-banner";
 import { getStorefrontBrands } from "@/services/api/storefront";
 
 async function SolidStoreHeader() {
@@ -41,7 +43,11 @@ export default function StoreLayout({
         <SolidStoreHeader />
       </Suspense>
       {children}
-      <SiteFooter />
+      <Suspense fallback={<SiteFooter />}>
+        <BenefitsFooter benefits={<NanaDifferenceBanner />}>
+          <SiteFooter />
+        </BenefitsFooter>
+      </Suspense>
     </>
   );
 }
