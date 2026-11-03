@@ -12,7 +12,7 @@ export function NanaDifferenceBanner() {
   return (
     <section
       aria-labelledby="nana-difference-heading"
-      className="relative isolate min-h-[300px] overflow-hidden bg-[#f7f8f2] px-5 py-14 sm:min-h-[360px] sm:px-8 sm:py-20 lg:min-h-[400px] lg:py-24"
+      className="relative isolate min-h-[310px] overflow-hidden bg-[#f7f8f2] px-5 py-14 sm:min-h-[360px] sm:px-8 sm:py-20 lg:min-h-[400px] lg:py-24"
     >
       <div
         aria-hidden="true"
