@@ -86,6 +86,20 @@ function variantLabel(variant: StoreProductVariant) {
   return variant.options?.map((option) => option.name).join(" · ") || variant.name;
 }
 
+function selectedProductTitle(
+  productName: string,
+  variant?: StoreProductVariant,
+) {
+  if (!variant) return productName;
+
+  const label = variantLabel(variant).trim();
+  if (!label || /^default$/i.test(label) || label === productName) {
+    return productName;
+  }
+
+  return `${productName} - ${label}`;
+}
+
 export function ProductDetail({
   product,
   relatedProducts,
@@ -112,6 +126,7 @@ export function ProductDetail({
   const [cartPending, setCartPending] = useState(false);
   const [cartMessage, setCartMessage] = useState("");
   const selectedVariant = product.variants.find((variant) => variant.id === selectedVariantId) ?? defaultVariant;
+  const productTitle = selectedProductTitle(product.name, selectedVariant);
   const inStock = selectedVariant?.stockLevel !== "OUT_OF_STOCK";
   const saved = wishlist.productIds.has(String(product.id));
   const saving = wishlist.pendingIds.has(String(product.id));
@@ -184,7 +199,7 @@ export function ProductDetail({
           <Link href={`/?brand=${encodeURIComponent(brandSlug)}`} className="hover:text-[#315f48]">Home</Link>
           <ChevronRight className="size-3.5" aria-hidden="true" />
           {collection ? <><Link href={`/shop/${collection.slug}?brand=${encodeURIComponent(brandSlug)}`} className="hover:text-[#315f48]">{collection.name}</Link><ChevronRight className="size-3.5" aria-hidden="true" /></> : null}
-          <span className="max-w-[20rem] truncate font-medium text-[#34483c]" aria-current="page">{product.name}</span>
+          <span className="max-w-[20rem] truncate font-medium text-[#34483c]" aria-current="page">{productTitle}</span>
         </nav>
 
         <div className="mt-7 grid gap-10 lg:grid-cols-[minmax(0,1.08fr)_minmax(390px,0.92fr)] lg:gap-16">
@@ -216,7 +231,7 @@ export function ProductDetail({
             <div className="mt-4 flex items-start justify-between gap-4">
               <div>
                 {brand ? <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#67b84d]">{brand.name}</p> : null}
-                <h1 id="product-title" className="mt-2 font-serif text-[34px] font-semibold leading-[1.12] tracking-[-0.025em] text-[#242e28] sm:text-[44px]">{product.name}</h1>
+                <h1 id="product-title" className="mt-2 font-serif text-[34px] font-semibold leading-[1.12] tracking-[-0.025em] text-[#242e28] sm:text-[44px]">{productTitle}</h1>
               </div>
               <button type="button" onClick={() => void toggleWishlist()} disabled={saving} aria-label={saved ? "Remove from wishlist" : "Add to wishlist"} aria-pressed={saved} className="grid size-12 shrink-0 place-items-center rounded-full border border-[#cbd9cf] text-[#5eb345] transition hover:bg-[#eef8e9] disabled:opacity-60">
                 <Heart className={`size-5 ${saved ? "fill-current" : ""}`} aria-hidden="true" />
@@ -242,27 +257,28 @@ export function ProductDetail({
               {product.variants.length > 1 ? (
                 <fieldset className="mt-6">
                   <legend className="text-sm font-semibold text-[#34483c]">Choose an option</legend>
-                  <select
-                    value={selectedVariant?.id ?? ""}
-                    onChange={(event) => {
-                      const variant = product.variants.find(
-                        (candidate) => candidate.id === event.target.value,
-                      );
-                      if (variant) chooseVariant(variant);
-                    }}
+                  <div
+                    role="group"
                     aria-label="Choose a product option"
-                    className="mt-3 h-[74px] w-full cursor-pointer rounded-xl border-2 border-[#2C5D43] bg-white px-7 text-xl font-medium text-[#2C5D43] outline-none transition focus-visible:ring-2 focus-visible:ring-[#2C5D43] focus-visible:ring-offset-2"
+                    className="mt-3 flex flex-wrap gap-2 border-b border-[#dbe6dd]"
                   >
                     {product.variants.map((variant) => (
-                      <option
+                      <button
                         key={variant.id}
-                        value={variant.id}
+                        type="button"
+                        aria-pressed={selectedVariant?.id === variant.id}
                         disabled={variant.stockLevel === "OUT_OF_STOCK"}
+                        onClick={() => chooseVariant(variant)}
+                        className={`min-h-12 border-b-2 px-4 py-2 text-base font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2C5D43] disabled:cursor-not-allowed disabled:opacity-45 sm:px-6 sm:text-lg ${
+                          selectedVariant?.id === variant.id
+                            ? "border-[#2C5D43] text-[#2C5D43]"
+                            : "border-transparent text-[#66756c] hover:border-[#9db5a3] hover:text-[#2C5D43]"
+                        }`}
                       >
                         {variantLabel(variant)}
-                      </option>
+                      </button>
                     ))}
-                  </select>
+                  </div>
                 </fieldset>
               ) : selectedVariant ? <p className="mt-5 text-sm"><span className="font-semibold">Option:</span> {variantLabel(selectedVariant)}</p> : null}
 
