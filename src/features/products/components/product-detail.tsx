@@ -136,6 +136,10 @@ export function ProductDetail({
   const tags = product.facetValues.filter((value) => value.id !== brand?.id).slice(0, 4);
   const collection = product.collections.at(-1);
   const bullets = aboutItems(product.customFields?.aboutThisItem, product.description);
+  const returnWindowDays = Math.max(
+    0,
+    product.customFields?.returnWindowDays ?? 0,
+  );
 
   function chooseVariant(variant: StoreProductVariant) {
     setSelectedVariantId(variant.id);
@@ -276,7 +280,7 @@ export function ProductDetail({
             </div>
 
             <div className="grid gap-4 py-6 sm:grid-cols-3">
-              {[{ icon: Truck, title: "Free delivery", text: "On eligible orders" }, { icon: ShieldCheck, title: "Secure payment", text: "Protected checkout" }, { icon: RotateCcw, title: "Easy returns", text: "30-day window" }].map(({ icon: Icon, title, text }) => (
+              {[{ icon: Truck, title: "Free delivery", text: "On eligible orders" }, { icon: ShieldCheck, title: "Secure payment", text: "Protected checkout" }, { icon: RotateCcw, title: returnWindowDays > 0 ? "Easy returns" : "No returns", text: returnWindowDays > 0 ? `${returnWindowDays}-day returns` : "No refunds" }].map(({ icon: Icon, title, text }) => (
                 <div key={title} className="flex items-center gap-3"><span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#eef7ed] text-[#5eae47]"><Icon className="size-5" aria-hidden="true" /></span><span><strong className="block text-xs text-[#34483c]">{title}</strong><small className="text-[11px] text-[#7c8881]">{text}</small></span></div>
               ))}
             </div>

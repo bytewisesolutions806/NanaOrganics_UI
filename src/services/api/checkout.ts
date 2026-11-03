@@ -1,5 +1,7 @@
 "use client";
 
+import { getAuthHeaders } from "@/services/api/auth";
+
 interface GraphQLError { message: string }
 interface GraphQLResponse<T> { data?: T; errors?: GraphQLError[] }
 
@@ -108,7 +110,11 @@ function endpoint() {
 
 function headers() {
   const token = process.env.NEXT_PUBLIC_VENDURE_CHANNEL_TOKEN;
-  return { "content-type": "application/json", ...(token ? { "vendure-token": token } : {}) };
+  return {
+    "content-type": "application/json",
+    ...(token ? { "vendure-token": token } : {}),
+    ...getAuthHeaders(),
+  };
 }
 
 async function request<T>(query: string, variables: Record<string, unknown> = {}) {
@@ -227,6 +233,12 @@ export async function getEligibleShippingMethods() {
 export async function setShippingMethod(shippingMethodId: string) {
   const data = await request<{ setOrderShippingMethod: OrderResult }>(`${ORDER_FRAGMENT} mutation SetShippingMethod($shippingMethodId: [ID!]!) { setOrderShippingMethod(shippingMethodId: $shippingMethodId) { __typename ... on Order { ...CheckoutOrder } ... on ErrorResult { errorCode message } } }`, { shippingMethodId: [shippingMethodId] });
   return orderResult(data.setOrderShippingMethod, "Set shipping method");
+}
+
+export async function clearShippingMethod() {
+  await ensureAddingItems();
+  const data = await request<{ setOrderShippingMethod: OrderResult }>(`${ORDER_FRAGMENT} mutation ClearShippingMethod { setOrderShippingMethod(shippingMethodId: []) { __typename ... on Order { ...CheckoutOrder } ... on ErrorResult { errorCode message } } }`);
+  return orderResult(data.setOrderShippingMethod, "Clear shipping method");
 }
 
 export async function getEligiblePaymentMethods() {

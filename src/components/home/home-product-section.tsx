@@ -24,6 +24,7 @@ import {
   toggleWishlistProduct,
   useWishlist,
 } from "@/features/wishlist/wishlist-store";
+import { addItemToCart } from "@/features/cart/cart-store";
 
 function getVariantWeight(name: string) {
   const match = name.match(
@@ -156,11 +157,17 @@ export function HomeProductCard({
   );
   const [quantity, setQuantity] = useState(1);
   const [wishlistError, setWishlistError] = useState("");
+  const [cartPending, setCartPending] = useState(false);
+  const [cartMessage, setCartMessage] = useState<{
+    text: string;
+    isError: boolean;
+  } | null>(null);
   const isSaved = wishlist.productIds.has(String(product.id));
   const wishlistPending = wishlist.pendingIds.has(String(product.id));
   const selectedVariant =
     product.variants.find((variant) => variant.id === selectedVariantId) ??
     product.variants[0];
+  const inStock = selectedVariant?.stockLevel !== "OUT_OF_STOCK";
   const image = product.featuredAsset?.preview ?? product.featuredAsset?.source;
   const basePrice = selectedVariant?.priceWithTax;
   const configuredSellingPrice = selectedVariant?.offerPricing?.sellingPrice;
@@ -197,11 +204,39 @@ export function HomeProductCard({
   const selectedWeight = selectedVariant
     ? getVariantWeight(selectedVariant.name)
     : "";
+  const productTitle = selectedWeight
+    ? `${product.name} - ${selectedWeight.replace(/^(\d+(?:\.\d+)?)([a-z]+)$/i, "$1 $2")}`
+    : product.name;
   const productSummary = getProductSummary(product.description);
 
   function selectVariant(variantId: string) {
     setSelectedVariantId(variantId);
     setQuantity(1);
+    setCartMessage(null);
+  }
+
+  async function addToCart() {
+    if (!selectedVariant || !inStock || cartPending) return;
+
+    setCartPending(true);
+    setCartMessage(null);
+    try {
+      const order = await addItemToCart(selectedVariant.id, quantity);
+      setCartMessage({
+        text: `${quantity} item${quantity === 1 ? "" : "s"} added to your cart · ${order.totalQuantity} total`,
+        isError: false,
+      });
+    } catch (error) {
+      setCartMessage({
+        text:
+          error instanceof Error
+            ? error.message
+            : "Could not add this item to your cart.",
+        isError: true,
+      });
+    } finally {
+      setCartPending(false);
+    }
   }
 
   async function toggleWishlist() {
@@ -219,7 +254,7 @@ export function HomeProductCard({
   }
 
   return (
-    <article className="relative flex h-[510px] w-full max-w-[304px] flex-col overflow-visible rounded-[12px] border border-[#cfded6] bg-white px-[27px] pb-5 shadow-[0_8px_24px_rgba(35,75,52,0.05)] [font-family:var(--font-plus-jakarta-sans)]">
+    <article className="relative flex min-h-[510px] w-full max-w-[304px] flex-col overflow-visible rounded-[12px] border border-[#cfded6] bg-white px-[27px] pb-5 shadow-[0_8px_24px_rgba(35,75,52,0.05)] [font-family:var(--font-plus-jakarta-sans)]">
       <div className="relative h-[250px] shrink-0 bg-white">
         {selectedWeight ? (
           <div className="absolute left-[-27px] top-5 z-20 h-10 w-[94px]">
@@ -283,7 +318,7 @@ export function HomeProductCard({
           href={getProductHref(product, brandSlug, selectedVariant)}
           className="line-clamp-2 h-[58px] shrink-0 text-[24px] font-medium leading-[29px] tracking-[-0.025em] text-[#242b32] hover:text-[#315f48]"
         >
-          {product.name}
+          {productTitle}
         </Link>
         <p
           title={productSummary}
@@ -328,6 +363,7 @@ export function HomeProductCard({
             <select
               value={selectedVariant?.id ?? ""}
               onChange={(event) => selectVariant(event.target.value)}
+              disabled={cartPending}
               aria-label={`Choose a weight for ${product.name}`}
               className="h-10 w-full cursor-pointer appearance-none rounded-md border border-[#2C5D43] bg-white pl-3 pr-9 text-sm font-medium text-[#2C5D43] outline-none transition focus-visible:ring-2 focus-visible:ring-[#2C5D43] focus-visible:ring-offset-2"
             >
@@ -359,8 +395,11 @@ export function HomeProductCard({
           >
             <button
               type="button"
-              onClick={() => setQuantity((current) => Math.max(1, current - 1))}
-              disabled={quantity === 1}
+              onClick={() => {
+                setCartMessage(null);
+                setQuantity((current) => Math.max(1, current - 1));
+              }}
+              disabled={quantity === 1 || cartPending}
               aria-label="Decrease quantity"
               className="grid size-8 place-items-center rounded-full border border-[#a8c0b0] bg-white text-[#315f48] shadow-[0_1px_3px_rgba(35,75,52,0.06)] transition-colors hover:border-[#315f48] hover:bg-[#f1f7f2] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#68bd45] focus-visible:ring-offset-2"
             >
@@ -379,10 +418,11 @@ export function HomeProductCard({
             </output>
             <button
               type="button"
-              onClick={() =>
+              onClick={() => {
+                setCartMessage(null);
                 setQuantity((current) => Math.min(99, current + 1))
-              }
-              disabled={quantity === 99}
+              }}
+              disabled={quantity === 99 || cartPending}
               aria-label="Increase quantity"
               className="grid size-8 place-items-center rounded-full border border-[#315f48] bg-white text-[#315f48] shadow-[0_1px_3px_rgba(35,75,52,0.06)] transition-colors hover:bg-[#315f48] hover:text-white disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#68bd45] focus-visible:ring-offset-2"
             >
@@ -390,13 +430,29 @@ export function HomeProductCard({
             </button>
           </div>
 
-          <Link
-            href={getProductHref(product, brandSlug, selectedVariant, quantity)}
-            className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center whitespace-nowrap rounded-md bg-[#2d6048] px-2.5 text-[13px] font-medium text-white shadow-[0_4px_10px_rgba(35,75,52,0.15)] transition hover:bg-[#234e3a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#315f48] focus-visible:ring-offset-2"
+          <button
+            type="button"
+            onClick={() => void addToCart()}
+            disabled={!selectedVariant || !inStock || cartPending}
+            className="inline-flex min-h-11 min-w-0 flex-1 items-center justify-center whitespace-nowrap rounded-md bg-[#2d6048] px-2.5 text-[13px] font-medium text-white shadow-[0_4px_10px_rgba(35,75,52,0.15)] transition hover:bg-[#234e3a] disabled:cursor-not-allowed disabled:bg-[#9aa9a0] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#315f48] focus-visible:ring-offset-2"
           >
-            Add to Cart
-          </Link>
+            {cartPending
+              ? "Adding..."
+              : !inStock
+                ? "Out of Stock"
+                : "Add to Cart"}
+          </button>
         </div>
+        {cartMessage ? (
+          <p
+            role={cartMessage.isError ? "alert" : "status"}
+            className={`mt-2 text-center text-[11px] leading-4 ${
+              cartMessage.isError ? "text-red-700" : "text-[#2d6048]"
+            }`}
+          >
+            {cartMessage.text}
+          </p>
+        ) : null}
       </div>
     </article>
   );

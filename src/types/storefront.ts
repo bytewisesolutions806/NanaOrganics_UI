@@ -102,6 +102,7 @@ export interface StorefrontProductDetail extends StoreProduct {
     aboutThisItem?: unknown;
     isVegetarian?: boolean | null;
     isOrganic?: boolean | null;
+    returnWindowDays?: number | null;
   } | null;
   facetValues: Array<{
     id: string;

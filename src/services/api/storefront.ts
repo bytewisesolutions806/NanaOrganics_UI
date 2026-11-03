@@ -354,6 +354,7 @@ const STOREFRONT_PRODUCT_QUERY = /* GraphQL */ `
         aboutThisItem
         isVegetarian
         isOrganic
+        returnWindowDays
       }
       featuredAsset { id name preview source mimeType }
       assets { id name preview source mimeType }

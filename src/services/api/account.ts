@@ -1,3 +1,5 @@
+import { getAuthHeaders } from "@/services/api/auth";
+
 interface GraphQLError {
   message: string;
 }
@@ -188,6 +190,7 @@ function channelHeaders(includeContentType = true): Record<string, string> {
   return {
     ...(includeContentType ? { "content-type": "application/json" } : {}),
     ...(channelToken ? { "vendure-token": channelToken } : {}),
+    ...getAuthHeaders(),
   };
 }
 

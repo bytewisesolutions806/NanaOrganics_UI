@@ -3,6 +3,7 @@ import {
   resendPasswordResetCode,
   resetPassword,
   verifyPasswordResetCode,
+  getAuthHeaders,
 } from "@/services/api/auth";
 
 interface GraphQLError {
@@ -91,6 +92,7 @@ function requestHeaders() {
   return {
     "content-type": "application/json",
     ...(channelToken ? { "vendure-token": channelToken } : {}),
+    ...getAuthHeaders(),
   };
 }
 
@@ -202,7 +204,10 @@ export async function uploadCustomerProfilePhoto(file: File) {
   const response = await fetch(getEndpoint(), {
     method: "POST",
     credentials: "include",
-    headers: channelToken ? { "vendure-token": channelToken } : undefined,
+    headers: {
+      ...(channelToken ? { "vendure-token": channelToken } : {}),
+      ...getAuthHeaders(),
+    },
     body: form,
   });
   const payload =

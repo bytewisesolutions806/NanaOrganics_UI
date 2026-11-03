@@ -16,6 +16,8 @@ export interface AuthRequestResult {
 export interface AuthActionResult {
   success: boolean;
   message?: string;
+  token?: string;
+  expiresAt?: string;
 }
 
 export interface AuthVerifyResult extends AuthActionResult {
@@ -69,6 +71,45 @@ interface LogoutMutation {
 }
 
 export const AUTH_STATE_CHANGED_EVENT = "nana-auth-state-changed";
+const SESSION_TOKEN_KEY = "nana-shop-session-token";
+const SESSION_TOKEN_EXPIRY_KEY = "nana-shop-session-token-expiry";
+
+export function getAuthHeaders(): Record<string, string> {
+  if (typeof window === "undefined") return {};
+
+  const token = window.sessionStorage.getItem(SESSION_TOKEN_KEY);
+  const expiresAt = window.sessionStorage.getItem(SESSION_TOKEN_EXPIRY_KEY);
+  if (!token) return {};
+
+  if (expiresAt && Date.parse(expiresAt) <= Date.now()) {
+    window.sessionStorage.removeItem(SESSION_TOKEN_KEY);
+    window.sessionStorage.removeItem(SESSION_TOKEN_EXPIRY_KEY);
+    return {};
+  }
+
+  return { authorization: `Bearer ${token}` };
+}
+
+function saveAuthToken(result: AuthActionResult) {
+  if (typeof window === "undefined") return;
+  if (!result.token) {
+    clearAuthToken();
+    return;
+  }
+
+  window.sessionStorage.setItem(SESSION_TOKEN_KEY, result.token);
+  if (result.expiresAt) {
+    window.sessionStorage.setItem(SESSION_TOKEN_EXPIRY_KEY, result.expiresAt);
+  } else {
+    window.sessionStorage.removeItem(SESSION_TOKEN_EXPIRY_KEY);
+  }
+}
+
+function clearAuthToken() {
+  if (typeof window === "undefined") return;
+  window.sessionStorage.removeItem(SESSION_TOKEN_KEY);
+  window.sessionStorage.removeItem(SESSION_TOKEN_EXPIRY_KEY);
+}
 
 export function notifyAuthStateChanged() {
   if (typeof window !== "undefined") {
@@ -94,6 +135,7 @@ async function mutate<TData, TVariables>(
     headers: {
       "content-type": "application/json",
       ...(channelToken ? { "vendure-token": channelToken } : {}),
+      ...getAuthHeaders(),
     },
     body: JSON.stringify({ query, variables }),
   });
@@ -138,7 +180,10 @@ export async function logout() {
     }`,
     {},
   );
-  if (result.logout.success) notifyAuthStateChanged();
+  if (result.logout.success) {
+    clearAuthToken();
+    notifyAuthStateChanged();
+  }
   return result.logout;
 }
 
@@ -174,12 +219,15 @@ export function login(input: {
         password: $password
         rememberMe: $rememberMe
       ) {
-        success message
+        success message token expiresAt
       }
     }`,
     input,
   ).then((result) => {
-    if (result.loginWithJwt.success) notifyAuthStateChanged();
+    if (result.loginWithJwt.success) {
+      saveAuthToken(result.loginWithJwt);
+      notifyAuthStateChanged();
+    }
     return result;
   });
 }
@@ -227,12 +275,15 @@ export function verifySignupCode(emailAddress: string, code: string) {
       $code: String!
     ) {
       verifyCustomerSignupCode(emailAddress: $emailAddress, code: $code) {
-        success message
+        success message token expiresAt
       }
     }`,
     { emailAddress, code },
   ).then((result) => {
-    if (result.verifyCustomerSignupCode.success) notifyAuthStateChanged();
+    if (result.verifyCustomerSignupCode.success) {
+      saveAuthToken(result.verifyCustomerSignupCode);
+      notifyAuthStateChanged();
+    }
     return result;
   });
 }
