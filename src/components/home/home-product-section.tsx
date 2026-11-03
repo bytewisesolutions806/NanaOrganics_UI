@@ -358,14 +358,14 @@ export function HomeProductCard({
           <div className="mt-2.5 min-h-8 shrink-0" />
         )}
 
-        {variantsWithWeight.length > 1 ? (
+        {variantsWithWeight.length > 0 ? (
           <div className="relative mt-2.5 shrink-0">
             <select
               value={selectedVariant?.id ?? ""}
               onChange={(event) => selectVariant(event.target.value)}
-              disabled={cartPending}
+              disabled={cartPending || variantsWithWeight.length === 1}
               aria-label={`Choose a weight for ${product.name}`}
-              className="h-10 w-full cursor-pointer appearance-none rounded-md border border-[#2C5D43] bg-white pl-3 pr-9 text-sm font-medium text-[#2C5D43] outline-none transition focus-visible:ring-2 focus-visible:ring-[#2C5D43] focus-visible:ring-offset-2"
+              className="h-10 w-full cursor-pointer appearance-none rounded-md border border-[#2C5D43] bg-white pl-3 pr-9 text-sm font-medium text-[#2C5D43] outline-none transition disabled:cursor-not-allowed disabled:bg-[#f5f7f5] disabled:text-[#557060] disabled:opacity-100 focus-visible:ring-2 focus-visible:ring-[#2C5D43] focus-visible:ring-offset-2"
             >
               {variantsWithWeight.map(({ variant, weight }) => (
                 <option
@@ -382,10 +382,6 @@ export function HomeProductCard({
               aria-hidden="true"
             />
           </div>
-        ) : selectedWeight ? (
-          <p className="mt-2.5 shrink-0 text-xs font-medium text-[#2C5D43]">
-            {selectedWeight}
-          </p>
         ) : null}
 
         <div className="mt-auto flex items-center gap-2.5 pt-3">
