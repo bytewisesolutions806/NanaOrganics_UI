@@ -85,12 +85,28 @@ export interface OrderLine {
   sku: string;
   slug: string;
   imageUrl: string;
+  returnWindowDays: number;
 }
 
 export interface OrderUpdate {
   id: string;
   label: string;
   date: string;
+}
+
+export type CustomerReturnStatus =
+  | "REQUESTED"
+  | "APPROVED"
+  | "REJECTED"
+  | "INSPECTION"
+  | "REFUND_CREATED"
+  | "REFUND_COMPLETED"
+  | "CANCELLED";
+
+export interface CustomerReturnSummary {
+  id: string;
+  orderId: string;
+  status: CustomerReturnStatus;
 }
 
 export interface CustomerOrder {
@@ -118,6 +134,8 @@ export interface CustomerOrder {
     phoneNumber: string;
   } | null;
   trackingCode: string;
+  deliveredAt: string | null;
+  returnRequest: CustomerReturnSummary | null;
   updates: OrderUpdate[];
 }
 
@@ -174,7 +192,7 @@ const ORDER_FIELDS = `
     featuredAsset { preview }
     productVariant {
       id name sku
-      product { id name slug featuredAsset { preview } }
+      product { id name slug featuredAsset { preview } customFields { returnWindowDays } }
     }
   }
 `;
@@ -591,7 +609,7 @@ interface OrderResponse {
   lines: Array<{
     id: string; quantity: number; unitPriceWithTax: number; linePriceWithTax: number; discountedLinePriceWithTax: number;
     featuredAsset?: { preview?: string };
-    productVariant: { id: string; name: string; sku: string; product: { id: string; name: string; slug: string; featuredAsset?: { preview?: string } } };
+    productVariant: { id: string; name: string; sku: string; product: { id: string; name: string; slug: string; featuredAsset?: { preview?: string }; customFields?: { returnWindowDays?: number | null } | null } };
   }>;
 }
 
@@ -615,12 +633,18 @@ function historyLabel(entry: { type: string; data?: Record<string, string> }) {
   return to ? to.replace(/([a-z])([A-Z])/g, "$1 $2") : "Order updated";
 }
 
-function mapOrder(order: OrderResponse): CustomerOrder {
+function mapOrder(order: OrderResponse, returnRequests: CustomerReturnSummary[] = []): CustomerOrder {
+  const deliveredFulfillments = (order.fulfillments ?? [])
+    .filter((fulfillment) => fulfillment.state === "Delivered")
+    .map((fulfillment) => fulfillment.updatedAt)
+    .filter(Boolean)
+    .sort((left, right) => new Date(right).getTime() - new Date(left).getTime());
+  const status = orderStatus(order);
   return {
     id: String(order.id),
     code: order.code,
     state: order.state,
-    status: orderStatus(order),
+    status,
     createdAt: order.createdAt,
     updatedAt: order.updatedAt,
     orderPlacedAt: order.orderPlacedAt || order.createdAt,
@@ -631,6 +655,8 @@ function mapOrder(order: OrderResponse): CustomerOrder {
     totalQuantity: order.totalQuantity,
     shippingAddress: order.shippingAddress || null,
     trackingCode: order.fulfillments?.find((item) => item.trackingCode)?.trackingCode || "",
+    deliveredAt: deliveredFulfillments[0] ?? (status === "delivered" ? order.updatedAt : null),
+    returnRequest: returnRequests.find((request) => String(request.orderId) === String(order.id)) ?? null,
     updates: (order.history?.items || []).map((entry) => ({ id: entry.id, label: historyLabel(entry), date: entry.createdAt })),
     lines: order.lines.map((line) => ({
       id: String(line.id), quantity: line.quantity, unitPriceWithTax: line.unitPriceWithTax,
@@ -639,25 +665,70 @@ function mapOrder(order: OrderResponse): CustomerOrder {
       productName: line.productVariant.product.name, variantName: line.productVariant.name,
       sku: line.productVariant.sku, slug: line.productVariant.product.slug,
       imageUrl: resolveAssetUrl(line.featuredAsset?.preview || line.productVariant.product.featuredAsset?.preview),
+      returnWindowDays: Math.max(0, Number(line.productVariant.product.customFields?.returnWindowDays ?? 0)),
     })),
   };
 }
 
+export function getOrderLineReturnDeadline(order: CustomerOrder, line: OrderLine) {
+  if (order.status !== "delivered" || !order.deliveredAt || line.returnWindowDays <= 0) return null;
+  const deliveredAt = new Date(order.deliveredAt).getTime();
+  if (!Number.isFinite(deliveredAt)) return null;
+  return new Date(deliveredAt + line.returnWindowDays * 86_400_000);
+}
+
+export function isOrderLineReturnEligible(order: CustomerOrder, line: OrderLine, now = Date.now()) {
+  const deadline = getOrderLineReturnDeadline(order, line);
+  return Boolean(deadline && now <= deadline.getTime());
+}
+
+export async function requestOrderReturn(input: {
+  orderId: string;
+  items: Array<{ orderLineId: string; quantity: number; reason?: string }>;
+  reason: string;
+  note?: string;
+}) {
+  const data = await accountRequest<{
+    requestOrderReturn: { success: boolean; errorCode?: string | null; message: string };
+  }, { input: typeof input }>(
+    `mutation RequestOrderReturn($input: RequestCustomerReturnInput!) {
+      requestOrderReturn(input: $input) { success errorCode message }
+    }`,
+    { input },
+  );
+  if (!data.requestOrderReturn.success) {
+    throw new Error(data.requestOrderReturn.message || "Could not submit the return request.");
+  }
+  return data.requestOrderReturn;
+}
+
 export async function getCustomerOrders() {
-  const data = await accountRequest<{ activeCustomer: { orders: { items: OrderResponse[] } } | null }, Record<string, never>>(
-    `query CustomerOrders { activeCustomer { orders(options: { take: 100, sort: { createdAt: DESC } }) { items { ${ORDER_FIELDS} } } } }`,
+  const data = await accountRequest<{
+    activeCustomer: { orders: { items: OrderResponse[] } } | null;
+    myReturnRequests: { items: CustomerReturnSummary[] };
+  }, Record<string, never>>(
+    `query CustomerOrders {
+      activeCustomer { orders(options: { take: 100, sort: { createdAt: DESC } }) { items { ${ORDER_FIELDS} } } }
+      myReturnRequests(take: 100) { items { id orderId status } }
+    }`,
     {},
   );
   if (!data.activeCustomer) throw new Error("You are not currently authorized to view orders.");
-  return data.activeCustomer.orders.items.map(mapOrder);
+  return data.activeCustomer.orders.items.map((order) => mapOrder(order, data.myReturnRequests.items));
 }
 
 export async function getCustomerOrder(id: string) {
-  const data = await accountRequest<{ order: OrderResponse | null }, { id: string }>(
-    `query CustomerOrder($id: ID!) { order(id: $id) { ${ORDER_FIELDS} } }`,
+  const data = await accountRequest<{
+    order: OrderResponse | null;
+    myReturnRequests: { items: CustomerReturnSummary[] };
+  }, { id: string }>(
+    `query CustomerOrder($id: ID!) {
+      order(id: $id) { ${ORDER_FIELDS} }
+      myReturnRequests(take: 100) { items { id orderId status } }
+    }`,
     { id },
   );
-  return data.order ? mapOrder(data.order) : null;
+  return data.order ? mapOrder(data.order, data.myReturnRequests.items) : null;
 }
 
 export function formatMoney(amount: number, currencyCode = "INR") {
