@@ -11,13 +11,21 @@ import {
 } from "@/components/home/home-discovery-sections";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { FooterReviews } from "@/components/layout/footer-reviews";
 import { BenefitsFooter } from "@/components/layout/benefits-footer";
 import { NanaDifferenceBanner } from "@/components/layout/nana-difference-banner";
 import { HomeMarketingSections } from "@/components/home/home-marketing-sections";
 import {
   getBrandHomepage,
+  getDefaultHomepage,
   getStorefrontBrands,
 } from "@/services/api/storefront";
+import type { BrandHomepageData } from "@/types/storefront";
+
+const defaultMetadata: Metadata = {
+  title: "Nana Organics",
+  description: "Thoughtful organic essentials from all our brands.",
+};
 
 interface HomePageProps {
   searchParams: Promise<{
@@ -31,61 +39,44 @@ function requestedBrandFrom(
   return Array.isArray(brand) ? brand[0] : brand;
 }
 
-async function getHeaderData(requestedBrandSlug?: string) {
-  const brands = await getStorefrontBrands();
-
-  if (!brands.length) {
-    throw new Error("No enabled storefront brands were returned by Vendure.");
-  }
-
-  const selectedBrand =
-    brands.find((brand) => brand.slug === requestedBrandSlug) ??
-    brands.find((brand) => brand.featured) ??
-    brands[0];
-
-  return { brands, selectedBrand };
-}
-
 export async function generateMetadata({
   searchParams,
 }: HomePageProps): Promise<Metadata> {
+  const brandSlug = requestedBrandFrom((await searchParams).brand);
+  if (!brandSlug) return defaultMetadata;
+
   try {
-    const query = await searchParams;
-    const data = await getHeaderData(requestedBrandFrom(query.brand));
-    console.log("data.selectedBrand.seoTitle", data.selectedBrand);
-    console.log(
-      "data.selectedBrand.seoDescription",
-      data.selectedBrand.seoDescription,
+    const brand = (await getStorefrontBrands()).find(
+      (item) => item.slug === brandSlug,
     );
+    if (!brand) return defaultMetadata;
     return {
-      title: {
-        absolute:
-          data.selectedBrand.seoTitle ??
-          `${data.selectedBrand.name} | Nana Organics`,
-      },
+      title: brand.seoTitle ?? `${brand.name} | Nana Organics`,
       description:
-        data.selectedBrand.seoDescription ??
-        data.selectedBrand.heroDescription ??
-        data.selectedBrand.description ??
-        `Discover ${data.selectedBrand.name} at Nana Organics.`,
+        brand.seoDescription ??
+        brand.heroDescription ??
+        brand.description ??
+        `Discover ${brand.name} at Nana Organics.`,
     };
-  } catch {
-    return {
-      title: "Nana Organics",
-      description: "Thoughtful organic essentials for everyday living.",
-    };
+  } catch (error) {
+    console.error("Failed to load brand homepage metadata.", error);
+    return defaultMetadata;
   }
 }
 
 async function HomeContent({ searchParams }: HomePageProps) {
-  const query = await searchParams;
-  let data: Awaited<ReturnType<typeof getBrandHomepage>>;
+  const requestedBrandSlug = requestedBrandFrom((await searchParams).brand);
+  let data: BrandHomepageData | null = null;
 
   try {
-    data = await getBrandHomepage(requestedBrandFrom(query.brand));
+    data = requestedBrandSlug
+      ? await getBrandHomepage(requestedBrandSlug)
+      : await getDefaultHomepage();
   } catch (error) {
     console.error("Failed to load homepage storefront data.", error);
+  }
 
+  if (!data) {
     return (
       <>
         <main className="flex min-h-[50vh] items-center justify-center px-5 text-center">
@@ -94,12 +85,16 @@ async function HomeContent({ searchParams }: HomePageProps) {
           </p>
         </main>
         <BenefitsFooter benefits={<NanaDifferenceBanner />}>
+          <Suspense fallback={null}>
+            <FooterReviews />
+          </Suspense>
           <SiteFooter />
         </BenefitsFooter>
       </>
     );
   }
 
+  const brandSlug = data.isDefault ? undefined : data.selectedBrand.slug;
   const betweenProductRows = data.marketingSections.filter(
     (section) =>
       section.code === "featured-product" || section.code === "ingredients",
@@ -113,9 +108,15 @@ async function HomeContent({ searchParams }: HomePageProps) {
     <>
       <SiteHeader
         brands={data.brands}
-        activeBrandSlug={data.selectedBrand.slug}
+        activeBrandSlug={brandSlug ?? ""}
+        homeHref={
+          data.isDefault
+            ? "/"
+            : `/?brand=${encodeURIComponent(data.selectedBrand.slug)}`
+        }
         variant={
-          data.settings?.enabled === false || data.settings?.heroEnabled === false
+          data.settings?.enabled === false ||
+          data.settings?.heroEnabled === false
             ? "solid"
             : "overlay"
         }
@@ -124,50 +125,61 @@ async function HomeContent({ searchParams }: HomePageProps) {
         {data.settings?.enabled === false ? null : (
           <>
             {data.settings?.heroEnabled !== false ? (
-              <HomeHero brand={data.selectedBrand} />
+              <HomeHero
+                brand={data.selectedBrand}
+                settings={data.settings}
+                useHomepageSettings={Boolean(data.isDefault)}
+              />
             ) : null}
             {data.settings?.categoryEnabled !== false ? (
               <BrandCategoryCarousel
-                brand={data.selectedBrand}
+                categories={data.categories ?? data.selectedBrand.categories}
+                brands={data.isDefault ? data.brands : undefined}
+                brandSlug={brandSlug}
+                initialBrandSlug={data.isDefault ? data.selectedBrand.slug : undefined}
+                isDefaultHomepage={Boolean(data.isDefault)}
                 settings={data.settings}
               />
             ) : null}
             {data.settings?.valuesEnabled ? (
               <HomeBrandValues
                 settings={data.settings}
-                brandSlug={data.selectedBrand.slug}
+                brandSlug={brandSlug}
               />
             ) : null}
             <HomeProductSections
               sections={data.productSections.slice(0, 1)}
-              brandSlug={data.selectedBrand.slug}
+              brandSlug={brandSlug}
             />
             <HomeMarketingSections
               sections={betweenProductRows}
-              brandSlug={data.selectedBrand.slug}
+              brandSlug={brandSlug}
             />
             <HomeProductSections
               sections={data.productSections.slice(1, 2)}
-              brandSlug={data.selectedBrand.slug}
+              brandSlug={brandSlug}
             />
             <HomeMarketingSections
               sections={afterProductRows}
-              brandSlug={data.selectedBrand.slug}
+              brandSlug={brandSlug}
             />
             {data.video ? (
               <HomeVideoDiscovery
                 video={data.video}
-                brandSlug={data.selectedBrand.slug}
+                brandSlug={brandSlug}
               />
             ) : null}
             <HomeProductSections
               sections={data.productSections.slice(2)}
-              brandSlug={data.selectedBrand.slug}
+              brandSlug={brandSlug}
             />
           </>
         )}
       </main>
       <BenefitsFooter benefits={<NanaDifferenceBanner />}>
+        <Suspense fallback={null}>
+          <FooterReviews />
+        </Suspense>
         <SiteFooter />
       </BenefitsFooter>
     </>

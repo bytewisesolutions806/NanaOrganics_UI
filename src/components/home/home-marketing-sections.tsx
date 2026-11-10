@@ -7,8 +7,9 @@ import type {
   StoreHomepageMarketingSection,
 } from "@/types/storefront";
 
-function withBrand(href: string, brandSlug: string) {
+function withBrand(href: string, brandSlug?: string) {
   if (!href.startsWith("/")) return href;
+  if (!brandSlug) return href;
   return `${href}${href.includes("?") ? "&" : "?"}brand=${encodeURIComponent(brandSlug)}`;
 }
 
@@ -22,7 +23,7 @@ function SectionHeader({ section, light = false }: { section: StoreHomepageMarke
   );
 }
 
-function SectionButton({ section, brandSlug, light = false }: { section: StoreHomepageMarketingSection; brandSlug: string; light?: boolean }) {
+function SectionButton({ section, brandSlug, light = false }: { section: StoreHomepageMarketingSection; brandSlug?: string; light?: boolean }) {
   if (!section.ctaLabel || !section.ctaLink) return null;
   return (
     <Link href={withBrand(section.ctaLink, brandSlug)} className={`inline-flex min-h-11 items-center gap-2 rounded-md px-5 text-sm font-semibold shadow-sm transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${light ? "bg-white text-[#27523a] hover:bg-[#f5f8f3]" : "bg-[#315f48] text-white hover:bg-[#234b37]"}`}>
@@ -52,7 +53,7 @@ function Benefit({ item, side }: { item: StoreHomepageMarketingItem; side: "left
   );
 }
 
-function FeaturedProductSection({ section, brandSlug }: { section: StoreHomepageMarketingSection; brandSlug: string }) {
+function FeaturedProductSection({ section, brandSlug }: { section: StoreHomepageMarketingSection; brandSlug?: string }) {
   const left = section.items.filter((item) => item.alignment !== "right");
   const right = section.items.filter((item) => item.alignment === "right");
   return (
@@ -75,7 +76,7 @@ function FeaturedProductSection({ section, brandSlug }: { section: StoreHomepage
   );
 }
 
-function IngredientsSection({ section, brandSlug }: { section: StoreHomepageMarketingSection; brandSlug: string }) {
+function IngredientsSection({ section, brandSlug }: { section: StoreHomepageMarketingSection; brandSlug?: string }) {
   return (
     <section className="relative isolate overflow-hidden px-5 py-14 sm:px-8 sm:py-20" aria-label={section.title}>
       {section.backgroundAsset?.source ? <Image src={section.backgroundAsset.source} alt="" fill unoptimized sizes="100vw" className="-z-20 object-cover" /> : null}
@@ -99,7 +100,7 @@ function IngredientsSection({ section, brandSlug }: { section: StoreHomepageMark
   );
 }
 
-function BrandBannerSection({ section, brandSlug }: { section: StoreHomepageMarketingSection; brandSlug: string }) {
+function BrandBannerSection({ section, brandSlug }: { section: StoreHomepageMarketingSection; brandSlug?: string }) {
   return (
     <section className="relative isolate flex min-h-[520px] items-center overflow-hidden px-5 py-16 sm:min-h-[600px] sm:px-8 sm:py-20" aria-label={section.title}>
       {section.backgroundAsset?.source ? <Image src={section.backgroundAsset.source} alt="" fill unoptimized sizes="100vw" className="-z-20 object-cover" /> : null}
@@ -114,7 +115,7 @@ function BrandBannerSection({ section, brandSlug }: { section: StoreHomepageMark
   );
 }
 
-function BundlesSection({ section, brandSlug }: { section: StoreHomepageMarketingSection; brandSlug: string }) {
+function BundlesSection({ section, brandSlug }: { section: StoreHomepageMarketingSection; brandSlug?: string }) {
   return (
     <section className="relative isolate overflow-hidden bg-white px-5 py-14 sm:px-8 sm:py-20" aria-label={section.title}>
       {section.backgroundAsset?.source ? <Image src={section.backgroundAsset.source} alt="" fill unoptimized sizes="100vw" className="-z-10 object-cover opacity-15" /> : null}
@@ -139,7 +140,7 @@ function BundlesSection({ section, brandSlug }: { section: StoreHomepageMarketin
   );
 }
 
-export function HomeMarketingSections({ sections, brandSlug }: { sections: StoreHomepageMarketingSection[]; brandSlug: string }) {
+export function HomeMarketingSections({ sections, brandSlug }: { sections: StoreHomepageMarketingSection[]; brandSlug?: string }) {
   return sections.map((section) => {
     if (!section.enabled) return null;
     if (section.code === "featured-product") return <FeaturedProductSection key={section.id} section={section} brandSlug={brandSlug} />;

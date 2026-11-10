@@ -30,6 +30,7 @@ import { useCart } from "@/features/cart/cart-store";
 interface SiteHeaderProps {
   brands: StoreBrand[];
   activeBrandSlug: string;
+  homeHref?: string;
   variant?: "overlay" | "solid";
 }
 
@@ -91,11 +92,16 @@ function CircleAction({
   href?: string;
 }) {
   const actionClass = `relative grid size-11 shrink-0 place-items-center overflow-visible rounded-full border border-[#d8e4da] bg-white text-[#24573C] shadow-[0_2px_8px_rgba(36,87,60,0.08)] transition hover:border-[#8eae96] hover:bg-[#eff5ef] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2C5D43] ${className}`;
-  const content = <>{children}{count !== undefined ? (
-    <span className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full border-2 border-white bg-[#eceb62] text-[10px] font-bold leading-none text-[#173e2a] shadow-sm">
-      {count > 99 ? "99+" : count}
-    </span>
-  ) : null}</>;
+  const content = (
+    <>
+      {children}
+      {count !== undefined ? (
+        <span className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full border-2 border-white bg-[#eceb62] text-[10px] font-bold leading-none text-[#173e2a] shadow-sm">
+          {count > 99 ? "99+" : count}
+        </span>
+      ) : null}
+    </>
+  );
   return href ? (
     <Link href={href} aria-label={label} className={actionClass}>
       {content}
@@ -191,9 +197,7 @@ function CustomerAccountButton({
           aria-hidden="true"
           className={`size-5 shrink-0 text-[#169b68] transition-transform ${
             compact ? "hidden size-4 sm:block sm:size-5" : ""
-          } ${
-            open ? "rotate-180" : ""
-          }`}
+          } ${open ? "rotate-180" : ""}`}
           strokeWidth={2.7}
         />
       </button>
@@ -232,6 +236,7 @@ function CustomerAccountButton({
 export function SiteHeader({
   brands,
   activeBrandSlug,
+  homeHref,
   variant = "solid",
 }: SiteHeaderProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -258,7 +263,9 @@ export function SiteHeader({
     try {
       const result = await logout();
       if (!result.success) {
-        throw new Error("The storefront API could not end the customer session.");
+        throw new Error(
+          "The storefront API could not end the customer session.",
+        );
       }
       setCustomer(null);
     } catch (error) {
@@ -324,7 +331,7 @@ export function SiteHeader({
               </button>
 
               <Link
-                href={{ pathname: "/", query: { brand: activeBrandSlug } }}
+                href="/"
                 className="shrink-0 xl:col-start-1 xl:row-span-2 xl:row-start-1 xl:flex xl:h-full xl:items-center xl:justify-center"
                 aria-label="Nana Organics home"
               >
@@ -378,7 +385,11 @@ export function SiteHeader({
                         strokeWidth={2.35}
                       />
                     </CircleAction>
-                    <CircleAction label="Shopping cart" count={cart.count} href="/cart">
+                    <CircleAction
+                      label="Shopping cart"
+                      count={cart.count}
+                      href="/cart"
+                    >
                       <ShoppingBasket
                         aria-hidden="true"
                         className="size-[23px]"
@@ -436,7 +447,11 @@ export function SiteHeader({
                     strokeWidth={2.35}
                   />
                 </CircleAction>
-                <CircleAction label="Shopping cart" count={cart.count} href="/cart">
+                <CircleAction
+                  label="Shopping cart"
+                  count={cart.count}
+                  href="/cart"
+                >
                   <ShoppingBasket
                     aria-hidden="true"
                     className="size-[23px]"
@@ -486,7 +501,7 @@ export function SiteHeader({
             >
               <div className="flex items-center justify-between border-b border-[#e1e9e0] px-5 py-4">
                 <Link
-                  href={{ pathname: "/", query: { brand: activeBrandSlug } }}
+                  href="/"
                   onClick={() => setDrawerOpen(false)}
                   aria-label="Nana Organics home"
                 >

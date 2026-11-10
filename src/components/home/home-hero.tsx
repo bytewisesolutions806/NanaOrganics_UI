@@ -3,25 +3,56 @@ import Image from "next/image";
 import Link from "next/link";
 import { UserRoundPlus } from "lucide-react";
 
-import type { StoreBrand } from "@/types/storefront";
+import type { StoreBrand, StoreHomepageSettings } from "@/types/storefront";
 
-function withBrand(href: string, brandSlug: string) {
+function withBrand(href: string, brandSlug?: string) {
   if (!href.startsWith("/")) return href;
+  if (!brandSlug) return href;
   const separator = href.includes("?") ? "&" : "?";
   return `${href}${separator}brand=${encodeURIComponent(brandSlug)}`;
 }
 
 interface HomeHeroProps {
   brand: StoreBrand;
+  settings?: StoreHomepageSettings | null;
+  useHomepageSettings?: boolean;
 }
 
-export function HomeHero({ brand }: HomeHeroProps) {
+export function HomeHero({
+  brand,
+  settings,
+  useHomepageSettings = false,
+}: HomeHeroProps) {
+  const eyebrow = useHomepageSettings
+    ? settings?.heroEyebrow
+    : brand.heroEyebrow;
+  const title = useHomepageSettings ? settings?.heroTitle : brand.heroTitle;
+  const description = useHomepageSettings
+    ? settings?.heroDescription
+    : brand.heroDescription;
+  const primaryLabel = useHomepageSettings
+    ? settings?.heroPrimaryLabel
+    : brand.heroPrimaryLabel;
+  const primaryLink = useHomepageSettings
+    ? settings?.heroPrimaryLink
+    : brand.heroPrimaryLink;
+  const secondaryLabel = useHomepageSettings
+    ? settings?.heroSecondaryLabel
+    : brand.heroSecondaryLabel;
+  const secondaryLink = useHomepageSettings
+    ? settings?.heroSecondaryLink
+    : brand.heroSecondaryLink;
+  const bannerAsset = useHomepageSettings
+    ? settings?.heroBannerAsset
+    : brand.bannerAsset;
+  const brandSlug = useHomepageSettings ? undefined : brand.slug;
+
   return (
     <section className="relative flex min-h-[620px] items-center justify-center overflow-hidden bg-[#dce7dc] sm:min-h-[680px]">
-      {brand.bannerAsset?.source ? (
+      {bannerAsset?.source ? (
         <Image
-          src={brand.bannerAsset.source}
-          alt={`${brand.name} banner`}
+          src={bannerAsset.source}
+          alt={useHomepageSettings ? "Nana Organics banner" : `${brand.name} banner`}
           fill
           priority
           unoptimized
@@ -35,35 +66,35 @@ export function HomeHero({ brand }: HomeHeroProps) {
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/80 via-white/40 to-transparent" />
 
       <div className="relative z-10 mx-auto flex w-full min-w-0 max-w-3xl flex-col items-center justify-center space-y-6 px-4 pt-16 text-center text-black sm:px-5 sm:pt-20">
-        {brand.heroEyebrow ? (
+        {eyebrow ? (
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#2C5D43] drop-shadow-sm">
-            {brand.heroEyebrow}
+            {eyebrow}
           </p>
         ) : null}
         <h1 className="w-full max-w-full break-words font-serif text-balance text-xl font-bold tracking-tight drop-shadow-md sm:text-4xl md:text-4xl">
-          {brand.heroTitle}
+          {title ?? "Thoughtful organic essentials for everyday living."}
         </h1>
 
-        {brand.heroDescription && (
+        {description && (
           <p className="w-full max-w-2xl break-words text-pretty text-base font-light drop-shadow sm:text-lg md:text-xl">
-            {brand.heroDescription}
+            {description}
           </p>
         )}
 
         <div className="flex flex-wrap justify-center gap-3">
           <Link
-            href={withBrand(brand.heroPrimaryLink ?? "/categories", brand.slug)}
+            href={withBrand(primaryLink ?? "/categories", brandSlug)}
             className="inline-flex min-h-11 items-center gap-2 rounded-md bg-[#2C5D43] px-5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#234B36] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2C5D43]"
           >
             <UserRoundPlus className="size-4" aria-hidden="true" />
-            {brand.heroPrimaryLabel ?? `Join ${brand.name}`}
+            {primaryLabel ?? (useHomepageSettings ? "Shop now" : `Join ${brand.name}`)}
           </Link>
-          {brand.heroSecondaryLink ? (
+          {secondaryLink ? (
             <Link
-              href={withBrand(brand.heroSecondaryLink, brand.slug)}
+              href={withBrand(secondaryLink, brandSlug)}
               className="inline-flex min-h-11 items-center rounded-md border border-[#2C5D43]/35 bg-white/75 px-5 text-sm font-medium text-[#244d37] backdrop-blur-sm transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2C5D43]"
             >
-              {brand.heroSecondaryLabel ?? "Our story"}
+              {secondaryLabel ?? "Our story"}
             </Link>
           ) : null}
         </div>

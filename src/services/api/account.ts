@@ -163,6 +163,17 @@ export interface PublicProductReviews {
   items: PublicProductReview[];
 }
 
+export interface PublicCustomerReview {
+  id: string;
+  createdAt: string;
+  customerName: string;
+  customerProfilePhotoUrl: string;
+  rating: number;
+  title: string;
+  content: string;
+  verifiedPurchase: boolean;
+}
+
 const ADDRESS_FIELDS = `
   id fullName streetLine1 streetLine2 city province postalCode phoneNumber
   defaultShippingAddress defaultBillingAddress
@@ -459,6 +470,68 @@ export async function getPublicProductReviews(
       verifiedPurchase: review.verifiedPurchase,
     })),
   };
+}
+
+export async function getTopCustomerReviews(
+  take = 10,
+): Promise<PublicCustomerReview[]> {
+  type TopReviewsResponse = {
+    topCustomerReviews: {
+      items: Array<{
+        id: string;
+        createdAt: string;
+        customerName: string;
+        customerProfilePhoto?: { source?: string | null; preview?: string | null } | null;
+        rating: number;
+        title?: string | null;
+        content: string;
+        verifiedPurchase: boolean;
+      }>;
+    };
+  };
+  const query = `query TopCustomerReviews($take: Int!) {
+    topCustomerReviews(take: $take) {
+      items {
+        id createdAt customerName rating title content verifiedPurchase
+        customerProfilePhoto { source preview }
+      }
+    }
+  }`;
+
+  let data: TopReviewsResponse;
+  try {
+    data = await accountRequest<TopReviewsResponse, { take: number }>(
+      query,
+      { take },
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (!/cannot query field.*customerProfilePhoto|customerProfilePhoto.*unknown field/i.test(message)) {
+      throw error;
+    }
+
+    data = await accountRequest<TopReviewsResponse, { take: number }>(
+      `query TopCustomerReviews($take: Int!) {
+        topCustomerReviews(take: $take) {
+          items { id createdAt customerName rating title content verifiedPurchase }
+        }
+      }`,
+      { take },
+    );
+  }
+
+  return data.topCustomerReviews.items.map((review) => ({
+    id: String(review.id),
+    createdAt: review.createdAt,
+    customerName: review.customerName || "Nana Organics customer",
+    customerProfilePhotoUrl: resolveAssetUrl(
+      review.customerProfilePhoto?.preview || review.customerProfilePhoto?.source,
+    ),
+    rating: review.rating,
+    title: review.title || "",
+    content: review.content,
+    verifiedPurchase: review.verifiedPurchase,
+  }));
 }
 
 interface ReviewResponse {

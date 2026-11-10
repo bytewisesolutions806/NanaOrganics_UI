@@ -35,13 +35,11 @@ async function ShopSubcategoryContent({
   ]);
   const requestedBrand = requestedBrandFrom(query.brand);
   const selectedBrand =
-    brands.find((brand) => brand.slug === requestedBrand) ??
-    brands.find((brand) => brand.featured) ??
-    brands[0];
-  const brandSlug = selectedBrand?.slug ?? requestedBrand ?? "";
-  const parentCategory = brands
-    .flatMap((brand) => brand.categories)
-    .find((category) => category.slug === parentSlug);
+    brands.find((brand) => brand.slug === requestedBrand);
+  const brandSlug = selectedBrand?.slug ?? "";
+  const parentCategory = allCategories.find(
+    (category) => category.slug === parentSlug,
+  );
   const subcategory = parentCategory?.children.find(
     (child) => child.slug === subcategorySlug,
   );

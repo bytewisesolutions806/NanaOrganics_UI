@@ -31,11 +31,8 @@ async function ShopCategoryContent({
       getStorefrontCategories(),
     ]);
   const selectedBrand =
-    brands.find((brand) => brand.slug === requestedBrandFrom(query.brand)) ??
-    brands.find((brand) => brand.featured) ??
-    brands[0];
-  const brandSlug =
-    selectedBrand?.slug ?? requestedBrandFrom(query.brand) ?? "";
+    brands.find((brand) => brand.slug === requestedBrandFrom(query.brand));
+  const brandSlug = selectedBrand?.slug ?? "";
   const categoryData = await getStorefrontCategory(categorySlug);
 
   if (!categoryData) notFound();

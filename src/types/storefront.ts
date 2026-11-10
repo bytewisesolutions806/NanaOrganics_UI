@@ -201,6 +201,14 @@ export interface HomepageProductSection {
 export interface StoreHomepageSettings {
   enabled: boolean;
   heroEnabled: boolean;
+  heroEyebrow?: string | null;
+  heroTitle?: string | null;
+  heroDescription?: string | null;
+  heroPrimaryLabel?: string | null;
+  heroPrimaryLink?: string | null;
+  heroSecondaryLabel?: string | null;
+  heroSecondaryLink?: string | null;
+  heroBannerAsset?: StoreAsset | null;
   categoryEnabled: boolean;
   categoryEyebrow: string;
   categoryTitle: string;
@@ -273,6 +281,8 @@ export interface StoreHomepageMarketingSection {
 export interface BrandHomepageData {
   brands: StoreBrand[];
   selectedBrand: StoreBrand;
+  categories?: StoreCategory[];
+  isDefault?: boolean;
   settings?: StoreHomepageSettings | null;
   productSections: HomepageProductSection[];
   video?: StoreHomepageVideo | null;

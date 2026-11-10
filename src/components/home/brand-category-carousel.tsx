@@ -20,13 +20,12 @@ import type {
 } from "@/types/storefront";
 
 interface BrandCategoryCarouselProps {
-  brand: StoreBrand;
+  categories: StoreCategory[];
+  brands?: StoreBrand[];
+  brandSlug?: string;
+  initialBrandSlug?: string;
+  isDefaultHomepage?: boolean;
   settings?: StoreHomepageSettings | null;
-}
-
-interface ParentCategory {
-  category: StoreCategory;
-  brandSlug: string;
 }
 
 function displayCategoryName(name: string) {
@@ -38,7 +37,11 @@ function displayCategoryName(name: string) {
 }
 
 export function BrandCategoryCarousel({
-  brand,
+  categories: sourceCategories,
+  brands = [],
+  brandSlug = "",
+  initialBrandSlug = brandSlug,
+  isDefaultHomepage = false,
   settings,
 }: BrandCategoryCarouselProps) {
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -50,36 +53,43 @@ export function BrandCategoryCarousel({
   });
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isScrollable, setIsScrollable] = useState(false);
+  const [activeBrandSlug, setActiveBrandSlug] = useState(initialBrandSlug);
+  const activeBrand = brands.find((brand) => brand.slug === activeBrandSlug) ??
+    brands[0];
+  const displayedBrandSlug = isDefaultHomepage
+    ? activeBrand?.slug ?? brandSlug
+    : brandSlug;
+  const sourceCategoriesForBrand =
+    isDefaultHomepage && activeBrand
+      ? activeBrand.categories
+      : sourceCategories;
 
   const categories = useMemo(() => {
-    const uniqueCategories = new Map<string, ParentCategory>();
+    const uniqueCategories = new Map<string, StoreCategory>();
     const childCategoryIds = new Set<string>();
 
-    for (const category of brand.categories) {
+    for (const category of sourceCategoriesForBrand) {
       for (const child of category.children) {
         childCategoryIds.add(child.id);
       }
     }
 
-    for (const category of brand.categories) {
+    for (const category of sourceCategoriesForBrand) {
       if (childCategoryIds.has(category.id)) continue;
 
       if (!uniqueCategories.has(category.id)) {
-        uniqueCategories.set(category.id, {
-          category,
-          brandSlug: brand.slug,
-        });
+        uniqueCategories.set(category.id, category);
       }
     }
 
     return [...uniqueCategories.values()]
       .sort(
         (left, right) =>
-          left.category.position - right.category.position ||
-          left.category.name.localeCompare(right.category.name),
+          left.position - right.position ||
+          left.name.localeCompare(right.name),
       )
       .slice(0, settings?.categoryLimit ?? 12);
-  }, [brand, settings?.categoryLimit]);
+  }, [sourceCategoriesForBrand, settings?.categoryLimit]);
 
   function updateScrollProgress(carousel: HTMLDivElement) {
     const maximumScroll = carousel.scrollWidth - carousel.clientWidth;
@@ -107,7 +117,7 @@ export function BrandCategoryCarousel({
     return () => resizeObserver.disconnect();
   }, [categories.length]);
 
-  if (!categories.length) return null;
+  if (!categories.length && !isDefaultHomepage) return null;
 
   function handleScroll(event: UIEvent<HTMLDivElement>) {
     updateScrollProgress(event.currentTarget);
@@ -160,6 +170,29 @@ export function BrandCategoryCarousel({
     });
   }
 
+  function handleBrandTabKeyDown(
+    event: React.KeyboardEvent<HTMLButtonElement>,
+    index: number,
+  ) {
+    let nextIndex = index;
+    if (event.key === "ArrowRight") {
+      nextIndex = (index + 1) % brands.length;
+    } else if (event.key === "ArrowLeft") {
+      nextIndex = (index - 1 + brands.length) % brands.length;
+    } else if (event.key === "Home") {
+      nextIndex = 0;
+    } else if (event.key === "End") {
+      nextIndex = brands.length - 1;
+    } else {
+      return;
+    }
+
+    event.preventDefault();
+    const nextBrand = brands[nextIndex];
+    setActiveBrandSlug(nextBrand.slug);
+    document.getElementById(`category-brand-tab-${nextBrand.slug}`)?.focus();
+  }
+
   return (
     <section
       aria-labelledby="brand-categories-heading"
@@ -180,7 +213,9 @@ export function BrandCategoryCarousel({
         }}
       />
 
-      <div className="relative mx-auto max-w-[1320px] px-5 py-14 sm:px-8 sm:py-16 lg:py-[72px]">
+      <div
+        className="relative mx-auto max-w-[1320px] px-5 py-14 sm:px-8 sm:py-16 lg:py-[72px]"
+      >
         <div className="mx-auto max-w-3xl text-center">
           <p className="text-[11px] font-semibold uppercase tracking-[0.38em] text-[#34453a]">
             {settings?.categoryEyebrow ?? "Browse our range"}
@@ -197,12 +232,57 @@ export function BrandCategoryCarousel({
           </p>
         </div>
 
-        <div className="relative mt-8 lg:mt-10">
+        {isDefaultHomepage && brands.length ? (
+          <div
+            role="tablist"
+            aria-label="Shop categories by brand"
+            className="mx-auto mt-5 flex w-fit max-w-full items-center overflow-x-auto border-b border-[#d5dfd8] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
+            {brands.map((brand, index) => {
+              const isActive = brand.slug === activeBrand?.slug;
+
+              return (
+                <button
+                  key={brand.id}
+                  id={`category-brand-tab-${brand.slug}`}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  tabIndex={isActive ? 0 : -1}
+                  aria-controls="brand-category-panel"
+                  onClick={() => setActiveBrandSlug(brand.slug)}
+                  onKeyDown={(event) => handleBrandTabKeyDown(event, index)}
+                  className={`relative min-h-10 shrink-0 px-4 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#2C5D43] sm:px-5 ${
+                    isActive
+                      ? "font-medium text-[#222a25] after:absolute after:inset-x-4 after:bottom-0 after:h-0.5 after:bg-[#2C5D43] sm:after:inset-x-5"
+                      : "text-[#828a85] hover:text-[#2C5D43]"
+                  }`}
+                >
+                  {brand.name}
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
+
+        <div
+          className={`relative ${isDefaultHomepage && brands.length ? "mt-5 sm:mt-7" : "mt-8 lg:mt-10"}`}
+        >
           <div
             ref={carouselRef}
-            role="region"
+            role={isDefaultHomepage ? "tabpanel" : "region"}
             tabIndex={0}
-            aria-label="All parent product categories. Swipe, drag, or use the left and right arrow keys to browse."
+            id={isDefaultHomepage ? "brand-category-panel" : undefined}
+            aria-label={
+              isDefaultHomepage
+                ? `${activeBrand?.name ?? "Selected brand"} categories`
+                : "All parent product categories. Swipe, drag, or use the left and right arrow keys to browse."
+            }
+            aria-labelledby={
+              isDefaultHomepage && activeBrand
+                ? `category-brand-tab-${activeBrand.slug}`
+                : undefined
+            }
             onScroll={handleScroll}
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
@@ -212,19 +292,26 @@ export function BrandCategoryCarousel({
             onKeyDown={handleKeyDown}
             className="flex cursor-grab snap-x snap-mandatory gap-3 overflow-x-auto scroll-smooth px-1 pb-3 outline-none [scrollbar-width:none] active:cursor-grabbing focus-visible:ring-2 focus-visible:ring-[#2C5D43]/50 focus-visible:ring-offset-4 [&::-webkit-scrollbar]:hidden sm:gap-4 lg:gap-5"
           >
-            {categories.map(({ category, brandSlug }) => {
+            {categories.map((category) => {
               const image =
                 category.featuredAsset?.preview ??
                 category.featuredAsset?.source;
+              const categoryHref = `/shop/${encodeURIComponent(category.slug)}${
+                displayedBrandSlug
+                  ? `?brand=${encodeURIComponent(displayedBrandSlug)}`
+                  : ""
+              }`;
 
               return (
                 <Link
                   key={category.id}
-                  href={`/shop/${encodeURIComponent(category.slug)}?brand=${encodeURIComponent(brandSlug)}`}
+                  href={categoryHref}
                   draggable={false}
                   className="group flex w-[46%] shrink-0 snap-start flex-col items-center px-1 py-3 text-center focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#2C5D43] sm:w-[31%] md:w-[23%] lg:w-[calc((100%-6.25rem)/6)]"
                 >
-                  <span className="relative grid size-[128px] place-items-center bg-transparent transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-[1.04] sm:size-[146px] lg:size-[180px]">
+                  <span
+                    className="relative grid size-[128px] place-items-center bg-transparent transition-transform duration-300 group-hover:-translate-y-1 group-hover:scale-[1.04] sm:size-[146px] lg:size-[180px]"
+                  >
                     {image ? (
                       <Image
                         src={image}
@@ -249,6 +336,11 @@ export function BrandCategoryCarousel({
                 </Link>
               );
             })}
+            {!categories.length ? (
+              <p className="w-full py-4 text-center text-sm text-[#59635d]">
+                No categories are available for this brand yet.
+              </p>
+            ) : null}
           </div>
 
           {isScrollable ? (
@@ -267,13 +359,17 @@ export function BrandCategoryCarousel({
         </div>
 
         <div className="mt-7 text-center sm:mt-8">
-          <Link
-            href={`${settings?.categoryCtaLink ?? "/categories"}${(settings?.categoryCtaLink ?? "/categories").includes("?") ? "&" : "?"}brand=${encodeURIComponent(brand.slug)}`}
-            className="inline-flex min-h-11 items-center gap-2 rounded-md bg-[#2C5D43] px-5 text-base  text-white shadow-[0_8px_18px_rgba(44,93,67,0.18)] transition hover:-translate-y-0.5 hover:bg-[#234b36] hover:shadow-[0_10px_22px_rgba(44,93,67,0.24)] focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#2C5D43]"
-          >
-            {settings?.categoryCtaLabel ?? "Discover Categories"}
-            <ArrowRight aria-hidden="true" className="size-4" />
-          </Link>
+            <Link
+              href={`${settings?.categoryCtaLink ?? "/categories"}${
+                displayedBrandSlug
+                  ? `${(settings?.categoryCtaLink ?? "/categories").includes("?") ? "&" : "?"}brand=${encodeURIComponent(displayedBrandSlug)}`
+                  : ""
+              }`}
+              className="inline-flex min-h-11 items-center gap-2 rounded-md bg-[#2C5D43] px-5 text-base text-white shadow-[0_8px_18px_rgba(44,93,67,0.18)] transition hover:-translate-y-0.5 hover:bg-[#234b36] hover:shadow-[0_10px_22px_rgba(44,93,67,0.24)] focus-visible:outline-2 focus-visible:outline-offset-3 focus-visible:outline-[#2C5D43]"
+            >
+              {settings?.categoryCtaLabel ?? "Discover Categories"}
+              <ArrowRight aria-hidden="true" className="size-4" />
+            </Link>
         </div>
       </div>
       <WaveDivider />

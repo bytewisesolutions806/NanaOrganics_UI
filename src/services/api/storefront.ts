@@ -132,70 +132,95 @@ const HOMEPAGE_SECTIONS_QUERY = /* GraphQL */ `
   }
 `;
 
-const HOMEPAGE_CONFIGURATION_QUERY = /* GraphQL */ `
-  query BrandHomepageConfiguration($brandSlug: String!) {
-    homepageSettings(brandSlug: $brandSlug) {
-      enabled
-      heroEnabled
-      categoryEnabled
-      categoryEyebrow
-      categoryTitle
-      categoryDescription
-      categoryLimit
-      categoryCtaLabel
-      categoryCtaLink
-      storyEnabled
-      valuesEnabled
-      valuesEyebrow
-      valuesTitle
-      valuesDescription
-      valuesCtaLabel
-      valuesCtaLink
-      valuesBackgroundAsset { id name source preview mimeType }
-      valueItems {
-        id
-        position
-        title
-        description
-        imageAsset { id name source preview mimeType }
-      }
-    }
-    homepageVideo(brandSlug: $brandSlug) {
+const homepageSettingsFields = /* GraphQL */ `
+  enabled
+  heroEnabled
+  categoryEnabled
+  categoryEyebrow
+  categoryTitle
+  categoryDescription
+  categoryLimit
+  categoryCtaLabel
+  categoryCtaLink
+  storyEnabled
+  valuesEnabled
+  valuesEyebrow
+  valuesTitle
+  valuesDescription
+  valuesCtaLabel
+  valuesCtaLink
+  valuesBackgroundAsset { id name source preview mimeType }
+  valueItems {
+    id
+    position
+    title
+    description
+    imageAsset { id name source preview mimeType }
+  }
+`;
+
+const homepageHeroSettingsFields = /* GraphQL */ `
+  heroEyebrow
+  heroTitle
+  heroDescription
+  heroPrimaryLabel
+  heroPrimaryLink
+  heroSecondaryLabel
+  heroSecondaryLink
+  heroBannerAsset { id name source preview mimeType }
+`;
+
+const homepageVideoFields = /* GraphQL */ `
+  id
+  title
+  description
+  videos {
+    id
+    position
+    videoAsset { id name source preview mimeType }
+    product {
       id
-      title
-      description
-      videos {
+      name
+      slug
+      featuredAsset { id name source preview mimeType }
+      variants {
         id
-        position
-        videoAsset { id name source preview mimeType }
-        product {
-          id
-          name
-          slug
-          featuredAsset { id name source preview mimeType }
-          variants {
-            id
-            name
-            currencyCode
-            priceWithTax
-            stockLevel
-            customFields { isPopular }
-            offerPricing { originalPrice offerPercentage sellingPrice }
-          }
-        }
+        name
+        currencyCode
+        priceWithTax
+        stockLevel
+        customFields { isPopular }
+        offerPricing { originalPrice offerPercentage sellingPrice }
       }
     }
-    homepageMarketingSections(brandSlug: $brandSlug) {
-      id code enabled position eyebrow title description secondaryDescription ctaLabel ctaLink
-      backgroundAsset { id name source preview mimeType }
-      foregroundAsset { id name source preview mimeType }
-      logoAsset { id name source preview mimeType }
-      items {
-        id position title description ctaLabel ctaLink alignment
-        imageAsset { id name source preview mimeType }
-        iconAsset { id name source preview mimeType }
-      }
-    }
+  }
+`;
+
+const homepageMarketingFields = /* GraphQL */ `
+  id code enabled position eyebrow title description secondaryDescription ctaLabel ctaLink
+  backgroundAsset { id name source preview mimeType }
+  foregroundAsset { id name source preview mimeType }
+  logoAsset { id name source preview mimeType }
+  items {
+    id position title description ctaLabel ctaLink alignment
+    imageAsset { id name source preview mimeType }
+    iconAsset { id name source preview mimeType }
+  }
+`;
+
+const BRAND_HOMEPAGE_CONFIGURATION_QUERY = /* GraphQL */ `
+  query BrandHomepageConfiguration($brandSlug: String!) {
+    homepageSettings(brandSlug: $brandSlug) { ${homepageSettingsFields} }
+    homepageVideo(brandSlug: $brandSlug) { ${homepageVideoFields} }
+    homepageMarketingSections(brandSlug: $brandSlug) { ${homepageMarketingFields} }
+  }
+`;
+
+const DEFAULT_HOMEPAGE_CONFIGURATION_QUERY = /* GraphQL */ `
+  query DefaultHomepageConfiguration {
+    homepageSettings { ${homepageSettingsFields} ${homepageHeroSettingsFields} }
+    homepageVideo { ${homepageVideoFields} }
+    homepageMarketingSections { ${homepageMarketingFields} }
   }
 `;
 
@@ -248,12 +273,14 @@ const STOREFRONT_CATEGORIES_QUERY = /* GraphQL */ `
         slug
         position
         productVariantCount
+        featuredAsset { id name preview source mimeType }
         children {
           id
           name
           slug
           position
           productVariantCount
+          featuredAsset { id name preview source mimeType }
         }
       }
     }
@@ -558,7 +585,11 @@ export async function getStorefrontCategories(): Promise<StoreCategory[]> {
     .flat()
     .map((category) => ({
       ...category,
-      children: category.children ?? [],
+      featuredAsset: normalizeAsset(category.featuredAsset),
+      children: (category.children ?? []).map((child) => ({
+        ...child,
+        featuredAsset: normalizeAsset(child.featuredAsset),
+      })),
     }))
     .sort(
       (left, right) =>
@@ -568,7 +599,9 @@ export async function getStorefrontCategories(): Promise<StoreCategory[]> {
 
 export async function getStorefrontCatalog(
   categories: StoreCategory[],
+  term?: string,
 ): Promise<StorefrontCatalogData> {
+  const searchTerm = term?.trim();
   const collectionSlugs = categories.flatMap((category) => [
     category.slug,
     ...category.children.map((child) => child.slug),
@@ -604,6 +637,7 @@ export async function getStorefrontCatalog(
       STOREFRONT_CATEGORY_SEARCH_QUERY,
       {
         input: {
+          ...(searchTerm ? { term: searchTerm } : {}),
           ...(collectionSlugs.length ? { collectionSlugs } : {}),
           groupByProduct: false,
           take: pageSize,
@@ -881,7 +915,7 @@ export async function getRelatedStorefrontProducts(
 }
 
 async function getBrandProductSections(
-  brandSlug: string,
+  brandSlug?: string,
 ): Promise<HomepageProductSection[]> {
   type HomepageSectionsResponse = {
     homepageProductSections: Array<{
@@ -897,7 +931,7 @@ async function getBrandProductSections(
   const [configuredResponse, discoveryResponse] = await Promise.all([
     requestStoreApi<HomepageSectionsResponse>(HOMEPAGE_SECTIONS_QUERY, {
       input: {
-        brandSlug,
+        ...(brandSlug ? { brandSlug } : {}),
         take: 8,
       },
     }),
@@ -905,7 +939,7 @@ async function getBrandProductSections(
       HOMEPAGE_SECTIONS_QUERY,
       {
         input: {
-          brandSlug,
+          ...(brandSlug ? { brandSlug } : {}),
           codes: ["all-products"],
           take: 8,
         },
@@ -935,21 +969,15 @@ async function getBrandProductSections(
     .filter((section) => section.products.length > 0);
 }
 
-async function getBrandHomepageConfiguration(brandSlug: string): Promise<{
+function normalizeHomepageConfiguration(response: {
   settings?: StoreHomepageSettings | null;
   video?: StoreHomepageVideo | null;
   marketingSections: StoreHomepageMarketingSection[];
-}> {
-  const response = await requestStoreApi<{
-    homepageSettings?: StoreHomepageSettings | null;
-    homepageVideo?: StoreHomepageVideo | null;
-    homepageMarketingSections: StoreHomepageMarketingSection[];
-  }>(HOMEPAGE_CONFIGURATION_QUERY, { brandSlug }, 0);
-
-  const video = response.homepageVideo
+}) {
+  const video = response.video
     ? {
-        ...response.homepageVideo,
-        videos: response.homepageVideo.videos
+        ...response.video,
+        videos: response.video.videos
           .slice()
           .sort((left, right) => left.position - right.position)
           .map((item) => ({
@@ -965,13 +993,16 @@ async function getBrandHomepageConfiguration(brandSlug: string): Promise<{
       }
     : null;
 
-  const settings = response.homepageSettings
+  const settings = response.settings
     ? {
-        ...response.homepageSettings,
-        valuesBackgroundAsset: normalizeAsset(
-          response.homepageSettings.valuesBackgroundAsset,
+        ...response.settings,
+          heroBannerAsset: normalizeAsset(
+            response.settings.heroBannerAsset,
+          ),
+          valuesBackgroundAsset: normalizeAsset(
+          response.settings.valuesBackgroundAsset,
         ),
-        valueItems: (response.homepageSettings.valueItems ?? [])
+        valueItems: (response.settings.valueItems ?? [])
           .slice()
           .sort((left, right) => left.position - right.position)
           .map((item) => ({
@@ -981,7 +1012,7 @@ async function getBrandHomepageConfiguration(brandSlug: string): Promise<{
       }
     : null;
 
-  const marketingSections = (response.homepageMarketingSections ?? [])
+  const marketingSections = (response.marketingSections ?? [])
     .slice()
     .sort((left, right) => left.position - right.position)
     .map((section) => ({
@@ -1000,6 +1031,34 @@ async function getBrandHomepageConfiguration(brandSlug: string): Promise<{
     }));
 
   return { settings, video, marketingSections };
+}
+
+async function getBrandHomepageConfiguration(brandSlug: string) {
+  const response = await requestStoreApi<{
+    homepageSettings?: StoreHomepageSettings | null;
+    homepageVideo?: StoreHomepageVideo | null;
+    homepageMarketingSections: StoreHomepageMarketingSection[];
+  }>(BRAND_HOMEPAGE_CONFIGURATION_QUERY, { brandSlug }, 0);
+
+  return normalizeHomepageConfiguration({
+    settings: response.homepageSettings,
+    video: response.homepageVideo,
+    marketingSections: response.homepageMarketingSections,
+  });
+}
+
+async function getDefaultHomepageConfiguration() {
+  const response = await requestStoreApi<{
+    homepageSettings?: StoreHomepageSettings | null;
+    homepageVideo?: StoreHomepageVideo | null;
+    homepageMarketingSections: StoreHomepageMarketingSection[];
+  }>(DEFAULT_HOMEPAGE_CONFIGURATION_QUERY, {}, 0);
+
+  return normalizeHomepageConfiguration({
+    settings: response.homepageSettings,
+    video: response.homepageVideo,
+    marketingSections: response.homepageMarketingSections,
+  });
 }
 
 export async function getBrandHomepage(
@@ -1027,5 +1086,37 @@ export async function getBrandHomepage(
     productSections,
     video: configuration.video,
     marketingSections: configuration.marketingSections,
+  };
+}
+
+export async function getDefaultHomepage(): Promise<BrandHomepageData> {
+  const [brands, categories] = await Promise.all([
+    getStorefrontBrands(),
+    getStorefrontCategories(),
+  ]);
+  if (!brands.length) {
+    throw new Error("No enabled storefront brands were returned by Vendure.");
+  }
+  const selectedBrand = brands.find((brand) => brand.featured) ?? brands[0];
+  const [productSections, configuration] = await Promise.all([
+    getBrandProductSections(),
+    getDefaultHomepageConfiguration().catch((error: unknown) => {
+      console.error(
+        "Default homepage settings are unavailable from Vendure; rendering the catalog with default storefront content.",
+        error,
+      );
+      return null;
+    }),
+  ]);
+
+  return {
+    brands,
+    selectedBrand,
+    categories,
+    isDefault: true,
+    settings: configuration?.settings,
+    productSections,
+    video: configuration?.video,
+    marketingSections: configuration?.marketingSections ?? [],
   };
 }

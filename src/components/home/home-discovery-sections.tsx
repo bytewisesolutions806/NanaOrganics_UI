@@ -10,8 +10,9 @@ import type {
   StoreHomepageVideo,
 } from "@/types/storefront";
 
-function withBrand(href: string, brandSlug: string) {
+function withBrand(href: string, brandSlug?: string) {
   if (!href.startsWith("/")) return href;
+  if (!brandSlug) return href;
   const separator = href.includes("?") ? "&" : "?";
   return `${href}${separator}brand=${encodeURIComponent(brandSlug)}`;
 }
@@ -21,7 +22,7 @@ export function HomeBrandValues({
   brandSlug,
 }: {
   settings: StoreHomepageSettings;
-  brandSlug: string;
+  brandSlug?: string;
 }) {
   if (!settings.valuesEnabled || !settings.valueItems.length) return null;
 
@@ -109,14 +110,14 @@ export function HomeProductSections({
   brandSlug,
 }: {
   sections: HomepageProductSection[];
-  brandSlug: string;
+  brandSlug?: string;
 }) {
   return sections.map((section) => (
     <HomeProductSection key={section.code} section={section} brandSlug={brandSlug} />
   ));
 }
 
-export function HomeVideoDiscovery({ video, brandSlug }: { video: StoreHomepageVideo; brandSlug: string }) {
+export function HomeVideoDiscovery({ video, brandSlug }: { video: StoreHomepageVideo; brandSlug?: string }) {
   return (
     <section className="bg-[#f3f7f1] py-14 sm:py-20" aria-labelledby="homepage-video-heading">
       <div className="mx-auto max-w-[1240px] px-5 sm:px-8">
@@ -129,7 +130,7 @@ export function HomeVideoDiscovery({ video, brandSlug }: { video: StoreHomepageV
             <article key={item.id} className="w-[72%] shrink-0 snap-start overflow-hidden rounded-2xl bg-white shadow-[0_10px_30px_rgba(40,72,49,0.08)] sm:w-[42%] lg:w-[calc((100%-3rem)/4)]">
               <video src={item.videoAsset.source} controls muted playsInline preload="metadata" className="aspect-[3/4] w-full bg-black object-cover" aria-label={item.product ? `${item.product.name} video` : "Product video"} />
               {item.product ? (
-                <Link href={`/products/${item.product.slug}?brand=${encodeURIComponent(brandSlug)}`} className="flex items-center justify-between gap-3 p-4 text-sm font-semibold text-[#263b2d] hover:text-[#2C5D43]">
+                <Link href={`/products/${item.product.slug}${brandSlug ? `?brand=${encodeURIComponent(brandSlug)}` : ""}`} className="flex items-center justify-between gap-3 p-4 text-sm font-semibold text-[#263b2d] hover:text-[#2C5D43]">
                   <span className="line-clamp-2">{item.product.name}</span><ArrowRight className="size-4 shrink-0" aria-hidden="true" />
                 </Link>
               ) : null}

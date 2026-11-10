@@ -119,15 +119,17 @@ function Price({
 
 function getProductHref(
   product: StoreProduct,
-  brandSlug: string,
+  brandSlug: string | undefined,
   variant?: StoreProductVariant,
   quantity?: number,
 ) {
-  const query = `brand=${encodeURIComponent(brandSlug)}${
-    variant ? `&variant=${encodeURIComponent(variant.id)}` : ""
-  }${quantity ? `&quantity=${quantity}` : ""}`;
+  const query = [
+    ...(brandSlug ? [`brand=${encodeURIComponent(brandSlug)}`] : []),
+    ...(variant ? [`variant=${encodeURIComponent(variant.id)}`] : []),
+    ...(quantity ? [`quantity=${quantity}`] : []),
+  ].join("&");
 
-  return `/products/${product.slug}?${query}`;
+  return `/products/${product.slug}${query ? `?${query}` : ""}`;
 }
 
 export function HomeProductCard({
@@ -135,7 +137,7 @@ export function HomeProductCard({
   brandSlug,
 }: {
   product: StoreProduct;
-  brandSlug: string;
+  brandSlug?: string;
 }) {
   const router = useRouter();
   const wishlist = useWishlist();
@@ -461,17 +463,20 @@ export function HomeProductSection({
   showViewAll = true,
 }: {
   section: HomepageProductSection;
-  brandSlug: string;
+  brandSlug?: string;
   eyebrow?: string;
   showViewAll?: boolean;
 }) {
   const carouselRef = useRef<HTMLDivElement>(null);
   const headingId = `homepage-products-${section.code.replace(/[^a-zA-Z0-9_-]/g, "-")}`;
-  const viewAllHref = section.ctaLink
-    ? section.ctaLink.startsWith("/")
-      ? `${section.ctaLink}${section.ctaLink.includes("?") ? "&" : "?"}brand=${encodeURIComponent(brandSlug)}`
-      : section.ctaLink
-    : `/categories?section=${encodeURIComponent(section.code)}&brand=${encodeURIComponent(brandSlug)}`;
+  const viewAllHref = (() => {
+    const href =
+      section.ctaLink ??
+      `/categories?section=${encodeURIComponent(section.code)}`;
+
+    if (!brandSlug || !href.startsWith("/")) return href;
+    return `${href}${href.includes("?") ? "&" : "?"}brand=${encodeURIComponent(brandSlug)}`;
+  })();
 
   function scrollProducts(direction: -1 | 1) {
     const carousel = carouselRef.current;
