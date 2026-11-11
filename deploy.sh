@@ -115,17 +115,32 @@ echo "Deploying frontend $RELEASE to $DEPLOY_ENV using $ENV_FILE"
 
 compose config --quiet
 
-PREVIOUS_CONTAINER="$(compose ps -q storefront 2>/dev/null || true)"
+PREVIOUS_CONTAINER="$(compose ps --all -q storefront 2>/dev/null || true)"
 PREVIOUS_IMAGE_ID=""
+
 if [[ -n "$PREVIOUS_CONTAINER" ]]; then
-    PREVIOUS_IMAGE_ID="$(docker inspect --format '{{.Image}}' "$PREVIOUS_CONTAINER")"
+    CANDIDATE_IMAGE_ID="$(
+        docker inspect \
+            --format '{{.Image}}' \
+            "$PREVIOUS_CONTAINER" \
+            2>/dev/null ||
+        true
+    )"
+
+    if [[ -n "$CANDIDATE_IMAGE_ID" ]] &&
+       docker image inspect "$CANDIDATE_IMAGE_ID" >/dev/null 2>&1; then
+        PREVIOUS_IMAGE_ID="$CANDIDATE_IMAGE_ID"
+    else
+        echo "Warning: previous storefront image is unavailable; continuing without a rollback image." >&2
+    fi
 fi
 
 # Build without interrupting the currently running storefront.
 compose build --pull storefront
 
 ROLLBACK_TAG="before-${RELEASE}"
-if [[ -n "$PREVIOUS_IMAGE_ID" ]]; then
+if [[ -n "$PREVIOUS_IMAGE_ID" ]] &&
+   docker image inspect "$PREVIOUS_IMAGE_ID" >/dev/null 2>&1; then
     docker image tag "$PREVIOUS_IMAGE_ID" \
         "${FRONTEND_IMAGE_REPOSITORY}:${ROLLBACK_TAG}"
 fi

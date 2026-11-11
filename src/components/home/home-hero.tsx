@@ -65,38 +65,69 @@ export function HomeHero({
 
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/80 via-white/40 to-transparent" />
 
-      <div className="relative z-10 mx-auto flex w-full min-w-0 max-w-3xl flex-col items-center justify-center space-y-6 px-4 pt-16 text-center text-black sm:px-5 sm:pt-20">
-        {eyebrow ? (
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#2C5D43] drop-shadow-sm">
-            {eyebrow}
-          </p>
-        ) : null}
-        <h1 className="w-full max-w-full break-words font-serif text-balance text-xl font-bold tracking-tight drop-shadow-md sm:text-4xl md:text-4xl">
-          {title ?? "Thoughtful organic essentials for everyday living."}
-        </h1>
-
-        {description && (
-          <p className="w-full max-w-2xl break-words text-pretty text-base font-light drop-shadow sm:text-lg md:text-xl">
-            {description}
-          </p>
-        )}
-
-        <div className="flex flex-wrap justify-center gap-3">
-          <Link
-            href={withBrand(primaryLink ?? "/categories", brandSlug)}
-            className="inline-flex min-h-11 items-center gap-2 rounded-md bg-[#2C5D43] px-5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#234B36] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2C5D43]"
-          >
-            <UserRoundPlus className="size-4" aria-hidden="true" />
-            {primaryLabel ?? (useHomepageSettings ? "Shop now" : `Join ${brand.name}`)}
-          </Link>
-          {secondaryLink ? (
-            <Link
-              href={withBrand(secondaryLink, brandSlug)}
-              className="inline-flex min-h-11 items-center rounded-md border border-[#2C5D43]/35 bg-white/75 px-5 text-sm font-medium text-[#244d37] backdrop-blur-sm transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2C5D43]"
-            >
-              {secondaryLabel ?? "Our story"}
-            </Link>
+      <div
+        className={`relative z-10 mx-auto w-full ${
+          useHomepageSettings
+            ? "max-w-[1280px] px-3 sm:px-5 lg:px-6"
+            : "max-w-3xl px-4 sm:px-5"
+        }`}
+      >
+        <div
+          className={`flex min-w-0 flex-col space-y-6 pt-16 text-black sm:pt-20 ${
+            useHomepageSettings
+              ? "w-full items-start text-left lg:w-1/2"
+              : "w-full items-center text-center"
+          }`}
+        >
+          {eyebrow ? (
+            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#2C5D43] drop-shadow-sm">
+              {eyebrow}
+            </p>
           ) : null}
+          <h1
+            className={`w-full max-w-full break-words font-serif text-balance font-bold tracking-tight drop-shadow-md ${
+              useHomepageSettings
+                ? "max-w-[620px] text-3xl sm:text-4xl md:text-5xl"
+                : "text-xl sm:text-4xl md:text-4xl"
+            }`}
+          >
+            {title ?? "Thoughtful organic essentials for everyday living."}
+          </h1>
+
+          {description && (
+            <p
+              className={`w-full max-w-2xl break-words text-pretty font-light drop-shadow ${
+                useHomepageSettings
+                  ? "text-sm sm:text-base"
+                  : "text-base sm:text-lg md:text-xl"
+              }`}
+            >
+              {description}
+            </p>
+          )}
+
+          <div
+            className={`flex flex-wrap gap-3 ${
+              useHomepageSettings ? "justify-start" : "justify-center"
+            }`}
+          >
+            <Link
+              href={withBrand(primaryLink ?? "/categories", brandSlug)}
+              className="inline-flex min-h-11 items-center gap-2 rounded-md bg-[#2C5D43] px-5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-[#234B36] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2C5D43]"
+            >
+              <UserRoundPlus className="size-4" aria-hidden="true" />
+              {primaryLabel ??
+                (useHomepageSettings ? "Shop now" : `Join ${brand.name}`)}
+            </Link>
+            {secondaryLink ? (
+              <Link
+                href={withBrand(secondaryLink, brandSlug)}
+                className="inline-flex min-h-11 items-center rounded-md border border-[#2C5D43]/35 bg-white/75 px-5 text-sm font-medium text-[#244d37] backdrop-blur-sm transition-colors hover:bg-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2C5D43]"
+              >
+                {secondaryLabel ?? "Our story"}
+              </Link>
+            ) : null}
+          </div>
         </div>
       </div>
     </section>
