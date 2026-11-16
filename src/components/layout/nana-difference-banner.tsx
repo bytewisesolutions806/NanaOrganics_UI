@@ -12,46 +12,15 @@ export function NanaDifferenceBanner() {
   return (
     <section
       aria-labelledby="nana-difference-heading"
-      className="relative isolate min-h-[310px] overflow-hidden bg-[#f7f8f2] px-5 py-14 sm:min-h-[360px] sm:px-8 sm:py-20 lg:min-h-[400px] lg:py-24"
+      className="relative isolate min-h-[330px] overflow-hidden bg-[#f7f8f2] px-5 py-14 sm:min-h-[380px] sm:px-8 sm:py-20 lg:min-h-[420px] lg:py-24"
     >
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 -z-10 bg-[linear-gradient(180deg,rgba(255,255,255,0.97)_0%,rgba(246,247,239,0.88)_58%,rgba(219,225,215,0.9)_100%)]"
-      />
-      <svg
-        aria-hidden="true"
-        viewBox="0 0 1440 220"
-        preserveAspectRatio="none"
-        className="absolute inset-x-0 bottom-0 -z-10 h-28 w-full sm:h-36"
-      >
-        <path
-          d="M0 166 130 142 246 172 383 130 520 163 676 122 827 166 960 135 1112 172 1253 126 1440 156V220H0Z"
-          fill="#d2d9cf"
-          fillOpacity=".42"
-        />
-        <path
-          d="m0 188 164-27 156 34 174-31 160 27 184-40 183 38 160-30 129 27 130-29v63H0Z"
-          fill="#c7d0c4"
-          fillOpacity=".55"
-        />
-      </svg>
       <Image
-        src="/images/homepage-leaf-left-bottom.png"
+        src="/images/what-makes-different-banner.png"
         alt=""
-        width={240}
-        height={190}
-        unoptimized
+        fill
+        sizes="100vw"
         aria-hidden="true"
-        className="pointer-events-none absolute -left-16 -top-14 -z-0 w-40 rotate-[-18deg] sm:-left-12 sm:-top-20 sm:w-56"
-      />
-      <Image
-        src="/images/homepage-leaf-right-top.png"
-        alt=""
-        width={260}
-        height={190}
-        unoptimized
-        aria-hidden="true"
-        className="pointer-events-none absolute -bottom-16 -right-14 -z-0 w-40 rotate-[-8deg] sm:-bottom-20 sm:-right-12 sm:w-60"
+        className="object-cover object-center -z-10"
       />
 
       <div className="relative z-10 mx-auto max-w-[920px] text-center">
