@@ -134,6 +134,7 @@ async function HomeContent({ searchParams }: HomePageProps) {
             {data.settings?.categoryEnabled !== false ? (
               <BrandCategoryCarousel
                 categories={data.categories ?? data.selectedBrand.categories}
+                contentBrand={data.isDefault ? undefined : data.selectedBrand}
                 brands={data.isDefault ? data.brands : undefined}
                 brandSlug={brandSlug}
                 initialBrandSlug={data.isDefault ? data.selectedBrand.slug : undefined}

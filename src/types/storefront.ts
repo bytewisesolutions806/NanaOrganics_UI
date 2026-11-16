@@ -44,6 +44,20 @@ export interface StoreBrand {
   storyDescription?: string | null;
   storyLinkLabel?: string | null;
   storyLink?: string | null;
+  processImageAsset?: StoreAsset | null;
+  processEyebrow?: string | null;
+  processTitle?: string | null;
+  processDescription?: string | null;
+  processLinkLabel?: string | null;
+  processLink?: string | null;
+  processStep1Title?: string | null;
+  processStep1Description?: string | null;
+  processStep2Title?: string | null;
+  processStep2Description?: string | null;
+  processStep3Title?: string | null;
+  processStep3Description?: string | null;
+  processStep4Title?: string | null;
+  processStep4Description?: string | null;
   logoAsset?: StoreAsset | null;
   bannerAsset?: StoreAsset | null;
   storyAsset?: StoreAsset | null;
@@ -224,6 +238,20 @@ export interface StoreHomepageSettings {
   valuesCtaLabel?: string | null;
   valuesCtaLink?: string | null;
   valuesBackgroundAsset?: StoreAsset | null;
+  processImageAsset?: StoreAsset | null;
+  processEyebrow?: string | null;
+  processTitle?: string | null;
+  processDescription?: string | null;
+  processLinkLabel?: string | null;
+  processLink?: string | null;
+  processStep1Title?: string | null;
+  processStep1Description?: string | null;
+  processStep2Title?: string | null;
+  processStep2Description?: string | null;
+  processStep3Title?: string | null;
+  processStep3Description?: string | null;
+  processStep4Title?: string | null;
+  processStep4Description?: string | null;
   valueItems: StoreHomepageValueItem[];
 }
 

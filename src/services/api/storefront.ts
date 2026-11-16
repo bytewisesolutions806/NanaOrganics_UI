@@ -40,6 +40,25 @@ const BRANDS_QUERY = /* GraphQL */ `
       storyDescription
       storyLinkLabel
       storyLink
+      processImageAsset {
+        id
+        name
+        source
+        mimeType
+      }
+      processEyebrow
+      processTitle
+      processDescription
+      processLinkLabel
+      processLink
+      processStep1Title
+      processStep1Description
+      processStep2Title
+      processStep2Description
+      processStep3Title
+      processStep3Description
+      processStep4Title
+      processStep4Description
       logoAsset {
         id
         name
@@ -150,6 +169,20 @@ const homepageSettingsFields = /* GraphQL */ `
   valuesCtaLabel
   valuesCtaLink
   valuesBackgroundAsset { id name source preview mimeType }
+  processImageAsset { id name source preview mimeType }
+  processEyebrow
+  processTitle
+  processDescription
+  processLinkLabel
+  processLink
+  processStep1Title
+  processStep1Description
+  processStep2Title
+  processStep2Description
+  processStep3Title
+  processStep3Description
+  processStep4Title
+  processStep4Description
   valueItems {
     id
     position
@@ -1002,6 +1035,7 @@ function normalizeHomepageConfiguration(response: {
           valuesBackgroundAsset: normalizeAsset(
           response.settings.valuesBackgroundAsset,
         ),
+        processImageAsset: normalizeAsset(response.settings.processImageAsset),
         valueItems: (response.settings.valueItems ?? [])
           .slice()
           .sort((left, right) => left.position - right.position)
