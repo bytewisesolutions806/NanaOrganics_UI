@@ -1,4 +1,5 @@
 import { getAuthHeaders } from "@/services/api/auth";
+import { normalizePostalCode, validatePostalCode } from "@/lib/address-validation";
 
 interface GraphQLError {
   message: string;
@@ -275,6 +276,8 @@ function mapAddress(address: Record<string, unknown>): CustomerAddress {
 }
 
 function addressInput(input: AddressInput, id?: string) {
+  const validationError = validatePostalCode(input.countryCode, input.postalCode);
+  if (validationError) throw new Error(validationError);
   return {
     ...(id ? { id } : {}),
     fullName: `${input.firstName.trim()} ${input.lastName.trim()}`.trim(),
@@ -282,8 +285,8 @@ function addressInput(input: AddressInput, id?: string) {
     streetLine2: input.streetLine2.trim(),
     city: input.city.trim(),
     province: input.province.trim(),
-    postalCode: input.postalCode.trim(),
-    countryCode: input.countryCode.toUpperCase(),
+    postalCode: normalizePostalCode(input.countryCode, input.postalCode),
+    countryCode: input.countryCode.trim().toUpperCase(),
     phoneNumber: input.phoneNumber.trim() || null,
     defaultShippingAddress: input.isDefault,
     defaultBillingAddress: input.isDefault,

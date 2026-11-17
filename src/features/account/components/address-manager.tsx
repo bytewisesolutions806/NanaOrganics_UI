@@ -5,6 +5,7 @@ import { Check, MapPin, Pencil, Plus, Trash2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import { AccountHeading, EmptyState, LoadingCards } from "./account-ui";
+import { isSupportedCountry, normalizePostalCode, supportedCountries, validatePostalCode } from "@/lib/address-validation";
 import {
   type AddressInput,
   type CustomerAddress,
@@ -14,15 +15,9 @@ import {
   updateCustomerAddress,
 } from "@/services/api/account";
 
-const countries = [
-  ["in", "India"], ["us", "United States"], ["gb", "United Kingdom"],
-  ["de", "Germany"], ["dk", "Denmark"], ["se", "Sweden"],
-  ["fr", "France"], ["es", "Spain"], ["it", "Italy"], ["my", "Malaysia"],
-] as const;
-
 const emptyAddress: AddressInput = {
   firstName: "", lastName: "", phoneNumber: "", streetLine1: "", streetLine2: "",
-  city: "", province: "", postalCode: "", countryCode: "in", isDefault: false,
+  city: "", province: "", postalCode: "", countryCode: "US", isDefault: false,
 };
 
 export function AddressManager() {
@@ -110,7 +105,7 @@ function AddressDialog({ address, onClose, onSaved }: { address: CustomerAddress
   const [form, setForm] = useState<AddressInput>(() => address ? {
     firstName: address.firstName, lastName: address.lastName, phoneNumber: address.phoneNumber,
     streetLine1: address.streetLine1, streetLine2: address.streetLine2, city: address.city,
-    province: address.province, postalCode: address.postalCode, countryCode: address.countryCode, isDefault: address.isDefault,
+    province: address.province, postalCode: address.postalCode, countryCode: address.countryCode.toUpperCase(), isDefault: address.isDefault,
   } : emptyAddress);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -122,9 +117,12 @@ function AddressDialog({ address, onClose, onSaved }: { address: CustomerAddress
     if (!form.firstName.trim() || !form.lastName.trim() || !form.streetLine1.trim() || !form.city.trim() || !form.province.trim() || !form.postalCode.trim() || !form.countryCode) {
       setError("Complete all required address fields."); return;
     }
+    const validationError = validatePostalCode(form.countryCode, form.postalCode);
+    if (validationError) { setError(validationError); return; }
     setSaving(true); setError("");
     try {
-      if (address) await updateCustomerAddress(address.id, form); else await createCustomerAddress(form);
+      const input = { ...form, postalCode: normalizePostalCode(form.countryCode, form.postalCode) };
+      if (address) await updateCustomerAddress(address.id, input); else await createCustomerAddress(input);
       await onSaved();
     } catch (caught) { setError(caught instanceof Error ? caught.message : "Could not save the address."); }
     finally { setSaving(false); }
@@ -139,7 +137,7 @@ function AddressDialog({ address, onClose, onSaved }: { address: CustomerAddress
           <Field label="First name *"><input value={form.firstName} onChange={(e) => set("firstName", e.target.value)} autoComplete="given-name" className={inputClass} /></Field>
           <Field label="Last name *"><input value={form.lastName} onChange={(e) => set("lastName", e.target.value)} autoComplete="family-name" className={inputClass} /></Field>
           <Field label="Phone"><input value={form.phoneNumber} onChange={(e) => set("phoneNumber", e.target.value)} autoComplete="tel" className={inputClass} /></Field>
-          <Field label="Country *"><select value={form.countryCode} onChange={(e) => set("countryCode", e.target.value)} autoComplete="country" className={inputClass}>{countries.map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select></Field>
+          <Field label="Country *"><select value={form.countryCode} onChange={(e) => set("countryCode", e.target.value)} autoComplete="country" className={inputClass}>{!isSupportedCountry(form.countryCode) ? <option value={form.countryCode} disabled>Unsupported country — select United States or Canada</option> : null}{supportedCountries.map(({ code, name }) => <option key={code} value={code}>{name}</option>)}</select></Field>
           <div className="sm:col-span-2"><Field label="Address line 1 *"><input value={form.streetLine1} onChange={(e) => set("streetLine1", e.target.value)} autoComplete="address-line1" className={inputClass} /></Field></div>
           <div className="sm:col-span-2"><Field label="Address line 2"><input value={form.streetLine2} onChange={(e) => set("streetLine2", e.target.value)} autoComplete="address-line2" className={inputClass} /></Field></div>
           <Field label="City *"><input value={form.city} onChange={(e) => set("city", e.target.value)} autoComplete="address-level2" className={inputClass} /></Field>

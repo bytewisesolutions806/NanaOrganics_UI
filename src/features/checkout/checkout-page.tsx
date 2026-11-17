@@ -8,6 +8,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 
 import { resetCartStore, setCartOrder, useCart } from "@/features/cart/cart-store";
 import { StripePayment } from "@/features/checkout/stripe-payment";
+import { isSupportedCountry, normalizePostalCode, supportedCountries, validatePostalCode } from "@/lib/address-validation";
 import { createCustomerAddress, getCustomerAddresses, type CustomerAddress } from "@/services/api/account";
 import { getActiveCustomer } from "@/services/api/auth";
 import {
@@ -30,20 +31,6 @@ import {
 type AddressForm = { firstName: string; lastName: string; email: string; phone: string; streetLine1: string; streetLine2: string; city: string; province: string; postalCode: string; countryCode: string };
 const emptyAddress: AddressForm = { firstName: "", lastName: "", email: "", phone: "", streetLine1: "", streetLine2: "", city: "", province: "", postalCode: "", countryCode: "US" };
 const inputClass = "mt-2 h-11 w-full rounded border border-[#d1dfdc] bg-white px-3 text-sm text-[#273b32] outline-none focus:border-[#315f48] focus:ring-2 focus:ring-[#315f48]/15";
-
-function validatePostalCode(countryCode: string, postalCode: string) {
-  const value = postalCode.trim();
-  if (countryCode === "US" && !/^\d{5}(?:-\d{4})?$/.test(value)) return "Enter a valid US ZIP code (12345 or 12345-6789).";
-  if (countryCode === "CA" && !/^[ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTV-Z][ -]?\d[ABCEGHJ-NPRSTV-Z]\d$/i.test(value)) return "Enter a valid Canadian postal code (for example, A1A 1A1).";
-  return "";
-}
-
-function normalizePostalCode(countryCode: string, postalCode: string) {
-  const value = postalCode.trim();
-  if (countryCode !== "CA") return value;
-  const characters = value.replace(/[ -]/g, "").toUpperCase();
-  return `${characters.slice(0, 3)} ${characters.slice(3)}`;
-}
 
 function shippingAddress(address: AddressForm): CartAddress | null {
   if (![address.firstName, address.lastName, address.phone, address.streetLine1, address.city, address.province, address.postalCode, address.countryCode].every((value) => value.trim()) || validatePostalCode(address.countryCode, address.postalCode)) return null;
@@ -101,7 +88,8 @@ export function CheckoutPage() {
         const addresses = addressResult.status === "fulfilled" ? addressResult.value : [];
         setAuthenticated(Boolean(customer));
         setSavedAddresses(addresses);
-        const saved = addresses.find((item) => item.isDefault) ?? addresses[0] ?? null;
+        const supported = addresses.filter((item) => isSupportedCountry(item.countryCode));
+        const saved = supported.find((item) => item.isDefault) ?? supported[0] ?? null;
         if (saved) setSelectedAddressId(saved.id);
         if (customer && addressResult.status === "rejected") setError(addressResult.reason instanceof Error ? addressResult.reason.message : "Could not load your saved addresses.");
         setAddress((current) => ({ ...current, firstName: current.firstName || saved?.firstName || customer?.firstName || "", lastName: current.lastName || saved?.lastName || customer?.lastName || "", email: current.email || customer?.emailAddress || "", phone: current.phone || saved?.phoneNumber || "", streetLine1: current.streetLine1 || saved?.streetLine1 || "", streetLine2: current.streetLine2 || saved?.streetLine2 || "", city: current.city || saved?.city || "", province: current.province || saved?.province || "", postalCode: current.postalCode || saved?.postalCode || "", countryCode: saved?.countryCode?.toUpperCase() || current.countryCode }));
@@ -163,7 +151,11 @@ export function CheckoutPage() {
   }
 
   function chooseSavedAddress(saved: CustomerAddress) {
-    const nextAddress = { ...address, firstName: saved.firstName, lastName: saved.lastName, phone: saved.phoneNumber, streetLine1: saved.streetLine1, streetLine2: saved.streetLine2, city: saved.city, province: saved.province, postalCode: saved.postalCode, countryCode: saved.countryCode.toUpperCase() || "US" };
+    if (!isSupportedCountry(saved.countryCode)) {
+      setError("Addresses are currently supported only in the United States and Canada.");
+      return;
+    }
+    const nextAddress = { ...address, firstName: saved.firstName, lastName: saved.lastName, phone: saved.phoneNumber, streetLine1: saved.streetLine1, streetLine2: saved.streetLine2, city: saved.city, province: saved.province, postalCode: saved.postalCode, countryCode: saved.countryCode.toUpperCase() };
     if (getAddressKey(nextAddress) !== addressKey) invalidateShipping();
     setSelectedAddressId(saved.id);
     setAddress(nextAddress);
@@ -284,7 +276,7 @@ export function CheckoutPage() {
             <div className="rounded border border-[#e0ece9] bg-white p-5 sm:p-7">
               <h2 className="font-serif text-xl font-semibold text-[#202b27]">Shipping Address</h2>
               <p className="mt-2 text-xs text-[#718078]">{authenticated ? "Choose a saved address or add a new one." : "Enter your contact and delivery details to continue as a guest."}</p>
-              {authenticated && savedAddresses.length ? <fieldset disabled={busy} className="mt-5 space-y-3"><legend className="mb-2 text-sm font-semibold text-[#34483c]">Your saved addresses</legend>{savedAddresses.map((saved) => <label key={saved.id} className={`block cursor-pointer rounded border p-3 ${selectedAddressId === saved.id ? "border-[#315f48] bg-[#f4f8f5]" : "border-[#dce5de]"}`}><span className="flex items-start gap-3"><input type="radio" name="savedAddress" checked={selectedAddressId === saved.id} onChange={() => chooseSavedAddress(saved)} className="mt-1 accent-[#315f48]" /><span className="text-sm leading-6 text-[#526159]"><strong className="block text-[#34483c]">{saved.firstName} {saved.lastName}{saved.isDefault ? " · Default" : ""}</strong>{saved.streetLine1}{saved.streetLine2 ? `, ${saved.streetLine2}` : ""}, {saved.city}, {saved.province} {saved.postalCode}<br />{saved.countryName} · {saved.phoneNumber}</span></span></label>)}<button type="button" onClick={useNewAddress} className="text-sm font-semibold text-[#315f48] hover:underline">+ Add a new address</button></fieldset> : null}
+              {authenticated && savedAddresses.length ? <fieldset disabled={busy} className="mt-5 space-y-3"><legend className="mb-2 text-sm font-semibold text-[#34483c]">Your saved addresses</legend>{savedAddresses.map((saved) => <label key={saved.id} className={`block rounded border p-3 ${!isSupportedCountry(saved.countryCode) ? "cursor-not-allowed opacity-70" : "cursor-pointer"} ${selectedAddressId === saved.id ? "border-[#315f48] bg-[#f4f8f5]" : "border-[#dce5de]"}`}><span className="flex items-start gap-3"><input type="radio" name="savedAddress" disabled={!isSupportedCountry(saved.countryCode)} checked={selectedAddressId === saved.id} onChange={() => chooseSavedAddress(saved)} className="mt-1 accent-[#315f48]" /><span className="text-sm leading-6 text-[#526159]"><strong className="block text-[#34483c]">{saved.firstName} {saved.lastName}{saved.isDefault ? " · Default" : ""}</strong>{saved.streetLine1}{saved.streetLine2 ? `, ${saved.streetLine2}` : ""}, {saved.city}, {saved.province} {saved.postalCode}<br />{saved.countryName} · {saved.phoneNumber}{!isSupportedCountry(saved.countryCode) ? <span className="block text-red-700">Delivery is available only in the United States and Canada.</span> : null}</span></span></label>)}<button type="button" onClick={useNewAddress} className="text-sm font-semibold text-[#315f48] hover:underline">+ Add a new address</button></fieldset> : null}
               <fieldset disabled={busy || addressesLoading} className="mt-5 grid gap-4 sm:grid-cols-2">
                   <label className="text-xs font-medium text-[#273b32]">First Name<input required value={address.firstName} onChange={(event) => update("firstName", event.target.value)} autoComplete="given-name" placeholder="Enter first name" className={inputClass} /></label>
                   <label className="text-xs font-medium text-[#273b32]">Last Name<input required value={address.lastName} onChange={(event) => update("lastName", event.target.value)} autoComplete="family-name" placeholder="Enter last name" className={inputClass} /></label>
@@ -295,7 +287,7 @@ export function CheckoutPage() {
                   <label className="text-xs font-medium text-[#273b32]">State / Province<input required value={address.province} onChange={(event) => update("province", event.target.value)} autoComplete="address-level1" placeholder="Enter state / province" className={inputClass} /></label>
                   <label className="text-xs font-medium text-[#273b32]">ZIP / Postal Code<input id="checkout-postal-code" required value={address.postalCode} onChange={(event) => update("postalCode", event.target.value)} autoComplete="postal-code" placeholder="Enter postal code" aria-describedby={address.postalCode && postalCodeError ? "checkout-postal-error" : undefined} aria-invalid={Boolean(address.postalCode && postalCodeError)} className={inputClass} />{address.postalCode && postalCodeError ? <span id="checkout-postal-error" className="mt-1 block text-red-700">{postalCodeError}</span> : null}</label>
                   <label className="text-xs font-medium text-[#273b32]">Address line 2 <span className="font-normal text-[#8a958e]">(optional)</span><input value={address.streetLine2} onChange={(event) => update("streetLine2", event.target.value)} autoComplete="address-line2" placeholder="Apartment, suite, etc." className={inputClass} /></label>
-                  <label className="text-xs font-medium text-[#273b32]">Country<select value={address.countryCode} onChange={(event) => update("countryCode", event.target.value)} autoComplete="country" className={inputClass}><option value="US">United States</option><option value="CA">Canada</option></select></label>
+                  <label className="text-xs font-medium text-[#273b32]">Country<select value={address.countryCode} onChange={(event) => update("countryCode", event.target.value)} autoComplete="country" className={inputClass}>{supportedCountries.map(({ code, name }) => <option key={code} value={code}>{name}</option>)}</select></label>
               </fieldset>
               <fieldset disabled={busy || shippingBusy || !ratesCurrent} className="mt-7 border-t border-[#e3e9e6] pt-6">
                 <legend className="sr-only">Choose Shipping Option</legend><h2 className="font-serif text-lg font-semibold text-[#202b27]">Choose Shipping Option</h2>

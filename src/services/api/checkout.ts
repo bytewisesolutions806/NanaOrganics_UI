@@ -1,6 +1,7 @@
 "use client";
 
 import { getAuthHeaders } from "@/services/api/auth";
+import { normalizePostalCode, validatePostalCode } from "@/lib/address-validation";
 
 interface GraphQLError { message: string }
 interface GraphQLResponse<T> { data?: T; errors?: GraphQLError[] }
@@ -219,8 +220,10 @@ export async function setCheckoutCustomer(contact: CheckoutContact) {
 }
 
 export async function setCheckoutAddress(address: CartAddress) {
+  const validationError = validatePostalCode(address.countryCode, address.postalCode);
+  if (validationError) throw new Error(validationError);
   await ensureAddingItems();
-  const data = await request<{ shipping: OrderResult; billing: OrderResult }>(`${ORDER_FRAGMENT} mutation SetCheckoutAddresses($input: CreateAddressInput!) { shipping: setOrderShippingAddress(input: $input) { __typename ... on Order { ...CheckoutOrder } ... on ErrorResult { errorCode message } } billing: setOrderBillingAddress(input: $input) { __typename ... on Order { ...CheckoutOrder } ... on ErrorResult { errorCode message } } }`, { input: address });
+  const data = await request<{ shipping: OrderResult; billing: OrderResult }>(`${ORDER_FRAGMENT} mutation SetCheckoutAddresses($input: CreateAddressInput!) { shipping: setOrderShippingAddress(input: $input) { __typename ... on Order { ...CheckoutOrder } ... on ErrorResult { errorCode message } } billing: setOrderBillingAddress(input: $input) { __typename ... on Order { ...CheckoutOrder } ... on ErrorResult { errorCode message } } }`, { input: { ...address, countryCode: address.countryCode.trim().toUpperCase(), postalCode: normalizePostalCode(address.countryCode, address.postalCode) } });
   orderResult(data.shipping, "Save shipping address");
   return orderResult(data.billing, "Save billing address");
 }
