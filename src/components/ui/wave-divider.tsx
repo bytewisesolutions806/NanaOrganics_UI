@@ -18,7 +18,7 @@ export function WaveDivider() {
 
   return (
     <div className="relative isolate h-10 w-full sm:h-14 md:h-36 lg:h-44">
-      <Image
+      {/* <Image
         src="/images/homepage-leaf-right-top.png"
         alt=""
         aria-hidden="true"
@@ -33,7 +33,7 @@ export function WaveDivider() {
         width={374}
         height={279}
         className="pointer-events-none absolute left-0 top-1/2 z-10 hidden h-auto w-36 object-contain md:block lg:w-44"
-      />
+      /> */}
 
       <svg
         aria-hidden="true"

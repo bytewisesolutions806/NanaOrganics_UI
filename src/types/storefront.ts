@@ -291,7 +291,7 @@ export interface StoreHomepageMarketingItem {
 
 export interface StoreHomepageMarketingSection {
   id: string;
-  code: "featured-product" | "ingredients" | "brand-banner" | "bundles";
+  code: "featured-product" | "ingredients" | "brand-banner" | "bundles" | "rituals";
   enabled: boolean;
   position: number;
   eyebrow?: string | null;
