@@ -21,6 +21,11 @@ export const metadata: Metadata = {
     template: "%s | Nana Organics",
   },
   description: "Thoughtful organic essentials for everyday living.",
+  icons: {
+    icon: "/images/AppLogo.png",
+    shortcut: "/images/AppLogo.png",
+    apple: "/images/AppLogo.png",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

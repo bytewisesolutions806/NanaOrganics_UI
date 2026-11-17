@@ -95,13 +95,20 @@ async function HomeContent({ searchParams }: HomePageProps) {
   }
 
   const brandSlug = data.isDefault ? undefined : data.selectedBrand.slug;
-  const betweenProductRows = data.marketingSections.filter(
-    (section) =>
-      section.code === "featured-product" || section.code === "ingredients",
+  const ingredientsSections = data.marketingSections.filter(
+    (section) => section.code === "ingredients",
   );
-  const afterProductRows = data.marketingSections.filter(
+  const ritualsSections = data.marketingSections.filter(
+    (section) => section.code === "rituals",
+  );
+  const bundlesSections = data.marketingSections.filter(
+    (section) => section.code === "bundles",
+  );
+  const additionalMarketingSections = data.marketingSections.filter(
     (section) =>
-      section.code !== "featured-product" && section.code !== "ingredients",
+      section.code !== "ingredients" &&
+      section.code !== "rituals" &&
+      section.code !== "bundles",
   );
 
   return (
@@ -142,26 +149,16 @@ async function HomeContent({ searchParams }: HomePageProps) {
                 settings={data.settings}
               />
             ) : null}
-            {data.settings?.valuesEnabled ? (
-              <HomeBrandValues
-                settings={data.settings}
-                brandSlug={brandSlug}
-              />
-            ) : null}
             <HomeProductSections
               sections={data.productSections.slice(0, 1)}
               brandSlug={brandSlug}
             />
             <HomeMarketingSections
-              sections={betweenProductRows}
-              brandSlug={brandSlug}
-            />
-            <HomeProductSections
-              sections={data.productSections.slice(1, 2)}
+              sections={ingredientsSections}
               brandSlug={brandSlug}
             />
             <HomeMarketingSections
-              sections={afterProductRows}
+              sections={ritualsSections}
               brandSlug={brandSlug}
             />
             {data.video ? (
@@ -170,10 +167,24 @@ async function HomeContent({ searchParams }: HomePageProps) {
                 brandSlug={brandSlug}
               />
             ) : null}
-            <HomeProductSections
-              sections={data.productSections.slice(2)}
+            <HomeMarketingSections
+              sections={bundlesSections}
               brandSlug={brandSlug}
             />
+            <HomeMarketingSections
+              sections={additionalMarketingSections}
+              brandSlug={brandSlug}
+            />
+            <HomeProductSections
+              sections={data.productSections.slice(1)}
+              brandSlug={brandSlug}
+            />
+            {data.settings?.valuesEnabled ? (
+              <HomeBrandValues
+                settings={data.settings}
+                brandSlug={brandSlug}
+              />
+            ) : null}
           </>
         )}
       </main>

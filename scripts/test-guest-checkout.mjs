@@ -24,6 +24,10 @@ const calls = [];
 
 vm.runInNewContext(source, {
   exports: moduleExports,
+  require: (id) => {
+    if (id === "@/services/api/auth") return { getAuthHeaders: () => ({}) };
+    throw new Error(`Unexpected dependency: ${id}`);
+  },
   process: { env: { NEXT_PUBLIC_VENDURE_API_URL: "https://store.example/shop-api" } },
   fetch: async (_url, options) => {
     const body = JSON.parse(options.body);

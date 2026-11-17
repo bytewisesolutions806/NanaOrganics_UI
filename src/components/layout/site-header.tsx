@@ -4,6 +4,7 @@ import TopBanner from "./TopBanner/TopBanner";
 
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   ChevronDown,
   Heart,
@@ -244,7 +245,8 @@ export function SiteHeader({
   const [customer, setCustomer] = useState<ActiveCustomer | null>(null);
   const wishlist = useWishlist();
   const cart = useCart();
-  const overlay = variant === "overlay";
+  const pathname = usePathname();
+  const overlay = variant === "overlay" || pathname === "/contact";
   const closeSearch = useCallback(() => setSearchOpen(false), []);
   const toggleSearch = useCallback(
     () => setSearchOpen((isOpen) => !isOpen),

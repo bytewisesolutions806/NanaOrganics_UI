@@ -466,7 +466,7 @@ function getStoreApiUrl() {
 
   if (!endpoint) {
     throw new Error(
-      "Set VENDURE_SHOP_API_URL or NEXT_PUBLIC_VENDURE_API_URL to the Vendure Shop API URL.",
+      "Set VENDURE_SHOP_API_URL or NEXT_PUBLIC_VENDURE_API_URL to the Nana Organics Shop API URL.",
     );
   }
 
@@ -500,7 +500,7 @@ async function requestStoreApi<T>(
     payload = JSON.parse(responseBody) as GraphQlResponse<T>;
   } catch {
     throw new Error(
-      `Vendure Shop API returned HTTP ${response.status} with an invalid JSON response.`,
+      `Nana Organics Shop API returned HTTP ${response.status} with an invalid JSON response.`,
     );
   }
 
@@ -509,16 +509,16 @@ async function requestStoreApi<T>(
     throw new Error(
       response.ok
         ? details
-        : `Vendure Shop API returned HTTP ${response.status}: ${details}`,
+        : `Nana Organics Shop API returned HTTP ${response.status}: ${details}`,
     );
   }
 
   if (!response.ok) {
-    throw new Error(`Vendure Shop API returned HTTP ${response.status}.`);
+    throw new Error(`Nana Organics Shop API returned HTTP ${response.status}.`);
   }
 
   if (!payload.data) {
-    throw new Error("Vendure Shop API returned no data.");
+    throw new Error("Nana Organics Shop API returned no data.");
   }
 
   return payload.data;
@@ -1101,7 +1101,7 @@ export async function getBrandHomepage(
   const brands = await getStorefrontBrands();
 
   if (!brands.length) {
-    throw new Error("No enabled storefront brands were returned by Vendure.");
+    throw new Error("No enabled storefront brands were returned by the Nana Organics store.");
   }
 
   const selectedBrand =
@@ -1129,14 +1129,14 @@ export async function getDefaultHomepage(): Promise<BrandHomepageData> {
     getStorefrontCategories(),
   ]);
   if (!brands.length) {
-    throw new Error("No enabled storefront brands were returned by Vendure.");
+    throw new Error("No enabled storefront brands were returned by the Nana Organics store.");
   }
   const selectedBrand = brands.find((brand) => brand.featured) ?? brands[0];
   const [productSections, configuration] = await Promise.all([
     getBrandProductSections(),
     getDefaultHomepageConfiguration().catch((error: unknown) => {
       console.error(
-        "Default homepage settings are unavailable from Vendure; rendering the catalog with default storefront content.",
+        "Default homepage settings are unavailable from the Nana Organics store; rendering the catalog with default storefront content.",
         error,
       );
       return null;

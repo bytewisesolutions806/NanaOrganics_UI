@@ -13,7 +13,7 @@ export function NewsletterSignup() {
     const body = encodeURIComponent(
       `Please add ${email} to the NANA Circle mailing list.`,
     );
-    window.location.href = `mailto:support@nanaorganics.com?subject=${subject}&body=${body}`;
+    window.location.href = `mailto:support@nanaorganics.co?subject=${subject}&body=${body}`;
   }
 
   return (

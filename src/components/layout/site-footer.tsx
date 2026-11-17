@@ -132,11 +132,11 @@ export function SiteFooter() {
                 <span>123 Street Name, City, State, ZIP</span>
               </p>
               <a
-                href="mailto:support@nanaorganics.com"
+                href="mailto:support@nanaorganics.co"
                 className="flex items-center gap-2 hover:text-white"
               >
                 <Mail aria-hidden="true" className="size-3.5 shrink-0" />
-                support@nanaorganics.com
+                support@nanaorganics.co
               </a>
               <a
                 href="tel:+91123456789"

@@ -1,21 +1,18 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Check, ChevronLeft, CreditCard, LockKeyhole, MapPin, PackageCheck, Truck } from "lucide-react";
-import { FormEvent, useEffect, useState } from "react";
+import { ArrowLeft, ArrowRight, LockKeyhole, PackageCheck, PackageOpen } from "lucide-react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
 import { resetCartStore, setCartOrder, useCart } from "@/features/cart/cart-store";
 import { StripePayment } from "@/features/checkout/stripe-payment";
-import {
-  createCustomerAddress,
-  getCustomerAddresses,
-  type CustomerAddress,
-} from "@/services/api/account";
+import { createCustomerAddress, getCustomerAddresses, type CustomerAddress } from "@/services/api/account";
 import { getActiveCustomer } from "@/services/api/auth";
 import {
-  createStripePaymentIntent,
   clearShippingMethod,
+  createStripePaymentIntent,
   ensureAddingItems,
   formatCartMoney,
   getEligiblePaymentMethods,
@@ -25,24 +22,19 @@ import {
   setCheckoutCustomer,
   setShippingMethod,
   waitForStripeOrder,
+  type CartAddress,
   type PaymentMethod,
   type ShippingMethod,
 } from "@/services/api/checkout";
 
 type AddressForm = { firstName: string; lastName: string; email: string; phone: string; streetLine1: string; streetLine2: string; city: string; province: string; postalCode: string; countryCode: string };
 const emptyAddress: AddressForm = { firstName: "", lastName: "", email: "", phone: "", streetLine1: "", streetLine2: "", city: "", province: "", postalCode: "", countryCode: "US" };
+const inputClass = "mt-2 h-11 w-full rounded border border-[#d1dfdc] bg-white px-3 text-sm text-[#273b32] outline-none focus:border-[#315f48] focus:ring-2 focus:ring-[#315f48]/15";
 
 function validatePostalCode(countryCode: string, postalCode: string) {
   const value = postalCode.trim();
-  if (countryCode === "US" && !/^\d{5}(?:-\d{4})?$/.test(value)) {
-    return "Enter a valid US ZIP code (12345 or 12345-6789).";
-  }
-  if (
-    countryCode === "CA" &&
-    !/^[ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTV-Z][ -]?\d[ABCEGHJ-NPRSTV-Z]\d$/i.test(value)
-  ) {
-    return "Enter a valid Canadian postal code (for example, A1A 1A1).";
-  }
+  if (countryCode === "US" && !/^\d{5}(?:-\d{4})?$/.test(value)) return "Enter a valid US ZIP code (12345 or 12345-6789).";
+  if (countryCode === "CA" && !/^[ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTV-Z][ -]?\d[ABCEGHJ-NPRSTV-Z]\d$/i.test(value)) return "Enter a valid Canadian postal code (for example, A1A 1A1).";
   return "";
 }
 
@@ -53,31 +45,52 @@ function normalizePostalCode(countryCode: string, postalCode: string) {
   return `${characters.slice(0, 3)} ${characters.slice(3)}`;
 }
 
-function Step({ number, label, active, complete }: { number: number; label: string; active: boolean; complete: boolean }) {
-  return <div className={`flex items-center gap-2 ${active || complete ? "text-[#315f48]" : "text-[#95a199]"}`}><span className={`grid size-8 place-items-center rounded-full text-xs font-bold ${active || complete ? "bg-[#315f48] text-white" : "bg-[#e7ece8]"}`}>{complete ? <Check className="size-4" aria-hidden="true" /> : number}</span><span className="hidden text-xs font-semibold uppercase tracking-[0.12em] sm:block">{label}</span></div>;
+function shippingAddress(address: AddressForm): CartAddress | null {
+  if (![address.firstName, address.lastName, address.phone, address.streetLine1, address.city, address.province, address.postalCode, address.countryCode].every((value) => value.trim()) || validatePostalCode(address.countryCode, address.postalCode)) return null;
+  return {
+    fullName: `${address.firstName.trim()} ${address.lastName.trim()}`,
+    streetLine1: address.streetLine1.trim(),
+    streetLine2: address.streetLine2.trim(),
+    city: address.city.trim(),
+    province: address.province.trim(),
+    postalCode: normalizePostalCode(address.countryCode, address.postalCode),
+    countryCode: address.countryCode.toUpperCase(),
+    phoneNumber: address.phone.trim(),
+  };
 }
 
-function inputClass() { return "h-12 w-full rounded-lg border border-[#cad8cd] bg-white px-3 text-sm text-[#34483c] outline-none transition focus:border-[#68bd45] focus:ring-2 focus:ring-[#68bd45]/25"; }
+function getAddressKey(address: AddressForm) {
+  const value = shippingAddress(address);
+  return value ? JSON.stringify(value) : "";
+}
 
 export function CheckoutPage() {
   const router = useRouter();
   const cart = useCart();
   const order = cart.order;
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState<"delivery" | "payment">("delivery");
   const [address, setAddress] = useState<AddressForm>(emptyAddress);
-  const postalCodeError = validatePostalCode(address.countryCode, address.postalCode);
   const [savedAddresses, setSavedAddresses] = useState<CustomerAddress[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState("");
   const [authenticated, setAuthenticated] = useState(false);
   const [addressesLoading, setAddressesLoading] = useState(true);
   const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([]);
   const [selectedShipping, setSelectedShipping] = useState("");
+  const [ratedAddressKey, setRatedAddressKey] = useState("");
+  const [shippingError, setShippingError] = useState("");
+  const [shippingBusy, setShippingBusy] = useState(false);
+  const [retry, setRetry] = useState(0);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [selectedPayment, setSelectedPayment] = useState("");
   const [clientSecret, setClientSecret] = useState("");
   const [stripeOrderCode, setStripeOrderCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const shippingQueue = useRef<Promise<void>>(Promise.resolve());
+  const revision = useRef(0);
+  const postalCodeError = validatePostalCode(address.countryCode, address.postalCode);
+  const addressKey = getAddressKey(address);
+  const ratesCurrent = Boolean(addressKey && ratedAddressKey === addressKey);
 
   useEffect(() => {
     let active = true;
@@ -90,38 +103,99 @@ export function CheckoutPage() {
         setSavedAddresses(addresses);
         const saved = addresses.find((item) => item.isDefault) ?? addresses[0] ?? null;
         if (saved) setSelectedAddressId(saved.id);
-        if (customer && addressResult.status === "rejected") {
-          setError(addressResult.reason instanceof Error ? addressResult.reason.message : "Could not load your saved addresses.");
-        }
-        setAddress((current) => ({ ...current, firstName: current.firstName || saved?.firstName || customer?.firstName || "", lastName: current.lastName || saved?.lastName || customer?.lastName || "", email: current.email || customer?.emailAddress || "", phone: current.phone || saved?.phoneNumber || "", streetLine1: current.streetLine1 || saved?.streetLine1 || "", streetLine2: current.streetLine2 || saved?.streetLine2 || "", city: current.city || saved?.city || "", province: current.province || saved?.province || "", postalCode: current.postalCode || saved?.postalCode || "", countryCode: current.countryCode || saved?.countryCode?.toUpperCase() || "US" }));
+        if (customer && addressResult.status === "rejected") setError(addressResult.reason instanceof Error ? addressResult.reason.message : "Could not load your saved addresses.");
+        setAddress((current) => ({ ...current, firstName: current.firstName || saved?.firstName || customer?.firstName || "", lastName: current.lastName || saved?.lastName || customer?.lastName || "", email: current.email || customer?.emailAddress || "", phone: current.phone || saved?.phoneNumber || "", streetLine1: current.streetLine1 || saved?.streetLine1 || "", streetLine2: current.streetLine2 || saved?.streetLine2 || "", city: current.city || saved?.city || "", province: current.province || saved?.province || "", postalCode: current.postalCode || saved?.postalCode || "", countryCode: saved?.countryCode?.toUpperCase() || current.countryCode }));
         setAddressesLoading(false);
       });
     }, 0);
     return () => { active = false; window.clearTimeout(timer); };
   }, []);
 
-  function update(name: keyof AddressForm, value: string) { setAddress((current) => ({ ...current, [name]: value })); setError(""); }
+  useEffect(() => {
+    if (!addressKey || !order?.id || !order.lines.length || step !== "delivery") return;
+    const revisionRef = revision;
+    const currentRevision = ++revision.current;
+    const isCurrent = () => revision.current === currentRevision;
+    const timer = window.setTimeout(() => {
+      setShippingBusy(true);
+      setShippingError("");
+      shippingQueue.current = shippingQueue.current.then(async () => {
+        if (!isCurrent()) return;
+        try {
+          await clearShippingMethod();
+          if (!isCurrent()) return;
+          const addressedOrder = await setCheckoutAddress(JSON.parse(addressKey) as CartAddress);
+          if (!isCurrent()) return;
+          setCartOrder(addressedOrder);
+          const methods = await getEligibleShippingMethods();
+          if (!isCurrent()) return;
+          if (!methods.length) throw new Error("No shipping options are available for this address. Check the address and try again.");
+          const nextOrder = await setShippingMethod(methods[0].id);
+          if (!isCurrent()) return;
+          setCartOrder(nextOrder);
+          setShippingMethods(methods);
+          setSelectedShipping(methods[0].id);
+          setRatedAddressKey(addressKey);
+        } catch (reason) {
+          if (isCurrent()) setShippingError(reason instanceof Error ? reason.message : "Could not load shipping options.");
+        } finally {
+          if (isCurrent()) setShippingBusy(false);
+        }
+      });
+    }, 500);
+    return () => { window.clearTimeout(timer); revisionRef.current++; };
+  }, [addressKey, order?.id, order?.lines.length, retry, step]);
+
+  function invalidateShipping() {
+    revision.current++;
+    setRatedAddressKey("");
+    setSelectedShipping("");
+    setShippingMethods([]);
+    setShippingBusy(false);
+    setShippingError("");
+  }
+
+  function update(name: keyof AddressForm, value: string) {
+    if (getAddressKey({ ...address, [name]: value }) !== addressKey) invalidateShipping();
+    if (name !== "email" && address[name] !== value) setSelectedAddressId("");
+    setAddress((current) => ({ ...current, [name]: value }));
+    setError("");
+  }
 
   function chooseSavedAddress(saved: CustomerAddress) {
+    const nextAddress = { ...address, firstName: saved.firstName, lastName: saved.lastName, phone: saved.phoneNumber, streetLine1: saved.streetLine1, streetLine2: saved.streetLine2, city: saved.city, province: saved.province, postalCode: saved.postalCode, countryCode: saved.countryCode.toUpperCase() || "US" };
+    if (getAddressKey(nextAddress) !== addressKey) invalidateShipping();
     setSelectedAddressId(saved.id);
-    setAddress((current) => ({
-      ...current,
-      firstName: saved.firstName,
-      lastName: saved.lastName,
-      phone: saved.phoneNumber,
-      streetLine1: saved.streetLine1,
-      streetLine2: saved.streetLine2,
-      city: saved.city,
-      province: saved.province,
-      postalCode: saved.postalCode,
-      countryCode: saved.countryCode.toUpperCase() || "US",
-    }));
+    setAddress(nextAddress);
     setError("");
   }
 
   function useNewAddress() {
+    invalidateShipping();
     setSelectedAddressId("");
+    setAddress((current) => ({ ...emptyAddress, email: current.email }));
     setError("");
+  }
+
+  async function chooseShipping(id: string) {
+    if (!ratesCurrent || shippingBusy || busy || id === selectedShipping) return;
+    const currentRevision = revision.current;
+    setShippingBusy(true);
+    setShippingError("");
+    shippingQueue.current = shippingQueue.current.then(async () => {
+      if (revision.current !== currentRevision) return;
+      try {
+        const nextOrder = await setShippingMethod(id);
+        if (revision.current !== currentRevision) return;
+        setCartOrder(nextOrder);
+        setSelectedShipping(id);
+      } catch (reason) {
+        if (revision.current === currentRevision) setShippingError(reason instanceof Error ? reason.message : "Could not select the shipping option.");
+      } finally {
+        if (revision.current === currentRevision) setShippingBusy(false);
+      }
+    });
+    await shippingQueue.current;
   }
 
   async function submitAddress(event: FormEvent) {
@@ -131,46 +205,25 @@ export function CheckoutPage() {
       document.getElementById("checkout-postal-code")?.focus();
       return;
     }
-
-    const postalCode = normalizePostalCode(address.countryCode, address.postalCode);
-    setBusy(true); setError("");
+    if (!ratesCurrent || !selectedShipping || shippingBusy || shippingError) return;
+    setBusy(true);
+    setError("");
     try {
       if (authenticated && !selectedAddressId) {
-        const savedAddress = await createCustomerAddress({
-          firstName: address.firstName,
-          lastName: address.lastName,
-          phoneNumber: address.phone,
-          streetLine1: address.streetLine1,
-          streetLine2: address.streetLine2,
-          city: address.city,
-          province: address.province,
-          postalCode,
-          countryCode: address.countryCode.toLowerCase(),
-          isDefault: false,
-        });
-        setSavedAddresses((current) => [...current, savedAddress]);
-        setSelectedAddressId(savedAddress.id);
+        const saved = await createCustomerAddress({ firstName: address.firstName, lastName: address.lastName, phoneNumber: address.phone, streetLine1: address.streetLine1, streetLine2: address.streetLine2, city: address.city, province: address.province, postalCode: normalizePostalCode(address.countryCode, address.postalCode), countryCode: address.countryCode.toLowerCase(), isDefault: false });
+        setSavedAddresses((current) => [...current, saved]);
+        setSelectedAddressId(saved.id);
       }
       const contactOrder = await setCheckoutCustomer({ emailAddress: address.email.trim(), firstName: address.firstName.trim(), lastName: address.lastName.trim(), phoneNumber: address.phone.trim() });
       if (contactOrder) setCartOrder(contactOrder);
-      const addressedOrder = await setCheckoutAddress({ fullName: `${address.firstName.trim()} ${address.lastName.trim()}`.trim(), streetLine1: address.streetLine1.trim(), streetLine2: address.streetLine2.trim(), city: address.city.trim(), province: address.province.trim(), postalCode, countryCode: address.countryCode.toUpperCase(), phoneNumber: address.phone.trim() });
-      setCartOrder(addressedOrder);
-      const methods = await getEligibleShippingMethods();
-      if (!methods.length) throw new Error("No delivery method is available for this address. Check the address and try again.");
-      setShippingMethods(methods); setSelectedShipping(methods[0].id); setStep(2);
-    } catch (reason) { setError(reason instanceof Error ? reason.message : "The delivery details could not be saved."); }
-    finally { setBusy(false); }
-  }
-
-  async function submitShipping() {
-    if (!selectedShipping) return;
-    setBusy(true); setError("");
-    try {
-      const nextOrder = await setShippingMethod(selectedShipping); setCartOrder(nextOrder);
+      const shippingOrder = await setShippingMethod(selectedShipping);
+      setCartOrder(shippingOrder);
       const methods = await getEligiblePaymentMethods();
       if (!methods.length) throw new Error("No payment method is available for this order.");
-      setPaymentMethods(methods); setSelectedPayment(""); setStep(3);
-    } catch (reason) { setError(reason instanceof Error ? reason.message : "The delivery method could not be selected."); }
+      setPaymentMethods(methods);
+      setSelectedPayment("");
+      setStep("payment");
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "The delivery details could not be saved."); }
     finally { setBusy(false); }
   }
 
@@ -205,57 +258,63 @@ export function CheckoutPage() {
     } catch (reason) { setError(reason instanceof Error ? reason.message : "The order could not be placed."); setBusy(false); }
   }
 
-  async function editEarlier(next: 1 | 2) {
-    setError("");
+  async function editDelivery() {
+    setBusy(true); setError("");
     try {
-      if (next === 1) {
-        const orderWithoutShipping = await clearShippingMethod();
-        setCartOrder(orderWithoutShipping);
-        setShippingMethods([]);
-        setSelectedShipping("");
-      } else {
-        const unlocked = await ensureAddingItems();
-        if (unlocked) setCartOrder(unlocked);
-      }
+      const unlocked = await ensureAddingItems();
+      if (unlocked) setCartOrder(unlocked);
+      invalidateShipping();
       setClientSecret("");
       setSelectedPayment("");
-      setStep(next);
-    }
-    catch (reason) { setError(reason instanceof Error ? reason.message : "This order can no longer be edited."); }
+      setStep("delivery");
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "This order can no longer be edited."); }
+    finally { setBusy(false); }
   }
 
   if (cart.loaded && !order?.lines.length) return <main className="mx-auto min-h-[65vh] max-w-xl px-5 py-20 text-center"><PackageCheck className="mx-auto size-16 text-[#68bd45]" /><h1 className="mt-5 font-serif text-4xl font-semibold text-[#26342d]">Your cart is empty</h1><p className="mt-3 text-sm text-[#66756c]">Add a product before starting checkout.</p><Link href="/product-listing" className="mt-7 inline-flex rounded-lg bg-[#2d6048] px-6 py-3 text-sm font-semibold text-white">Continue Shopping</Link></main>;
 
   const currency = order?.currencyCode || "INR";
+  const showShipping = step === "payment" || (ratesCurrent && !shippingBusy && !shippingError && Boolean(selectedShipping));
   return (
     <main className="mx-auto max-w-[1180px] px-5 py-10 sm:px-8 lg:py-14 [font-family:var(--font-plus-jakarta-sans)]">
-      <div className="mx-auto flex max-w-2xl items-center justify-between"><Step number={1} label="Address" active={step === 1} complete={step > 1} /><span className="h-px flex-1 bg-[#d7e1d9]" /><Step number={2} label="Delivery" active={step === 2} complete={step > 2} /><span className="h-px flex-1 bg-[#d7e1d9]" /><Step number={3} label="Payment" active={step === 3} complete={false} /></div>
-      <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
-        <section className="rounded-2xl border border-[#dce6de] bg-white p-6 sm:p-8">
-          {step === 1 ? <form onSubmit={(event) => void submitAddress(event)}><div className="flex items-center gap-3"><span className="grid size-11 place-items-center rounded-full bg-[#eef7ed] text-[#5eae47]"><MapPin className="size-5" aria-hidden="true" /></span><div><h1 className="font-serif text-3xl font-semibold text-[#26342d]">Delivery address</h1><p className="mt-1 text-xs text-[#718078]">{authenticated ? "Choose a saved address or add a new one." : "No account is needed. Enter your contact and delivery details to continue as a guest."}</p></div></div>
-            {authenticated && savedAddresses.length ? <fieldset className="mt-6 space-y-3"><legend className="mb-3 text-sm font-semibold text-[#34483c]">Your saved addresses</legend>{savedAddresses.map((saved) => <label key={saved.id} className={`block cursor-pointer rounded-xl border-2 p-4 transition ${selectedAddressId === saved.id ? "border-[#68bd45] bg-[#f3f9f1]" : "border-[#dce5de] hover:border-[#b9ccbd]"}`}><span className="flex items-start gap-3"><input type="radio" name="savedAddress" checked={selectedAddressId === saved.id} onChange={() => chooseSavedAddress(saved)} className="mt-1 accent-[#315f48]" /><span className="text-sm leading-6 text-[#526159]"><strong className="block text-[#34483c]">{saved.firstName} {saved.lastName}{saved.isDefault ? " · Default" : ""}</strong>{saved.streetLine1}{saved.streetLine2 ? `, ${saved.streetLine2}` : ""}<br />{saved.city}, {saved.province} {saved.postalCode}<br />{saved.countryName} · {saved.phoneNumber}</span></span></label>)}<button type="button" onClick={useNewAddress} className="text-sm font-semibold text-[#315f48] hover:underline">+ Add a new address</button></fieldset> : null}
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <label className="text-xs font-semibold text-[#526159]">Email address<input required type="email" value={address.email} onChange={(event) => update("email", event.target.value)} autoComplete="email" className={`mt-2 ${inputClass()}`} /></label>
-              {(!authenticated || !selectedAddressId) ? <>
-                <label className="text-xs font-semibold text-[#526159]">First name<input required value={address.firstName} onChange={(event) => update("firstName", event.target.value)} autoComplete="given-name" className={`mt-2 ${inputClass()}`} /></label>
-                <label className="text-xs font-semibold text-[#526159]">Last name<input required value={address.lastName} onChange={(event) => update("lastName", event.target.value)} autoComplete="family-name" className={`mt-2 ${inputClass()}`} /></label>
-                <label className="text-xs font-semibold text-[#526159]">Phone number<input required value={address.phone} onChange={(event) => update("phone", event.target.value)} autoComplete="tel" className={`mt-2 ${inputClass()}`} /></label>
-                <label className="text-xs font-semibold text-[#526159] sm:col-span-2">Address line 1<input required value={address.streetLine1} onChange={(event) => update("streetLine1", event.target.value)} autoComplete="address-line1" className={`mt-2 ${inputClass()}`} /></label>
-                <label className="text-xs font-semibold text-[#526159] sm:col-span-2">Address line 2 <span className="font-normal text-[#8a958e]">(optional)</span><input value={address.streetLine2} onChange={(event) => update("streetLine2", event.target.value)} autoComplete="address-line2" className={`mt-2 ${inputClass()}`} /></label>
-                <label className="text-xs font-semibold text-[#526159]">City<input required value={address.city} onChange={(event) => update("city", event.target.value)} autoComplete="address-level2" className={`mt-2 ${inputClass()}`} /></label>
-                <label className="text-xs font-semibold text-[#526159]">State / Province<input required value={address.province} onChange={(event) => update("province", event.target.value)} autoComplete="address-level1" className={`mt-2 ${inputClass()}`} /></label>
-                <label className="text-xs font-semibold text-[#526159]">Postal code<input id="checkout-postal-code" required value={address.postalCode} onChange={(event) => update("postalCode", event.target.value)} autoComplete="postal-code" aria-describedby={postalCodeError && error === postalCodeError ? "checkout-address-error" : undefined} aria-invalid={Boolean(error === postalCodeError && postalCodeError)} className={`mt-2 ${inputClass()}`} /></label>
-                <label className="text-xs font-semibold text-[#526159]">Country<select value={address.countryCode} onChange={(event) => update("countryCode", event.target.value)} autoComplete="country" className={`mt-2 ${inputClass()}`}><option value="US">United States</option><option value="CA">Canada</option></select></label>
-              </> : <p className="text-xs leading-5 text-[#718078] sm:col-span-2">Using {address.firstName} {address.lastName}&apos;s selected address for delivery.</p>}
-            </div><button type="submit" disabled={busy || addressesLoading} className="mt-7 inline-flex min-h-12 w-full items-center justify-center rounded-lg bg-[#2d6048] px-5 text-sm font-semibold text-white hover:bg-[#244f3b] disabled:opacity-60">{busy ? "Checking delivery options…" : addressesLoading ? "Loading saved addresses…" : "Continue to Delivery"}</button></form> : null}
-
-          {step === 2 ? <div><button type="button" onClick={() => void editEarlier(1)} className="inline-flex items-center gap-1 text-xs font-semibold text-[#315f48]"><ChevronLeft className="size-4" aria-hidden="true" />Edit address</button><div className="mt-5 flex items-center gap-3"><span className="grid size-11 place-items-center rounded-full bg-[#eef7ed] text-[#5eae47]"><Truck className="size-5" aria-hidden="true" /></span><div><h1 className="font-serif text-3xl font-semibold text-[#26342d]">Delivery method</h1><p className="mt-1 text-xs text-[#718078]">Choose how you’d like your order delivered.</p></div></div><div className="mt-7 space-y-3">{shippingMethods.map((method) => <button key={method.id} type="button" onClick={() => setSelectedShipping(method.id)} className={`flex w-full items-center justify-between gap-5 rounded-xl border-2 p-5 text-left ${selectedShipping === method.id ? "border-[#68bd45] bg-[#f3f9f1]" : "border-[#dce5de] hover:border-[#b9ccbd]"}`}><span><strong className="block text-sm text-[#34483c]">{method.name}</strong><span className="mt-1 block text-xs leading-5 text-[#718078]">{method.description}</span></span><strong className="shrink-0 text-sm text-[#315f48]">{method.priceWithTax ? formatCartMoney(method.priceWithTax, currency) : "FREE"}</strong></button>)}</div><button type="button" onClick={() => void submitShipping()} disabled={!selectedShipping || busy} className="mt-7 inline-flex min-h-12 w-full items-center justify-center rounded-lg bg-[#2d6048] px-5 text-sm font-semibold text-white hover:bg-[#244f3b] disabled:opacity-60">{busy ? "Preparing payment…" : "Continue to Payment"}</button></div> : null}
-
-          {step === 3 ? <div><button type="button" onClick={() => void editEarlier(2)} className="inline-flex items-center gap-1 text-xs font-semibold text-[#315f48]"><ChevronLeft className="size-4" aria-hidden="true" />Edit delivery</button><div className="mt-5 flex items-center gap-3"><span className="grid size-11 place-items-center rounded-full bg-[#eef7ed] text-[#5eae47]"><CreditCard className="size-5" aria-hidden="true" /></span><div><h1 className="font-serif text-3xl font-semibold text-[#26342d]">Secure payment</h1><p className="mt-1 text-xs text-[#718078]">Choose your preferred payment method.</p></div></div><div className="mt-7 grid gap-3 sm:grid-cols-2">{paymentMethods.map((method) => <button key={method.id || method.code} type="button" onClick={() => void choosePayment(method.code)} disabled={busy} className={`rounded-xl border-2 p-5 text-left ${selectedPayment === method.code ? "border-[#68bd45] bg-[#f3f9f1]" : "border-[#dce5de] hover:border-[#b9ccbd]"} disabled:opacity-60`}><span className="flex items-start gap-3"><span className={`mt-0.5 size-4 shrink-0 rounded-full border-2 border-[#68bd45] ${selectedPayment === method.code ? "bg-[#68bd45] shadow-[inset_0_0_0_3px_white]" : ""}`} /><span><strong className="block text-sm text-[#34483c]">{method.code === "stripe" ? "Pay securely by card" : method.name}</strong><small className="mt-1 block leading-5 text-[#718078]">{method.code === "stripe" ? "Powered by Stripe. Your card details never touch Nana Organics servers." : method.description}</small></span></span></button>)}</div>{busy && selectedPayment === "stripe" && !clientSecret ? <p className="mt-5 animate-pulse rounded-xl bg-[#edf5ef] p-5 text-center text-sm text-[#315f48]">Opening secure Stripe payment…</p> : null}{selectedPayment === "stripe" && clientSecret && stripeOrderCode ? <StripePayment clientSecret={clientSecret} orderCode={stripeOrderCode} customerEmail={address.email} total={formatCartMoney(order?.totalWithTax ?? 0, currency)} onSuccess={stripeSuccess} onError={setError} /> : null}{selectedPayment === "cash-on-delivery" ? <div className="mt-5 rounded-xl bg-[#edf5ef] p-5"><p className="text-sm leading-6 text-[#526159]">Pay {formatCartMoney(order?.totalWithTax ?? 0, currency)} when your order is delivered.</p><button type="button" onClick={() => void cashOnDelivery()} disabled={busy} className="mt-4 min-h-12 w-full rounded-lg bg-[#2d6048] px-5 text-sm font-semibold text-white disabled:opacity-60">{busy ? "Placing order…" : "Place Cash on Delivery Order"}</button></div> : null}</div> : null}
-          {error ? <p id="checkout-address-error" role="alert" className="mt-5 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
-        </section>
-
-        <aside className="rounded-2xl bg-[#edf5ef] p-6 lg:sticky lg:top-28"><h2 className="font-serif text-2xl font-semibold text-[#26342d]">Order Summary</h2><div className="mt-5 max-h-64 space-y-3 overflow-y-auto pr-1">{order?.lines.map((line) => <div key={line.id} className="flex justify-between gap-3 text-xs text-[#526159]"><span className="min-w-0"><strong className="block truncate text-[#34483c]">{line.variant.product.name}</strong><span>{line.quantity} × {formatCartMoney(line.unitPriceWithTax, currency)}</span></span><span className="shrink-0 font-semibold">{formatCartMoney(line.discountedLinePriceWithTax, currency)}</span></div>)}</div><dl className="mt-5 space-y-3 border-t border-[#cfded2] pt-5 text-sm text-[#526159]"><div className="flex justify-between"><dt>Subtotal</dt><dd>{formatCartMoney(order?.subTotalWithTax ?? 0, currency)}</dd></div><div className="flex justify-between"><dt>Shipping</dt><dd>{order?.shippingWithTax ? formatCartMoney(order.shippingWithTax, currency) : step > 1 ? "FREE" : "Calculated next"}</dd></div><div className="flex justify-between border-t border-[#cfded2] pt-4 font-serif text-xl font-semibold text-[#26342d]"><dt>Total</dt><dd>{formatCartMoney(order?.totalWithTax ?? 0, currency)}</dd></div></dl><p className="mt-5 flex items-center justify-center gap-1.5 text-xs text-[#65746b]"><LockKeyhole className="size-3.5" aria-hidden="true" />Secure checkout powered by Vendure</p></aside>
+      <div className="flex items-center justify-between gap-4"><h1 className="font-serif text-3xl font-semibold text-[#202b27]">Checkout</h1><Link href="/cart" className="inline-flex items-center gap-2 text-sm text-[#315f48] hover:underline"><ArrowLeft className="size-4" aria-hidden="true" /> Back to Cart</Link></div>
+      <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start">
+        <div>
+          {step === "delivery" ? <form onSubmit={(event) => void submitAddress(event)}>
+            <div className="rounded border border-[#e0ece9] bg-white p-5 sm:p-7">
+              <h2 className="font-serif text-xl font-semibold text-[#202b27]">Shipping Address</h2>
+              <p className="mt-2 text-xs text-[#718078]">{authenticated ? "Choose a saved address or add a new one." : "Enter your contact and delivery details to continue as a guest."}</p>
+              {authenticated && savedAddresses.length ? <fieldset disabled={busy} className="mt-5 space-y-3"><legend className="mb-2 text-sm font-semibold text-[#34483c]">Your saved addresses</legend>{savedAddresses.map((saved) => <label key={saved.id} className={`block cursor-pointer rounded border p-3 ${selectedAddressId === saved.id ? "border-[#315f48] bg-[#f4f8f5]" : "border-[#dce5de]"}`}><span className="flex items-start gap-3"><input type="radio" name="savedAddress" checked={selectedAddressId === saved.id} onChange={() => chooseSavedAddress(saved)} className="mt-1 accent-[#315f48]" /><span className="text-sm leading-6 text-[#526159]"><strong className="block text-[#34483c]">{saved.firstName} {saved.lastName}{saved.isDefault ? " · Default" : ""}</strong>{saved.streetLine1}{saved.streetLine2 ? `, ${saved.streetLine2}` : ""}, {saved.city}, {saved.province} {saved.postalCode}<br />{saved.countryName} · {saved.phoneNumber}</span></span></label>)}<button type="button" onClick={useNewAddress} className="text-sm font-semibold text-[#315f48] hover:underline">+ Add a new address</button></fieldset> : null}
+              <fieldset disabled={busy || addressesLoading} className="mt-5 grid gap-4 sm:grid-cols-2">
+                  <label className="text-xs font-medium text-[#273b32]">First Name<input required value={address.firstName} onChange={(event) => update("firstName", event.target.value)} autoComplete="given-name" placeholder="Enter first name" className={inputClass} /></label>
+                  <label className="text-xs font-medium text-[#273b32]">Last Name<input required value={address.lastName} onChange={(event) => update("lastName", event.target.value)} autoComplete="family-name" placeholder="Enter last name" className={inputClass} /></label>
+                <label className="text-xs font-medium text-[#273b32]">Email<input required type="email" value={address.email} onChange={(event) => update("email", event.target.value)} autoComplete="email" placeholder="Enter email" className={inputClass} /></label>
+                  <label className="text-xs font-medium text-[#273b32]">Phone<input required value={address.phone} onChange={(event) => update("phone", event.target.value)} autoComplete="tel" placeholder="Enter phone number" className={inputClass} /></label>
+                  <label className="text-xs font-medium text-[#273b32]">Street / Area<input required value={address.streetLine1} onChange={(event) => update("streetLine1", event.target.value)} autoComplete="address-line1" placeholder="Enter street / area" className={inputClass} /></label>
+                  <label className="text-xs font-medium text-[#273b32]">City<input required value={address.city} onChange={(event) => update("city", event.target.value)} autoComplete="address-level2" placeholder="Enter city" className={inputClass} /></label>
+                  <label className="text-xs font-medium text-[#273b32]">State / Province<input required value={address.province} onChange={(event) => update("province", event.target.value)} autoComplete="address-level1" placeholder="Enter state / province" className={inputClass} /></label>
+                  <label className="text-xs font-medium text-[#273b32]">ZIP / Postal Code<input id="checkout-postal-code" required value={address.postalCode} onChange={(event) => update("postalCode", event.target.value)} autoComplete="postal-code" placeholder="Enter postal code" aria-describedby={address.postalCode && postalCodeError ? "checkout-postal-error" : undefined} aria-invalid={Boolean(address.postalCode && postalCodeError)} className={inputClass} />{address.postalCode && postalCodeError ? <span id="checkout-postal-error" className="mt-1 block text-red-700">{postalCodeError}</span> : null}</label>
+                  <label className="text-xs font-medium text-[#273b32]">Address line 2 <span className="font-normal text-[#8a958e]">(optional)</span><input value={address.streetLine2} onChange={(event) => update("streetLine2", event.target.value)} autoComplete="address-line2" placeholder="Apartment, suite, etc." className={inputClass} /></label>
+                  <label className="text-xs font-medium text-[#273b32]">Country<select value={address.countryCode} onChange={(event) => update("countryCode", event.target.value)} autoComplete="country" className={inputClass}><option value="US">United States</option><option value="CA">Canada</option></select></label>
+              </fieldset>
+              <fieldset disabled={busy || shippingBusy || !ratesCurrent} className="mt-7 border-t border-[#e3e9e6] pt-6">
+                <legend className="sr-only">Choose Shipping Option</legend><h2 className="font-serif text-lg font-semibold text-[#202b27]">Choose Shipping Option</h2>
+                {!addressKey ? <p className="mt-4 text-sm text-[#718078]">Complete your shipping address to see available options.</p> : null}
+                {addressKey && !ratesCurrent && !shippingError ? <p className="mt-4 text-sm text-[#718078]" role="status">Checking shipping options for your address…</p> : null}
+                {ratesCurrent ? <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">{shippingMethods.map((method) => <label key={method.id} className="flex cursor-pointer items-start gap-2 text-xs text-[#526159]"><input type="radio" name="shippingMethod" value={method.id} checked={selectedShipping === method.id} onChange={() => void chooseShipping(method.id)} className="mt-0.5 accent-[#315f48]" /><span><span className="block font-medium text-[#273b32]">{method.name}</span>{method.description ? <span className="mt-1 block leading-5 text-[#718078]">{method.description}</span> : null}<span className="mt-1 block font-semibold text-[#315f48]">{method.priceWithTax ? formatCartMoney(method.priceWithTax, currency) : "Free"}</span></span></label>)}</div> : null}
+              </fieldset>
+              {shippingError ? <div role="alert" className="mt-4 text-sm text-red-700">{shippingError} <button type="button" disabled={busy} onClick={() => { invalidateShipping(); setRetry((value) => value + 1); }} className="font-semibold underline">Try again</button></div> : null}
+            </div>
+            <div className="mt-5 flex flex-wrap items-center justify-between gap-4"><div><p className="text-xs text-[#526159]">Total Price</p><p className="text-xl font-semibold text-[#315f48]">{showShipping ? formatCartMoney(order?.totalWithTax ?? 0, currency) : "Calculated after shipping"}</p></div><button type="submit" disabled={busy || addressesLoading || !ratesCurrent || shippingBusy || !selectedShipping || Boolean(shippingError)} className="inline-flex min-h-12 items-center justify-center gap-3 rounded bg-[#2d6048] px-6 text-sm font-semibold text-white hover:bg-[#244f3b] disabled:cursor-not-allowed disabled:opacity-60">{busy ? "Preparing payment…" : "Payment & Confirm"} <ArrowRight className="size-4" aria-hidden="true" /></button></div>
+          </form> : <section className="rounded border border-[#e0ece9] bg-white p-5 sm:p-7"><button type="button" disabled={busy} onClick={() => void editDelivery()} className="inline-flex items-center gap-2 text-sm font-semibold text-[#315f48] disabled:opacity-60"><ArrowLeft className="size-4" aria-hidden="true" /> Edit delivery</button><h2 className="mt-6 font-serif text-xl font-semibold text-[#202b27]">Secure payment</h2><p className="mt-2 text-sm text-[#718078]">Choose your preferred payment method.</p><div className="mt-5 grid gap-3 sm:grid-cols-2">{paymentMethods.map((method) => <button key={method.id || method.code} type="button" onClick={() => void choosePayment(method.code)} disabled={busy} className={`rounded border p-4 text-left ${selectedPayment === method.code ? "border-[#315f48] bg-[#f4f8f5]" : "border-[#dce5de]"} disabled:opacity-60`}><strong className="block text-sm text-[#34483c]">{method.code === "stripe" ? "Pay securely by card" : method.name}</strong><span className="mt-1 block text-xs leading-5 text-[#718078]">{method.code === "stripe" ? "Powered by Stripe. Your card details never touch Nana Organics servers." : method.description}</span></button>)}</div>{busy && selectedPayment === "stripe" && !clientSecret ? <p role="status" className="mt-5 text-sm text-[#315f48]">Opening secure Stripe payment…</p> : null}{selectedPayment === "stripe" && clientSecret && stripeOrderCode ? <StripePayment clientSecret={clientSecret} orderCode={stripeOrderCode} customerEmail={address.email} total={formatCartMoney(order?.totalWithTax ?? 0, currency)} onSuccess={stripeSuccess} onError={setError} /> : null}{selectedPayment === "cash-on-delivery" ? <div className="mt-5 rounded bg-[#edf5ef] p-5"><p className="text-sm leading-6 text-[#526159]">Pay {formatCartMoney(order?.totalWithTax ?? 0, currency)} when your order is delivered.</p><button type="button" onClick={() => void cashOnDelivery()} disabled={busy} className="mt-4 min-h-12 w-full rounded bg-[#2d6048] px-5 text-sm font-semibold text-white disabled:opacity-60">{busy ? "Placing order…" : "Place Cash on Delivery Order"}</button></div> : null}</section>}
+          {error ? <p id="checkout-error" role="alert" className="mt-5 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
+        </div>
+        <aside className="rounded bg-[#f6f7f5] p-5 sm:p-6 lg:sticky lg:top-28">
+          <h2 className="font-serif text-xl font-semibold text-[#202b27]">Order Summary</h2>
+          <div className="mt-5 max-h-96 space-y-3 overflow-y-auto">{order?.lines.map((line) => <div key={line.id} className="flex gap-3 rounded-lg bg-white p-3"><div className="relative size-20 shrink-0">{line.imageUrl ? <Image src={line.imageUrl} alt={line.variant.product.name} fill unoptimized sizes="80px" className="object-contain" /> : <span className="grid size-full place-items-center text-[#84968a]"><PackageOpen className="size-7" aria-hidden="true" /></span>}</div><div className="min-w-0"><strong className="block text-sm text-[#202b27]">{line.variant.product.name}</strong><span className="mt-1 block text-xs text-[#718078]">{line.variant.name} · Qty: {line.quantity}</span><span className="mt-2 block text-sm font-semibold text-[#315f48]">{formatCartMoney(line.discountedLinePriceWithTax, currency)} {line.discountedLinePriceWithTax < line.linePriceWithTax ? <span className="text-xs font-normal text-[#98a29c] line-through">{formatCartMoney(line.linePriceWithTax, currency)}</span> : null}</span></div></div>)}</div>
+          <dl className="mt-7 space-y-3 border-t border-[#dce5de] pt-5 text-sm text-[#526159]"><div className="flex justify-between gap-4"><dt>Subtotal ({order?.totalQuantity ?? 0} items)</dt><dd>{formatCartMoney((order?.subTotalWithTax ?? 0) + (order?.discountWithTax ?? 0), currency)}</dd></div>{order && order.discountWithTax > 0 ? <div className="flex justify-between gap-4"><dt>Discount</dt><dd>− {formatCartMoney(order.discountWithTax, currency)}</dd></div> : null}<div className="flex justify-between gap-4"><dt>Shipping</dt><dd>{showShipping ? order?.shippingWithTax ? formatCartMoney(order.shippingWithTax, currency) : "Free" : "Calculated after address"}</dd></div><div className="flex justify-between gap-4 border-t border-[#dce5de] pt-4 font-semibold text-[#202b27]"><dt>Total</dt><dd>{showShipping ? formatCartMoney(order?.totalWithTax ?? 0, currency) : "—"}</dd></div></dl>
+          <p className="mt-5 flex items-center gap-1.5 text-xs text-[#65746b]"><LockKeyhole className="size-3.5" aria-hidden="true" />Secure checkout by Nana Organics</p>
+        </aside>
       </div>
     </main>
   );
