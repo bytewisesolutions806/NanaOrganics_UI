@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, LockKeyhole, PackageCheck, PackageOpen } from "lucide-react";
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { resetCartStore, setCartOrder, useCart } from "@/features/cart/cart-store";
 import { StripePayment } from "@/features/checkout/stripe-payment";
@@ -52,6 +52,17 @@ function getAddressKey(address: AddressForm) {
 }
 
 export function CheckoutPage() {
+  const [visit, setVisit] = useState(0);
+
+  // Next.js preserves hidden routes; a new checkout visit must start at delivery.
+  useLayoutEffect(() => () => {
+    setVisit((current) => current + 1);
+  }, []);
+
+  return <CheckoutVisit key={visit} />;
+}
+
+function CheckoutVisit() {
   const router = useRouter();
   const cart = useCart();
   const order = cart.order;
