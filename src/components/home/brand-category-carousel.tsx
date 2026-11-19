@@ -352,7 +352,7 @@ export function BrandCategoryCarousel({
           }}
         />
 
-        <div className="relative mx-auto max-w-[1320px] px-5 py-14 sm:px-8 sm:py-16 lg:py-[72px]">
+        <div className="relative mx-auto max-w-[1320px] px-5 py-14 sm:px-8 sm:py-16 lg:py-[7px]">
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-[11px] font-semibold uppercase tracking-[0.38em] text-[#34453a]">
               {settings?.categoryEyebrow ?? "Browse our range"}

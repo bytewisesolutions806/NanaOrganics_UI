@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Leaf } from "lucide-react";
 
+import { IngredientContrast } from "@/components/home/ingredient-contrast";
 import type {
   StoreHomepageMarketingItem,
   StoreHomepageMarketingSection,
@@ -212,32 +213,53 @@ function IngredientsSection({
       <div className="absolute inset-0 -z-10" />
       <div className="mx-auto max-w-[1240px]">
         <SectionHeader section={section} wideDescription />
-        <div className="mt-9 grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-3 lg:grid-cols-5 lg:gap-7">
-          {section.items.map((item) => (
-            <article key={item.id} className="min-w-0 text-center text-white">
-              <div className="relative mx-auto size-28 overflow-hidden rounded-full  bg-[#dfe8d8] shadow-lg sm:size-32 lg:size-36">
-                {item.imageAsset?.source ? (
-                  <Image
-                    src={item.imageAsset.source}
-                    alt={item.title}
-                    fill
-                    unoptimized
-                    sizes="144px"
-                    className="object-cover"
-                  />
-                ) : null}
-              </div>
-              <h3 className="mt-4 break-words text-base font-semibold sm:text-lg">
-                {item.title}
-              </h3>
-              {item.description ? (
-                <p className="mt-0.5 text-xs text-white/80 sm:text-sm">
-                  {item.description}
-                </p>
-              ) : null}
-            </article>
-          ))}
-        </div>
+        <IngredientContrast backgroundSrc={section.backgroundAsset?.source}>
+          <div className="mt-9 flex flex-wrap justify-center gap-x-5 gap-y-8 lg:gap-7">
+            {section.items.map((item) => (
+              <article
+                key={item.id}
+                className={`min-w-0 w-[calc((100%-1.25rem)/2)] text-center ${
+                  section.items.length === 4
+                    ? "sm:w-[calc((100%-1.25rem)/2)]"
+                    : "sm:w-[calc((100%-2.5rem)/3)]"
+                } ${
+                  section.items.length === 1
+                    ? "lg:w-full"
+                    : section.items.length === 2
+                      ? "lg:w-[calc((100%-1.75rem)/2)]"
+                      : section.items.length === 3
+                        ? "lg:w-[calc((100%-3.5rem)/3)]"
+                        : section.items.length === 4
+                          ? "lg:w-[calc((100%-5.25rem)/4)]"
+                          : "lg:w-[calc((100%-7rem)/5)]"
+                }`}
+              >
+                <div className="relative mx-auto size-28 overflow-hidden rounded-full bg-[#dfe8d8] shadow-lg sm:size-32 lg:size-36">
+                  {item.imageAsset?.source ? (
+                    <Image
+                      src={item.imageAsset.source}
+                      alt={item.title}
+                      fill
+                      unoptimized
+                      sizes="144px"
+                      className="object-cover"
+                    />
+                  ) : null}
+                </div>
+                <div data-ingredient-label className="mt-3 rounded-md bg-white px-2 py-1 text-[#111111]">
+                  <h3 className="break-words text-base font-semibold sm:text-lg">
+                    {item.title}
+                  </h3>
+                  {item.description ? (
+                    <p className="mt-0.5 text-xs sm:text-sm">
+                      {item.description}
+                    </p>
+                  ) : null}
+                </div>
+              </article>
+            ))}
+          </div>
+        </IngredientContrast>
         <div className="mt-9 text-center">
           <SectionButton section={section} brandSlug={brandSlug} light />
         </div>

@@ -52,7 +52,11 @@ export function HomeHero({
       {bannerAsset?.source ? (
         <Image
           src={bannerAsset.source}
-          alt={useHomepageSettings ? "Nana Organics banner" : `${brand.name} banner`}
+          alt={
+            useHomepageSettings
+              ? "Nana Organics banner"
+              : `${brand.name} banner`
+          }
           fill
           priority
           unoptimized
@@ -83,7 +87,7 @@ export function HomeHero({
             </p>
           ) : null}
           <h1
-            className={`w-full max-w-full break-words font-serif text-balance font-bold tracking-tight drop-shadow-md ${
+            className={`w-full max-w-full break-words font-serif text-balance font-bold leading-[1.2] tracking-tight drop-shadow-md ${
               useHomepageSettings
                 ? "max-w-[620px] text-3xl sm:text-4xl md:text-5xl"
                 : "text-xl sm:text-4xl md:text-4xl"
@@ -94,7 +98,7 @@ export function HomeHero({
 
           {description && (
             <p
-              className={`w-full max-w-2xl break-words text-pretty font-light drop-shadow ${
+              className={` max-w-2xl  break-words leading-[1.8] text-pretty font-light drop-shadow ${
                 useHomepageSettings
                   ? "text-sm sm:text-base"
                   : "text-base sm:text-lg md:text-xl"
