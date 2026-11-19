@@ -242,6 +242,7 @@ export function SiteHeader({
 }: SiteHeaderProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const [customer, setCustomer] = useState<ActiveCustomer | null>(null);
   const wishlist = useWishlist();
   const cart = useCart();
@@ -276,6 +277,13 @@ export function SiteHeader({
   }, []);
 
   useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 8);
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
     const initialLoad = window.setTimeout(() => {
       void refreshCustomer();
     }, 0);
@@ -306,8 +314,8 @@ export function SiteHeader({
     <div
       className={
         overlay
-          ? "absolute inset-x-0 top-0 z-50"
-          : "relative z-50 w-full bg-white"
+          ? "sticky top-0 z-50 -mb-[111px] w-full xl:-mb-[165px]"
+          : "sticky top-0 z-50 w-full bg-white"
       }
     >
       <TopBanner />
@@ -315,7 +323,9 @@ export function SiteHeader({
         <div
           className={
             overlay
-              ? " bg-transparent"
+              ? scrolled
+                ? "border-b border-[#dbe4dc] bg-white shadow-[0_4px_18px_rgba(24,54,35,0.07)]"
+                : "bg-transparent"
               : "border-b border-[#dbe4dc] bg-white shadow-[0_4px_18px_rgba(24,54,35,0.07)]"
           }
         >

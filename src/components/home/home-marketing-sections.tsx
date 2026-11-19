@@ -262,7 +262,7 @@ function RitualsSection({
 
   return (
     <section
-      className="relative isolate overflow-hidden bg-white px-5 py-14 sm:px-8 sm:py-16"
+      className="relative isolate mt-8 overflow-hidden bg-white px-5 pt-8 pb-8 sm:px-8 sm:pb-10 lg:pt-0"
       aria-label={section.title}
     >
       {section.backgroundAsset?.source ? (
@@ -275,8 +275,8 @@ function RitualsSection({
           className="-z-10 object-cover opacity-10"
         />
       ) : null}
-      <div className="mx-auto max-w-[1080px]">
-        <div className="grid items-center gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:gap-12">
+      <div className="mx-auto max-w-[960px]">
+        <div className="grid items-center gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:gap-8">
           <div className="text-center lg:text-left">
             {section.eyebrow ? (
               <p className="text-[10px] font-semibold uppercase tracking-[0.32em] text-[#30483a] sm:text-xs">
@@ -295,7 +295,7 @@ function RitualsSection({
               <SectionButton section={section} brandSlug={brandSlug} />
             </div>
           </div>
-          <div className="relative mx-auto aspect-[5/4] w-full max-w-[580px]">
+          <div className="relative mx-auto aspect-[3/2] w-full max-w-[580px]">
             {section.foregroundAsset?.source ? (
               <Image
                 src={section.foregroundAsset.source}
@@ -311,13 +311,13 @@ function RitualsSection({
           </div>
         </div>
         {section.items.length > 0 ? (
-          <div className="mt-8 grid grid-cols-2 gap-y-7 sm:grid-cols-4 sm:gap-y-0">
+          <div className="mt-8 grid grid-cols-2 gap-y-7 sm:mt-12 sm:grid-cols-4 sm:gap-y-0">
             {section.items.map((item, index) => (
               <article
                 key={item.id}
-                className={`px-4 text-center sm:px-5 ${index < section.items.length - 1 ? "sm:border-r sm:border-[#e3e9e3]" : ""}`}
+                className={`px-4 text-left sm:px-5 ${index < section.items.length - 1 ? "sm:border-r sm:border-[#e3e9e3]" : ""}`}
               >
-                <div className="mx-auto flex size-10 items-center justify-center text-[#62b847]">
+                <div className="flex size-14 items-center justify-start text-[#62b847]">
                   {item.iconAsset?.source || ritualIcons[item.title.trim().toLowerCase()] ? (
                     <Image
                       src={
@@ -325,20 +325,20 @@ function RitualsSection({
                         ritualIcons[item.title.trim().toLowerCase()]
                       }
                       alt=""
-                      width={40}
-                      height={40}
+                      width={56}
+                      height={56}
                       unoptimized
-                      className="size-10 object-contain"
+                      className="size-14 object-contain"
                     />
                   ) : (
-                    <Leaf className="size-9" aria-hidden="true" />
+                    <Leaf className="size-12" aria-hidden="true" />
                   )}
                 </div>
-                <h3 className="mt-2 text-base font-medium text-[#27352d]">
+                <h3 className="mt-2 text-lg font-medium text-[#27352d] sm:text-xl">
                   {item.title}
                 </h3>
                 {item.description ? (
-                  <p className="mx-auto mt-1 max-w-[180px] text-xs leading-5 text-[#526058] sm:text-sm">
+                  <p className="mt-1 max-w-[200px] text-sm leading-5 text-[#526058]">
                     {item.description}
                   </p>
                 ) : null}
@@ -429,7 +429,7 @@ function BundlesSection({
           {section.items.map((item) => (
             <article
               key={item.id}
-              className="group relative min-h-[380px] overflow-hidden rounded-xl bg-[#eef1e9] shadow-[0_12px_35px_rgba(35,58,43,0.10)] sm:min-h-[430px]"
+              className="group relative min-h-[460px] overflow-hidden rounded-xl bg-[#f7f5f2] shadow-[0_12px_35px_rgba(35,58,43,0.10)] sm:min-h-[460px]"
             >
               {item.imageAsset?.source ? (
                 <Image
@@ -441,7 +441,6 @@ function BundlesSection({
                   className="object-cover transition duration-500 group-hover:scale-105"
                 />
               ) : null}
-              <div className="absolute inset-0 bg-gradient-to-b from-white/95 via-white/35 to-transparent" />
               <div className="relative p-6">
                 <h3 className="text-xl font-medium text-[#26332b]">
                   {item.title}

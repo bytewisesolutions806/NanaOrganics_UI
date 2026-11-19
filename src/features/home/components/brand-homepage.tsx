@@ -69,7 +69,7 @@ function BrandHero({ brand }: { brand: StoreBrand }) {
     //     </div>
     //   </div>
     // </section>
-    <section className="relative isolate min-h-[620px] overflow-hidden bg-[#d8e4d8] sm:min-h-[680px]">
+    <section className="relative isolate min-h-[720px] overflow-hidden bg-[#d8e4d8] sm:min-h-[800px]">
       {brand.bannerAsset?.source ? (
         <Image
           src={brand.bannerAsset.source}
@@ -81,15 +81,10 @@ function BrandHero({ brand }: { brand: StoreBrand }) {
           className="object-cover object-center"
         />
       ) : (
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,#a7be83_0,transparent_35%),radial-gradient(circle_at_80%_20%,#dce6d4_0,transparent_40%),linear-gradient(135deg,#c3d1bd,#edf1e8)]" />
+        <div className="absolute inset-0 bg-[#d8e4d8]" />
       )}
 
-      {/* Enhanced top-to-bottom gradient for menu and hero readability */}
-      <div className="absolute inset-0 bg-gradient-to-b from-red/100 via-white/40 to-transparent pointer-events-none" />
-
-      <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(246,248,241,0.3),rgba(246,248,241,0.58)_50%,rgba(246,248,241,0.1))]" />
-
-      <div className="relative z-10 mx-auto flex min-h-[620px] max-w-[1240px] items-center justify-center px-5 pb-16 pt-[185px] text-center sm:min-h-[680px] sm:px-8 sm:pt-[195px]">
+      <div className="relative z-10 mx-auto flex min-h-[720px] max-w-[1240px] items-center justify-center px-5 pb-16 pt-[185px] text-center sm:min-h-[800px] sm:px-8 sm:pt-[195px]">
         <div className="max-w-[730px] text-[#1d2b22]">
           <p className="inline-flex items-center gap-2 rounded-full border border-[#51745d]/30 bg-white/45 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] backdrop-blur-sm">
             <Leaf className="size-4 text-[#43814f]" aria-hidden="true" />

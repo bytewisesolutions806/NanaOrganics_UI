@@ -48,7 +48,7 @@ export function HomeHero({
   const brandSlug = useHomepageSettings ? undefined : brand.slug;
 
   return (
-    <section className="relative flex min-h-[620px] items-center justify-center overflow-hidden bg-[#dce7dc] sm:min-h-[680px]">
+    <section className="relative flex min-h-[720px] items-center justify-center overflow-hidden bg-[#dce7dc] sm:min-h-[800px]">
       {bannerAsset?.source ? (
         <Image
           src={bannerAsset.source}
@@ -60,10 +60,8 @@ export function HomeHero({
           className="object-cover object-center"
         />
       ) : (
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_80%,#a7be83_0,transparent_35%),radial-gradient(circle_at_80%_20%,#dce6d4_0,transparent_40%),linear-gradient(135deg,#c3d1bd,#edf1e8)]" />
+        <div className="absolute inset-0 bg-[#dce7dc]" />
       )}
-
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white/80 via-white/40 to-transparent" />
 
       <div
         className={`relative z-10 mx-auto w-full ${

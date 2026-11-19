@@ -67,7 +67,7 @@ function BrandProcessSection({
   return (
     <section
       aria-labelledby={headingId}
-      className="bg-white px-5 pb-16 pt-16 sm:px-8 sm:pb-20 sm:pt-20 lg:min-h-[550px] lg:pb-[72px] lg:pt-[108px]"
+      className="bg-white px-5 pb-16 pt-10 sm:px-8 sm:pb-20 sm:pt-20 lg:min-h-[550px] lg:pb-[72px] lg:pt-[10px]"
     >
       <div className="mx-auto max-w-[1260px]">
         <div className="grid items-center gap-6 md:grid-cols-[0.95fr_1.05fr] lg:min-h-[230px] lg:gap-10">
@@ -478,7 +478,7 @@ export function BrandCategoryCarousel({
               ) : null}
             </div>
 
-            {isScrollable ? (
+            {/* {isScrollable ? (
               <div
                 aria-hidden="true"
                 className="mx-auto mt-4 h-1 w-24 overflow-hidden rounded-full bg-[#e5ede4]"
@@ -490,10 +490,10 @@ export function BrandCategoryCarousel({
                   }}
                 />
               </div>
-            ) : null}
+            ) : null} */}
           </div>
 
-          <div className="mt-7 text-center sm:mt-8">
+          {/* <div className="mt-7 text-center sm:mt-8">
             <Link
               href={`${settings?.categoryCtaLink ?? "/categories"}${
                 displayedBrandSlug
@@ -505,7 +505,7 @@ export function BrandCategoryCarousel({
               {settings?.categoryCtaLabel ?? "Discover Categories"}
               <ArrowRight aria-hidden="true" className="size-4" />
             </Link>
-          </div>
+          </div> */}
         </div>
         <WaveDivider />
       </section>
