@@ -3,7 +3,10 @@ import { Suspense } from "react";
 
 import { HomeHero } from "@/components/home/home-hero";
 import { HomeLoading } from "@/components/home/home-loading";
-import { BrandCategoryCarousel } from "@/components/home/brand-category-carousel";
+import {
+  BrandCategoryCarousel,
+  BrandProcessSection,
+} from "@/components/home/brand-category-carousel";
 import {
   HomeBrandValues,
   HomeProductSections,
@@ -141,12 +144,25 @@ async function HomeContent({ searchParams }: HomePageProps) {
             {data.settings?.categoryEnabled !== false ? (
               <BrandCategoryCarousel
                 categories={data.categories ?? data.selectedBrand.categories}
-                contentBrand={data.isDefault ? undefined : data.selectedBrand}
                 brands={data.isDefault ? data.brands : undefined}
                 brandSlug={brandSlug}
                 initialBrandSlug={data.isDefault ? data.selectedBrand.slug : undefined}
                 isDefaultHomepage={Boolean(data.isDefault)}
                 settings={data.settings}
+              />
+            ) : null}
+            {!data.isDefault && data.settings?.valuesEnabled ? (
+              <HomeBrandValues
+                settings={data.settings}
+                brandSlug={brandSlug}
+              />
+            ) : null}
+            {data.settings?.categoryEnabled !== false &&
+            (data.isDefault ||
+              (data.categories ?? data.selectedBrand.categories).length > 0) ? (
+              <BrandProcessSection
+                brand={data.isDefault ? undefined : data.selectedBrand}
+                settings={data.isDefault ? data.settings : null}
               />
             ) : null}
             <HomeProductSections
@@ -168,10 +184,6 @@ async function HomeContent({ searchParams }: HomePageProps) {
               />
             ) : null}
             <HomeMarketingSections
-              sections={bundlesSections}
-              brandSlug={brandSlug}
-            />
-            <HomeMarketingSections
               sections={additionalMarketingSections}
               brandSlug={brandSlug}
             />
@@ -179,12 +191,16 @@ async function HomeContent({ searchParams }: HomePageProps) {
               sections={data.productSections.slice(1)}
               brandSlug={brandSlug}
             />
-            {data.settings?.valuesEnabled ? (
+            {data.isDefault && data.settings?.valuesEnabled ? (
               <HomeBrandValues
                 settings={data.settings}
                 brandSlug={brandSlug}
               />
             ) : null}
+            <HomeMarketingSections
+              sections={bundlesSections}
+              brandSlug={brandSlug}
+            />
           </>
         )}
       </main>

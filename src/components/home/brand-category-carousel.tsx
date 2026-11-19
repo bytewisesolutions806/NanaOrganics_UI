@@ -19,7 +19,7 @@ import type {
   StoreHomepageSettings,
 } from "@/types/storefront";
 
-function BrandProcessSection({
+export function BrandProcessSection({
   brand,
   settings,
 }: {
@@ -157,7 +157,6 @@ function BrandProcessSection({
 
 interface BrandCategoryCarouselProps {
   categories: StoreCategory[];
-  contentBrand?: StoreBrand;
   brands?: StoreBrand[];
   brandSlug?: string;
   initialBrandSlug?: string;
@@ -175,7 +174,6 @@ function displayCategoryName(name: string) {
 
 export function BrandCategoryCarousel({
   categories: sourceCategories,
-  contentBrand,
   brands = [],
   brandSlug = "",
   initialBrandSlug = brandSlug,
@@ -197,7 +195,6 @@ export function BrandCategoryCarousel({
   const displayedBrandSlug = isDefaultHomepage
     ? (activeBrand?.slug ?? brandSlug)
     : brandSlug;
-  const sectionBrand = isDefaultHomepage ? undefined : contentBrand;
   const sourceCategoriesForBrand =
     isDefaultHomepage && activeBrand
       ? activeBrand.categories
@@ -509,10 +506,6 @@ export function BrandCategoryCarousel({
         </div>
         <WaveDivider />
       </section>
-      <BrandProcessSection
-        brand={sectionBrand}
-        settings={isDefaultHomepage ? settings : null}
-      />
     </>
   );
 }
