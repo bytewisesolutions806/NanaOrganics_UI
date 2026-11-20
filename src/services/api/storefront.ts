@@ -428,6 +428,7 @@ const STOREFRONT_PRODUCT_QUERY = /* GraphQL */ `
       description
       enabled
       customFields {
+        brand { name }
         aboutThisItem
         isVegetarian
         isOrganic

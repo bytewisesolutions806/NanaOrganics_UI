@@ -23,7 +23,7 @@ export function StripeReturn({ clientSecret, queryOrderCode }: { clientSecret: s
         if (!stripe) throw new Error("Stripe could not be initialized.");
         const { paymentIntent, error: stripeError } = await stripe.retrievePaymentIntent(clientSecret);
         if (stripeError) throw stripeError;
-        if (!paymentIntent || !["succeeded", "processing", "requires_capture"].includes(paymentIntent.status)) throw new Error(paymentIntent?.status === "requires_payment_method" ? "The payment was not successful. Return to checkout and try another card." : `The payment is currently ${paymentIntent?.status?.replaceAll("_", " ") || "unavailable"}.`);
+        if (!paymentIntent || !["succeeded", "processing", "requires_capture"].includes(paymentIntent.status)) throw new Error(paymentIntent?.status === "requires_payment_method" ? "The payment was not successful. Return to checkout and try another payment method." : `The payment is currently ${paymentIntent?.status?.replaceAll("_", " ") || "unavailable"}.`);
         const result = await waitForStripeOrder(orderCode);
         if (!active) return;
         sessionStorage.removeItem("stripe_order_code"); resetCartStore();
