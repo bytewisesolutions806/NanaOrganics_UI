@@ -50,19 +50,14 @@ export function HeaderProductSearch({
     onClose();
   }
 
-  function openProduct(slug: string) {
-    router.push(
-      productHref(slug),
-    );
-    onClose();
-  }
-
   useEffect(() => {
     if (inputRef.current?.offsetParent !== null) inputRef.current?.focus();
   }, []);
 
   useEffect(() => {
     function handlePointerDown(event: PointerEvent) {
+      if (!containerRef.current?.getClientRects().length) return;
+
       if (
         event.target instanceof Element &&
         event.target.closest("[data-search-toggle]")
@@ -219,10 +214,7 @@ export function HeaderProductSearch({
                   <li key={item.productId}>
                     <Link
                       href={productHref(item.slug)}
-                      onClick={(event) => {
-                        event.preventDefault();
-                        openProduct(item.slug);
-                      }}
+                      onNavigate={onClose}
                       className="block rounded-md px-3 py-3 text-sm font-medium text-[#27382d] hover:bg-[#eff5ef] focus-visible:outline-2 focus-visible:outline-[#2C5D43]"
                     >
                       {item.productName}
@@ -234,7 +226,7 @@ export function HeaderProductSearch({
             {!error && !isLoading ? (
               <Link
                 href={`/product-listing?q=${encodeURIComponent(term.trim())}${brandQuery()}`}
-                onClick={onClose}
+                onNavigate={onClose}
                 className="block border-t border-[#e5ece6] px-3 py-3 text-sm font-semibold text-[#315f48] hover:bg-[#eff5ef]"
               >
                 View all results for “{term.trim()}”

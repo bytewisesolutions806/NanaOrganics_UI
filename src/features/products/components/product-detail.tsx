@@ -74,6 +74,19 @@ function aboutItems(value: unknown, fallback?: string | null) {
   return summary ? [summary] : ["A carefully selected organic product made for simple, everyday wellbeing."];
 }
 
+function AboutItem({ text }: { text: string }) {
+  const match = text.match(/^(.+?)\s+[-–—]\s+(.+)$/);
+
+  if (!match) return <>{text}</>;
+
+  return (
+    <>
+      <strong className="font-semibold text-[#242b32]">{match[1]}</strong>
+      {" – "}{match[2]}
+    </>
+  );
+}
+
 function assetUrl(asset?: StoreAsset | null) {
   return asset?.preview || asset?.source || "";
 }
@@ -301,10 +314,14 @@ export function ProductDetail({
               ))}
             </div>
 
-            <div className="rounded-2xl bg-[#f4f8f4] p-6">
-              <h2 className="font-serif text-2xl font-semibold">About this item</h2>
-              <ul className="mt-4 space-y-3">
-                {bullets.slice(0, 6).map((item) => <li key={item} className="flex gap-3 text-sm leading-6 text-[#53635a]"><CircleCheck className="mt-1 size-4 shrink-0 text-[#68bd45]" aria-hidden="true" />{item}</li>)}
+            <div className="py-2">
+              <h2 className="text-base font-semibold text-[#242b32]">About this item</h2>
+              <ul className="mt-2 space-y-2">
+                {bullets.slice(0, 6).map((item, index) => (
+                  <li key={`${index}-${item}`} className="text-sm leading-5 text-[#59616d]">
+                    <AboutItem text={item} />
+                  </li>
+                ))}
               </ul>
             </div>
           </section>
