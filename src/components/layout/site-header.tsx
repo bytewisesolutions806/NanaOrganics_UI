@@ -247,7 +247,8 @@ export function SiteHeader({
   const wishlist = useWishlist();
   const cart = useCart();
   const pathname = usePathname();
-  const overlay = variant === "overlay" || pathname === "/contact";
+  const overlay =
+    variant === "overlay" || pathname === "/contact" || pathname === "/our-story";
   const closeSearch = useCallback(() => setSearchOpen(false), []);
   const toggleSearch = useCallback(
     () => setSearchOpen((isOpen) => !isOpen),

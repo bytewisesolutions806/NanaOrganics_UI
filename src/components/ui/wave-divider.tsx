@@ -13,11 +13,15 @@ function createWavePath(baseline: number, crest: number) {
   return `M0 ${baseline} C${quarterWidth} ${baseline} ${quarterWidth} ${crest} ${halfWidth} ${crest} S${threeQuarterWidth} ${baseline} ${WAVE_PATTERN_WIDTH} ${baseline}`;
 }
 
-export function WaveDivider() {
+export function WaveDivider({
+  className = "relative isolate h-10 w-full sm:h-14 md:h-36 lg:h-44",
+}: {
+  className?: string;
+}) {
   const patternId = useId().replaceAll(":", "");
 
   return (
-    <div className="relative isolate h-10 w-full sm:h-14 md:h-36 lg:h-44">
+    <div className={className}>
       {/* <Image
         src="/images/homepage-leaf-right-top.png"
         alt=""
