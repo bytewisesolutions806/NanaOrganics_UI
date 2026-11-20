@@ -131,7 +131,7 @@ async function HomeContent({ searchParams }: HomePageProps) {
             : "overlay"
         }
       />
-      <main className="bg-[#fcfdf9]">
+      <main className="bg-white">
         {data.settings?.enabled === false ? null : (
           <>
             {data.settings?.heroEnabled !== false ? (

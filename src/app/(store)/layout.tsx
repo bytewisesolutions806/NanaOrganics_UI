@@ -27,7 +27,7 @@ async function SolidStoreHeader() {
 function SolidHeaderLoading() {
   return (
     <div
-      className="h-[180px] animate-pulse border-b border-[#dbe4dc] bg-white"
+      className="h-[144px] animate-pulse border-b border-[#dbe4dc] bg-white"
       aria-hidden="true"
     />
   );

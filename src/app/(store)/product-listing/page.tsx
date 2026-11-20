@@ -52,7 +52,7 @@ async function ProductListingContent({
   );
 
   return (
-    <main className="min-h-[55vh] bg-[#fcfdf9] pb-16 pt-7 sm:pb-20 sm:pt-10">
+    <main className="min-h-[55vh] bg-white pb-16 pt-7 sm:pb-20 sm:pt-10">
       <div className="mx-auto max-w-[1240px] px-5 sm:px-8">
         <nav aria-label="Breadcrumb" className="mb-6">
           <ol className="flex flex-wrap items-center gap-2 text-sm text-[#68756d]">
@@ -101,7 +101,7 @@ export default function ProductListingPage(props: ProductListingPageProps) {
     <Suspense
       fallback={
         <main
-          className="min-h-[55vh] bg-[#fcfdf9] px-5 py-10 text-sm text-[#68756d] sm:px-8"
+          className="min-h-[55vh] bg-white px-5 py-10 text-sm text-[#68756d] sm:px-8"
           aria-busy="true"
         >
           Loading products...

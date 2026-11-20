@@ -314,7 +314,7 @@ export function SiteHeader({
     <div
       className={
         overlay
-          ? "sticky top-0 z-50 -mb-[111px] w-full xl:-mb-[165px]"
+          ? "sticky top-0 z-50 -mb-[102px] w-full xl:-mb-[144px]"
           : "sticky top-0 z-50 w-full bg-white"
       }
     >
@@ -330,7 +330,7 @@ export function SiteHeader({
           }
         >
           <div className="mx-auto max-w-[1280px] px-3 sm:px-5 lg:px-6">
-            <div className="relative flex min-h-[76px] w-full min-w-0 items-center gap-3 sm:gap-5 xl:grid xl:min-h-0 xl:grid-cols-[160px_minmax(0,1fr)] xl:grid-rows-[82px_48px] xl:gap-x-6">
+            <div className="relative flex min-h-[70px] w-full min-w-0 items-center gap-3 sm:gap-5 xl:grid xl:min-h-0 xl:grid-cols-[150px_minmax(0,1fr)] xl:grid-rows-[70px_42px] xl:gap-x-6">
               <button
                 type="button"
                 aria-label="Open navigation menu"
@@ -354,12 +354,12 @@ export function SiteHeader({
                   height={120}
                   priority
                   unoptimized
-                  className="h-[58px] w-auto object-contain sm:h-[68px] xl:h-[120px] xl:w-[140px]"
+                  className="h-[54px] w-auto object-contain sm:h-[62px] xl:h-[104px] xl:w-[122px]"
                 />
               </Link>
 
               <div className="hidden min-w-0 flex-1 xl:col-start-2 xl:row-start-1 xl:block">
-                <div className="flex min-h-[82px] items-center justify-between gap-5">
+                <div className="flex min-h-[70px] items-center justify-between gap-5">
                   <BrandSwitcher
                     brands={brands}
                     activeBrandSlug={activeBrandSlug}
@@ -488,7 +488,7 @@ export function SiteHeader({
 
               <nav
                 aria-label="Main navigation"
-                className="hidden h-12 items-stretch justify-between gap-1 xl:col-start-2 xl:row-start-2 xl:flex"
+                className="hidden h-10 items-stretch justify-between gap-1 xl:col-start-2 xl:row-start-2 xl:flex"
               >
                 <NavigationLinks />
               </nav>
@@ -509,7 +509,7 @@ export function SiteHeader({
               role="dialog"
               aria-modal="true"
               aria-label="Site navigation"
-              className="relative flex h-full w-[min(88vw,360px)] flex-col overflow-y-auto bg-[#fbfcf9] shadow-2xl"
+              className="relative flex h-full w-[min(88vw,360px)] flex-col overflow-y-auto bg-white shadow-2xl"
             >
               <div className="flex items-center justify-between border-b border-[#e1e9e0] px-5 py-4">
                 <Link
@@ -523,7 +523,7 @@ export function SiteHeader({
                     width={140}
                     height={120}
                     unoptimized
-                    className="h-[60px] w-auto object-contain"
+                    className="h-[56px] w-auto object-contain"
                   />
                 </Link>
                 <button

@@ -255,7 +255,7 @@ export function BrandHomepage({
   productSections: HomepageProductSection[];
 }) {
   return (
-    <main className="bg-[#fcfdf9]">
+    <main className="bg-white">
       <BrandHero brand={brand} />
       <BrandCategories brand={brand} />
       {productSections.slice(0, 2).map((section) => (

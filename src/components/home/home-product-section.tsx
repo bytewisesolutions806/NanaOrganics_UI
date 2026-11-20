@@ -459,7 +459,7 @@ export function HomeProductCard({
 export function HomeProductSection({
   section,
   brandSlug,
-  eyebrow = "Featured Products",
+  eyebrow,
   showViewAll = true,
 }: {
   section: HomepageProductSection;
@@ -498,19 +498,25 @@ export function HomeProductSection({
       className="relative isolate overflow-hidden bg-[#f2f7f3] px-5 py-14 sm:px-8 sm:py-[68px]"
       aria-labelledby={headingId}
     >
-      <Image
-        src="/images/homepage-leaf-left-bottom.png"
-        alt=""
-        width={320}
-        height={320}
-        sizes="320px"
-        className="pointer-events-none absolute -left-16 top-6 -z-10 w-[250px] opacity-[0.12] sm:w-[320px]"
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute -left-5 top-0 -z-10 h-[250px] w-[200px] bg-[#dfe8e2] opacity-80 sm:h-[310px] sm:w-[250px] lg:left-0 lg:h-[360px] lg:w-[300px]"
+        style={{
+          WebkitMaskImage: "url('/images/category-side-image.png')",
+          maskImage: "url('/images/category-side-image.png')",
+          WebkitMaskPosition: "left top",
+          maskPosition: "left top",
+          WebkitMaskRepeat: "no-repeat",
+          maskRepeat: "no-repeat",
+          WebkitMaskSize: "contain",
+          maskSize: "contain",
+        }}
       />
       <div className="mx-auto max-w-[1240px]">
         <header className="mx-auto max-w-4xl text-center">
-          {eyebrow ? (
+          {(eyebrow ?? section.eyebrow ?? "Featured Products") ? (
             <p className="text-[11px] font-medium uppercase tracking-[0.34em] text-[#26342d] sm:text-xs">
-              {eyebrow}
+              {eyebrow ?? section.eyebrow ?? "Featured Products"}
             </p>
           ) : null}
           <h2

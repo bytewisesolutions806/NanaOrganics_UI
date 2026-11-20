@@ -99,7 +99,7 @@ export function BrandProcessSection({
             ) : null}
           </div>
 
-          <div className="relative mx-auto h-[190px] w-full max-w-[520px] sm:h-[230px] lg:h-[250px]">
+          <div className="relative mx-auto h-[230px] w-full max-w-[560px] sm:h-[280px] lg:h-[320px] lg:max-w-[600px]">
             {content.processImageAsset?.source ? (
               <Image
                 src={content.processImageAsset.source}
@@ -332,7 +332,7 @@ export function BrandCategoryCarousel({
     <>
       <section
         aria-labelledby="brand-categories-heading"
-        className="relative isolate overflow-hidden bg-[#fdfefd]"
+        className="relative isolate overflow-hidden bg-white"
       >
         <div
           aria-hidden="true"
@@ -349,7 +349,7 @@ export function BrandCategoryCarousel({
           }}
         />
 
-        <div className="relative mx-auto max-w-[1320px] px-5 py-14 sm:px-8 sm:py-16 lg:py-[7px]">
+        <div className="relative mx-auto max-w-[1320px] px-5 py-14 sm:px-8 sm:py-16 lg:py-16">
           <div className="mx-auto max-w-3xl text-center">
             <p className="text-[11px] font-semibold uppercase tracking-[0.38em] text-[#34453a]">
               {settings?.categoryEyebrow ?? "Browse our range"}
@@ -462,7 +462,7 @@ export function BrandCategoryCarousel({
                         />
                       )}
                     </span>
-                    <span className="mt-2 line-clamp-2 max-w-[160px] text-base font-medium leading-[1.35] text-[#263029] transition-colors group-hover:text-[#2C5D43] sm:text-sm">
+                    <span className="mt-2 line-clamp-2 max-w-[160px] text-base font-medium leading-[1.35] text-[#263029] transition-colors group-hover:text-[#2C5D43] sm:text-lg">
                       {displayCategoryName(category.name)}
                     </span>
                   </Link>

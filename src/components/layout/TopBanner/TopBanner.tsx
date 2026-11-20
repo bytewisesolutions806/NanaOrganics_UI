@@ -8,8 +8,8 @@ const Index = () => {
         src="/images/topbanner-truck.png"
         style={{ marginRight: "10px" }}
         alt="Truck"
-        width={27}
-        height={27}
+        width={24}
+        height={24}
       />
       <span>Enjoy Complimentary Shipping on Orders $50+ | US & Canada</span>
     </div>

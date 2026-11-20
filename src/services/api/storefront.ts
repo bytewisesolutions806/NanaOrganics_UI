@@ -114,6 +114,7 @@ const HOMEPAGE_SECTIONS_QUERY = /* GraphQL */ `
     homepageProductSections(input: $input) {
       code
       title
+      eyebrow
       description
       ctaLabel
       ctaLink
@@ -954,6 +955,7 @@ async function getBrandProductSections(
     homepageProductSections: Array<{
       code: string;
       title: string;
+      eyebrow?: string | null;
       description?: string | null;
       ctaLabel?: string | null;
       ctaLink?: string | null;
@@ -986,10 +988,12 @@ async function getBrandProductSections(
     ...discoveryResponse.homepageProductSections,
   ];
 
-  return [...new Map(sections.map((section) => [section.code, section])).values()]
+  return [...new Map(sections.slice().reverse().map((section) => [section.code, section])).values()]
+    .reverse()
     .map((section) => ({
       code: section.code,
       title: section.title,
+      eyebrow: section.eyebrow,
       description: section.description,
       ctaLabel:
         section.ctaLabel ??

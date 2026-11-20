@@ -38,11 +38,7 @@ export function BrandSwitcher({
             }
           >
             <span
-              className={
-                active
-                  ? "grid size-7 shrink-0 place-items-center overflow-hidden rounded-full bg-white p-0.5 shadow-sm ring-1 ring-white/80"
-                  : "grid size-7 shrink-0 place-items-center overflow-hidden rounded-full bg-[#f7f9f4] p-0.5 ring-1 ring-[#d6e1d7]"
-              }
+              className="grid size-7 shrink-0 place-items-center bg-transparent"
             >
               {brand.logoAsset?.source ? (
                 <Image

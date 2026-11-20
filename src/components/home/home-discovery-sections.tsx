@@ -114,7 +114,11 @@ export function HomeProductSections({
   brandSlug?: string;
 }) {
   return sections.map((section) => (
-    <HomeProductSection key={section.code} section={section} brandSlug={brandSlug} />
+    <HomeProductSection
+      key={section.code}
+      section={section}
+      brandSlug={brandSlug}
+    />
   ));
 }
 

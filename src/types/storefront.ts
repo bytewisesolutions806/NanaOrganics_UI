@@ -206,6 +206,7 @@ export interface StorefrontSearchResult {
 export interface HomepageProductSection {
   code: string;
   title: string;
+  eyebrow?: string | null;
   description?: string | null;
   ctaLabel?: string | null;
   ctaLink?: string | null;

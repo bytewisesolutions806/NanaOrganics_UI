@@ -52,7 +52,7 @@ async function ShopSubcategoryContent({
   const brandQuery = brandSlug ? `?brand=${encodeURIComponent(brandSlug)}` : "";
 
   return (
-    <main className="min-h-[55vh] bg-[#fcfdf9] px-5 pb-16 pt-7 sm:px-8 sm:pb-20 sm:pt-10">
+    <main className="min-h-[55vh] bg-white px-5 pb-16 pt-7 sm:px-8 sm:pb-20 sm:pt-10">
       <div className="mx-auto max-w-[1240px]">
         <nav aria-label="Breadcrumb" className="mb-6">
           <ol className="flex flex-wrap items-center gap-2 text-sm text-[#68756d]">
@@ -114,7 +114,7 @@ async function ShopSubcategoryContent({
 function ShopSubcategoryLoading() {
   return (
     <main
-      className="min-h-[55vh] bg-[#fcfdf9] px-5 pb-16 pt-10 sm:px-8"
+      className="min-h-[55vh] bg-white px-5 pb-16 pt-10 sm:px-8"
       aria-busy="true"
     >
       <div className="mx-auto max-w-[1240px] animate-pulse">
