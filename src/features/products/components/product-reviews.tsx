@@ -30,7 +30,19 @@ function Stars({ rating, label }: { rating: number; label?: string }) {
   );
 }
 
-export function ProductReviews({ productId }: { productId: string }) {
+export interface ProductReviewSummary {
+  productId: string;
+  averageRating: number;
+  totalReviewCount: number;
+}
+
+export function ProductReviews({
+  productId,
+  onSummaryChange,
+}: {
+  productId: string;
+  onSummaryChange?: (summary: ProductReviewSummary | null) => void;
+}) {
   const [reviews, setReviews] = useState<PublicProductReviews>(emptyReviews);
   const [rating, setRating] = useState(0);
   const [sort, setSort] = useState<"NEWEST" | "OLDEST" | "HIGHEST_RATED" | "LOWEST_RATED">("NEWEST");
@@ -49,10 +61,20 @@ export function ProductReviews({ productId }: { productId: string }) {
         sort,
       })
         .then((result) => {
-          if (active) setReviews(result);
+          if (active) {
+            setReviews(result);
+            onSummaryChange?.({
+              productId,
+              averageRating: result.averageRating,
+              totalReviewCount: result.totalReviewCount,
+            });
+          }
         })
         .catch((reason: unknown) => {
-          if (active) setError(reason instanceof Error ? reason.message : "Reviews are unavailable right now.");
+          if (active) {
+            onSummaryChange?.(null);
+            setError(reason instanceof Error ? reason.message : "Reviews are unavailable right now.");
+          }
         })
         .finally(() => {
           if (active) setLoading(false);
@@ -63,7 +85,7 @@ export function ProductReviews({ productId }: { productId: string }) {
       active = false;
       window.clearTimeout(timer);
     };
-  }, [productId, rating, sort, visible]);
+  }, [productId, rating, sort, visible, onSummaryChange]);
 
   return (
     <section id="customer-reviews" className="mx-auto max-w-[1240px] px-5 py-14 sm:px-8 lg:py-20" aria-labelledby="reviews-title">

@@ -104,6 +104,12 @@ export interface StoreProduct {
     isVegetarian?: boolean | null;
     isOrganic?: boolean | null;
     returnWindowDays?: number | null;
+    dermatologistClaimValue?: string | null;
+    dermatologistClaimLabel?: string | null;
+    ingredientClaimValue?: string | null;
+    ingredientClaimLabel?: string | null;
+    guaranteeClaimValue?: string | null;
+    guaranteeClaimLabel?: string | null;
   } | null;
   facetValues?: Array<{
     id: string;

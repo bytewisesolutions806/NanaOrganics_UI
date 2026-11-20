@@ -432,6 +432,12 @@ const STOREFRONT_PRODUCT_QUERY = /* GraphQL */ `
         isVegetarian
         isOrganic
         returnWindowDays
+        dermatologistClaimValue
+        dermatologistClaimLabel
+        ingredientClaimValue
+        ingredientClaimLabel
+        guaranteeClaimValue
+        guaranteeClaimLabel
       }
       featuredAsset { id name preview source mimeType }
       assets { id name preview source mimeType }

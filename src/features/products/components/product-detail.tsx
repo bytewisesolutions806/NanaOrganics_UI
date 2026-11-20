@@ -22,7 +22,8 @@ import {
 } from "lucide-react";
 
 import { HomeProductCard } from "@/components/home/home-product-section";
-import { ProductReviews } from "@/features/products/components/product-reviews";
+import { ProductHighlights } from "@/features/products/components/product-highlights";
+import { ProductReviews, type ProductReviewSummary } from "@/features/products/components/product-reviews";
 import { toggleWishlistProduct, useWishlist } from "@/features/wishlist/wishlist-store";
 import { addItemToCart } from "@/features/cart/cart-store";
 import type { StoreAsset, StoreProduct, StoreProductVariant, StorefrontProductDetail } from "@/types/storefront";
@@ -138,6 +139,7 @@ export function ProductDetail({
   const [wishlistError, setWishlistError] = useState("");
   const [cartPending, setCartPending] = useState(false);
   const [cartMessage, setCartMessage] = useState("");
+  const [reviewSummary, setReviewSummary] = useState<ProductReviewSummary | null>(null);
   const selectedVariant = product.variants.find((variant) => variant.id === selectedVariantId) ?? defaultVariant;
   const productTitle = selectedProductTitle(product.name, selectedVariant);
   const inStock = selectedVariant?.stockLevel !== "OUT_OF_STOCK";
@@ -328,6 +330,8 @@ export function ProductDetail({
         </div>
       </div>
 
+      <ProductHighlights product={product} reviewSummary={reviewSummary} />
+
       <section className="bg-[#2d6048] px-5 py-10 text-white sm:px-8" aria-label="Nana Organics product promise">
         <div className="mx-auto grid max-w-[1100px] gap-7 sm:grid-cols-3">
           {[{ icon: PackageCheck, value: "Quality checked", text: "Carefully sourced products" }, { icon: Leaf, value: "Organic choices", text: "Better everyday ingredients" }, { icon: ShieldCheck, value: "Shop confidently", text: "Secure support and checkout" }].map(({ icon: Icon, value, text }) => (
@@ -336,7 +340,7 @@ export function ProductDetail({
         </div>
       </section>
 
-      <ProductReviews productId={product.id} />
+      <ProductReviews productId={product.id} onSummaryChange={setReviewSummary} />
 
       {relatedProducts.length ? (
         <section className="bg-[#f2f7f3] px-5 py-14 sm:px-8 lg:py-20" aria-labelledby="related-products-title">
