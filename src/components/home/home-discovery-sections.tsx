@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 import { HomeProductSection } from "@/components/home/home-product-section";
+import { HomeVideoShowcase } from "@/components/home/home-video-showcase";
 import type {
   HomepageProductSection,
   StoreBrand,
@@ -118,28 +119,7 @@ export function HomeProductSections({
 }
 
 export function HomeVideoDiscovery({ video, brandSlug }: { video: StoreHomepageVideo; brandSlug?: string }) {
-  return (
-    <section className="bg-[#f3f7f1] py-14 sm:py-20" aria-labelledby="homepage-video-heading">
-      <div className="mx-auto max-w-[1240px] px-5 sm:px-8">
-        <div className="text-center">
-          <h2 id="homepage-video-heading" className="font-serif text-3xl font-semibold text-[#203428] sm:text-4xl">{video.title}</h2>
-          {video.description ? <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-[#67756c] sm:text-base">{video.description}</p> : null}
-        </div>
-        <div className="mt-8 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {video.videos.map((item) => (
-            <article key={item.id} className="w-[72%] shrink-0 snap-start overflow-hidden rounded-2xl bg-white shadow-[0_10px_30px_rgba(40,72,49,0.08)] sm:w-[42%] lg:w-[calc((100%-3rem)/4)]">
-              <video src={item.videoAsset.source} controls muted playsInline preload="metadata" className="aspect-[3/4] w-full bg-black object-cover" aria-label={item.product ? `${item.product.name} video` : "Product video"} />
-              {item.product ? (
-                <Link href={`/products/${item.product.slug}${brandSlug ? `?brand=${encodeURIComponent(brandSlug)}` : ""}`} className="flex items-center justify-between gap-3 p-4 text-sm font-semibold text-[#263b2d] hover:text-[#2C5D43]">
-                  <span className="line-clamp-2">{item.product.name}</span><ArrowRight className="size-4 shrink-0" aria-hidden="true" />
-                </Link>
-              ) : null}
-            </article>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
+  return <HomeVideoShowcase video={video} brandSlug={brandSlug} />;
 }
 
 export function HomeBrandStory({ brand }: { brand: StoreBrand }) {
