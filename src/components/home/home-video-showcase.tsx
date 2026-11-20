@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Play, X } from "lucide-react";
+import { Play, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import type { StoreHomepageVideo } from "@/types/storefront";
@@ -15,34 +15,24 @@ export function HomeVideoShowcase({
   video,
   brandSlug,
 }: HomeVideoShowcaseProps) {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [playingIndex, setPlayingIndex] = useState<number | null>(null);
+  const [playing, setPlaying] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const playerRef = useRef<HTMLVideoElement>(null);
-  const item = video.videos[activeIndex];
+  const item = video.videos[0];
 
   useEffect(() => {
-    if (playingIndex === null) return;
-    dialogRef.current?.showModal();
+    if (!playing) return;
+    if (dialogRef.current && !dialogRef.current.open) dialogRef.current.showModal();
     playerRef.current?.play().catch(() => undefined);
-  }, [playingIndex]);
+  }, [playing]);
 
   if (!item) return null;
 
   const closePlayer = () => {
     playerRef.current?.pause();
     dialogRef.current?.close();
-    setPlayingIndex(null);
+    setPlaying(false);
   };
-
-  const move = (direction: -1 | 1) => {
-    setActiveIndex((current) =>
-      (current + direction + video.videos.length) % video.videos.length,
-    );
-  };
-
-  const playingItem =
-    playingIndex === null ? null : video.videos[playingIndex];
 
   return (
     <section
@@ -79,7 +69,7 @@ export function HomeVideoShowcase({
 
           <button
             type="button"
-            onClick={() => setPlayingIndex(activeIndex)}
+            onClick={() => setPlaying(true)}
             className="mt-6 flex flex-col items-center gap-2 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-4 focus-visible:ring-offset-[#18231a]"
             aria-label={`Play ${video.title}`}
           >
@@ -99,36 +89,13 @@ export function HomeVideoShowcase({
           ) : null}
         </div>
 
-        {video.videos.length > 1 ? (
-          <div className="absolute inset-x-0 bottom-4 flex items-center justify-center gap-3 text-white">
-            <button
-              type="button"
-              onClick={() => move(-1)}
-              className="grid size-9 place-items-center rounded-full border border-white/40 bg-black/20 backdrop-blur-sm hover:bg-white/15"
-              aria-label="Previous video"
-            >
-              <ChevronLeft className="size-4" aria-hidden="true" />
-            </button>
-            <span className="min-w-12 text-center text-xs tabular-nums">
-              {activeIndex + 1} / {video.videos.length}
-            </span>
-            <button
-              type="button"
-              onClick={() => move(1)}
-              className="grid size-9 place-items-center rounded-full border border-white/40 bg-black/20 backdrop-blur-sm hover:bg-white/15"
-              aria-label="Next video"
-            >
-              <ChevronRight className="size-4" aria-hidden="true" />
-            </button>
-          </div>
-        ) : null}
       </div>
 
       <dialog
         ref={dialogRef}
         className="m-auto w-[min(1100px,calc(100%-2rem))] max-w-none overflow-visible rounded-2xl bg-black p-0 text-white backdrop:bg-black/85"
         onCancel={closePlayer}
-        onClose={() => setPlayingIndex(null)}
+        onClose={() => setPlaying(false)}
         onClick={(event) => {
           if (event.target === event.currentTarget) closePlayer();
         }}
@@ -141,11 +108,11 @@ export function HomeVideoShowcase({
         >
           <X className="size-5" aria-hidden="true" />
         </button>
-        {playingItem ? (
+        {playing ? (
           <video
             ref={playerRef}
-            key={playingItem.id}
-            src={playingItem.videoAsset.source}
+            key={item.id}
+            src={item.videoAsset.source}
             controls
             autoPlay
             playsInline
