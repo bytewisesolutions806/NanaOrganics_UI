@@ -209,6 +209,24 @@ const ORDER_FIELDS = `
   }
 `;
 
+// Keep the collection query deliberately smaller than the single-order query.
+// Vendure's HardenPlugin multiplies the complexity of paginated and nested list
+// fields, so selecting every order's full history can exceed the Shop API limit.
+const ORDER_LIST_FIELDS = `
+  id code state createdAt updatedAt orderPlacedAt currencyCode
+  subTotalWithTax shippingWithTax totalWithTax totalQuantity
+  fulfillments { state trackingCode createdAt updatedAt }
+  payments { method state }
+  lines {
+    id quantity unitPriceWithTax linePriceWithTax discountedLinePriceWithTax
+    featuredAsset { preview }
+    productVariant {
+      id name sku
+      product { id name slug featuredAsset { preview } customFields { returnWindowDays } }
+    }
+  }
+`;
+
 function getEndpoint() {
   const endpoint = process.env.NEXT_PUBLIC_VENDURE_API_URL;
   if (!endpoint) throw new Error("NEXT_PUBLIC_VENDURE_API_URL is not configured.");
@@ -784,7 +802,7 @@ export async function getCustomerOrders() {
     myReturnRequests: { items: CustomerReturnSummary[] };
   }, Record<string, never>>(
     `query CustomerOrders {
-      activeCustomer { orders(options: { take: 100, sort: { createdAt: DESC } }) { items { ${ORDER_FIELDS} } } }
+      activeCustomer { orders(options: { take: 100, sort: { createdAt: DESC } }) { items { ${ORDER_LIST_FIELDS} } } }
       myReturnRequests(take: 100) { items { id orderId status } }
     }`,
     {},
