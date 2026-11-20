@@ -98,6 +98,13 @@ export interface StoreProduct {
   slug: string;
   description?: string | null;
   featuredAsset?: StoreAsset | null;
+  customFields?: {
+    brand?: { name: string } | null;
+    aboutThisItem?: unknown;
+    isVegetarian?: boolean | null;
+    isOrganic?: boolean | null;
+    returnWindowDays?: number | null;
+  } | null;
   facetValues?: Array<{
     id: string;
     name: string;
@@ -112,12 +119,6 @@ export interface StoreProduct {
 export interface StorefrontProductDetail extends StoreProduct {
   enabled: boolean;
   assets: StoreAsset[];
-  customFields?: {
-    aboutThisItem?: unknown;
-    isVegetarian?: boolean | null;
-    isOrganic?: boolean | null;
-    returnWindowDays?: number | null;
-  } | null;
   facetValues: Array<{
     id: string;
     name: string;

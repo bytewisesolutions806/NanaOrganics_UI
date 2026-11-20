@@ -210,6 +210,7 @@ export function HomeProductCard({
     ? `${product.name} - ${selectedWeight.replace(/^(\d+(?:\.\d+)?)([a-z]+)$/i, "$1 $2")}`
     : product.name;
   const productSummary = getProductSummary(product.description);
+  const ribbonLabel = product.customFields?.brand?.name || selectedWeight;
 
   function selectVariant(variantId: string) {
     setSelectedVariantId(variantId);
@@ -256,16 +257,16 @@ export function HomeProductCard({
   }
 
   return (
-    <article className="relative flex min-h-[510px] w-full max-w-[304px] flex-col overflow-visible rounded-[12px] border border-[#cfded6] bg-white px-[27px] pb-5 shadow-[0_8px_24px_rgba(35,75,52,0.05)] [font-family:var(--font-plus-jakarta-sans)]">
-      <div className="relative h-[250px] shrink-0 bg-white">
-        {selectedWeight ? (
-          <div className="absolute left-[-27px] top-5 z-20 h-10 w-[94px]">
+    <article className="relative flex h-full w-full max-w-[352px] flex-col rounded-xl border border-[#cfded6] bg-white px-5 pb-5 [font-family:var(--font-plus-jakarta-sans)] sm:px-6">
+      <div className="relative aspect-square w-full shrink-0">
+        {ribbonLabel ? (
+          <div className="absolute -left-[31px] top-6 z-20 max-w-[calc(100%-24px)] sm:-left-[35px]">
             <span
               aria-hidden="true"
-              className="absolute -top-3 left-0 -z-10 h-3 w-3 bg-[#2f7b32] [clip-path:polygon(0_100%,100%_0,100%_100%)]"
+              className="absolute -top-3 left-0 h-3 w-3 bg-[#2f7b32] [clip-path:polygon(0_100%,100%_0,100%_100%)]"
             />
-            <span className="flex h-full w-full items-center bg-[#69BD45] pl-4 pr-7 text-[15px] font-medium leading-none text-white [clip-path:polygon(0_0,100%_0,86%_50%,100%_100%,0_100%)] [font-family:var(--font-plus-jakarta-sans)]">
-              {selectedWeight}
+            <span className="relative block truncate bg-[#69BD45] py-2 pl-3 pr-7 text-sm font-medium leading-5 text-white [clip-path:polygon(0_0,100%_0,calc(100%_-_12px)_50%,100%_100%,0_100%)]">
+              {ribbonLabel}
             </span>
           </div>
         ) : null}
@@ -281,10 +282,10 @@ export function HomeProductCard({
               fill
               unoptimized
               sizes="(max-width: 639px) 250px, (max-width: 1023px) 260px, 280px"
-              className="object-contain pt-10 transition duration-500 hover:scale-[1.04]"
+              className="object-contain px-3 pb-3 pt-16 transition duration-500 hover:scale-[1.04]"
             />
           ) : (
-            <div className="grid size-full place-items-center pt-10 text-[#719078]">
+            <div className="grid size-full place-items-center pt-12 text-[#719078]">
               <PackageOpen className="size-12" aria-hidden="true" />
             </div>
           )}
@@ -301,10 +302,10 @@ export function HomeProductCard({
         aria-pressed={isSaved}
         disabled={wishlistPending}
         onClick={() => void toggleWishlist()}
-        className="absolute right-4 top-5 z-20 grid size-8 place-items-center rounded-full bg-white text-[#65b94c] transition hover:bg-[#f1f8ed] disabled:cursor-wait disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#65b94c]"
+        className="absolute right-4 top-5 z-20 grid size-10 place-items-center rounded-full bg-white text-[#65b94c] transition hover:bg-[#f1f8ed] disabled:cursor-wait disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#65b94c]"
       >
         <Heart
-          className={`size-[17px] ${isSaved ? "fill-current" : ""}`}
+          className={`size-6 ${isSaved ? "fill-current" : ""}`}
           aria-hidden="true"
         />
       </button>
@@ -318,19 +319,19 @@ export function HomeProductCard({
       <div className="flex flex-1 flex-col">
         <Link
           href={getProductHref(product, brandSlug, selectedVariant)}
-          className="line-clamp-2 h-[58px] shrink-0 text-[24px] font-medium leading-[29px] tracking-[-0.025em] text-[#242b32] hover:text-[#315f48]"
+          className="line-clamp-2 min-h-[58px] shrink-0 text-[24px] font-medium leading-[29px] tracking-[-0.025em] text-[#242b32] hover:text-[#315f48]"
         >
           {productTitle}
         </Link>
         <p
           title={productSummary}
-          className="mt-1 h-[18px] shrink-0 truncate text-[11px] leading-[18px] text-[#3f4844]"
+          className="mt-1 min-h-[18px] shrink-0 truncate text-xs leading-[18px] text-[#3f4844]"
         >
           {productSummary}
         </p>
 
         {selectedVariant && sellingPrice !== undefined ? (
-          <div className="mt-2.5 flex min-h-8 shrink-0 items-center gap-2 whitespace-nowrap">
+          <div className="mt-2.5 flex min-h-8 shrink-0 flex-wrap items-center gap-2">
             <span className="text-[26px] leading-8 text-[#293139]">
               <Price
                 amount={sellingPrice}
@@ -483,10 +484,8 @@ export function HomeProductSection({
     if (!carousel) return;
 
     const gap = Number.parseFloat(getComputedStyle(carousel).columnGap) || 0;
-    const visibleCards =
-      window.innerWidth >= 1024 ? 4 : window.innerWidth >= 640 ? 2 : 1;
-    const cardWidth =
-      (carousel.clientWidth - gap * (visibleCards - 1)) / visibleCards;
+    const cardWidth = carousel.firstElementChild?.getBoundingClientRect().width;
+    if (!cardWidth) return;
     carousel.scrollBy({
       left: direction * (cardWidth + gap),
       behavior: "smooth",
@@ -543,7 +542,7 @@ export function HomeProductSection({
           </button>
           <div
             ref={carouselRef}
-            className="home-product-carousel snap-x snap-mandatory overflow-x-auto scroll-smooth pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="home-product-carousel snap-x snap-mandatory scroll-pl-3 overflow-x-auto scroll-smooth px-3 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {section.products.map((product) => (
               <div

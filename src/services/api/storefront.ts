@@ -124,6 +124,7 @@ const HOMEPAGE_SECTIONS_QUERY = /* GraphQL */ `
           name
           slug
           description
+          customFields { brand { name } }
           featuredAsset {
             id
             name
@@ -385,6 +386,7 @@ const PRODUCT_CATEGORY_PRODUCTS_QUERY = /* GraphQL */ `
         name
         slug
         description
+        customFields { brand { name } }
         featuredAsset { id name preview source mimeType }
         variants {
           id
@@ -401,6 +403,17 @@ const PRODUCT_CATEGORY_PRODUCTS_QUERY = /* GraphQL */ `
           name
           facet { id name }
         }
+      }
+    }
+  }
+`;
+
+const CATALOG_PRODUCT_BRANDS_QUERY = /* GraphQL */ `
+  query CatalogProductBrands($ids: [String!]!, $take: Int!) {
+    products(options: { filter: { id: { in: $ids } }, take: $take }) {
+      items {
+        id
+        customFields { brand { name } }
       }
     }
   }
@@ -761,6 +774,20 @@ export async function getStorefrontCatalog(
       offerPricing: item.offerPricing,
     });
     productsById.set(item.productId, product);
+  }
+
+  const productIds = [...productsById.keys()];
+  for (let offset = 0; offset < productIds.length; offset += pageSize) {
+    const ids = productIds.slice(offset, offset + pageSize);
+    const { products } = await requestStoreApi<{
+      products: {
+        items: Array<Pick<StoreProduct, "id" | "customFields">>;
+      };
+    }>(CATALOG_PRODUCT_BRANDS_QUERY, { ids, take: ids.length }, 60);
+    for (const product of products.items) {
+      const catalogProduct = productsById.get(product.id);
+      if (catalogProduct) catalogProduct.customFields = product.customFields;
+    }
   }
 
   return {
