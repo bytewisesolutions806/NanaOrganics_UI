@@ -11,7 +11,7 @@ import { AccountHeading, EmptyState, LoadingCards, Pagination } from "./account-
 import { OrderProgress } from "./order-progress";
 import { type CustomerOrder, type CustomerReturnStatus, formatMoney, getCustomerOrder, getCustomerOrders, isOrderLineReturnEligible } from "@/services/api/account";
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 4;
 const statusLabels: Record<CustomerOrder["status"], string> = {
   payment_pending: "Payment pending", payment_failed: "Payment not completed",
   confirmed: "Order confirmed", on_the_way: "On the way", delivered: "Delivered", cancelled: "Cancelled",

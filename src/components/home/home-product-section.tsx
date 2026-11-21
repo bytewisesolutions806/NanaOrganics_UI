@@ -247,8 +247,15 @@ export function HomeProductCard({
     try {
       await toggleWishlistProduct(product.id);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Could not update your wishlist.";
-      if (/not (?:currently )?authorized|unauthorized|session|login/i.test(message)) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Could not update your wishlist.";
+      if (
+        /not (?:currently )?authorized|unauthorized|session|login/i.test(
+          message,
+        )
+      ) {
         router.push("/login");
         return;
       }
@@ -311,7 +318,10 @@ export function HomeProductCard({
       </button>
 
       {wishlistError ? (
-        <p role="alert" className="absolute right-3 top-14 z-30 max-w-48 rounded-md bg-red-50 px-2 py-1 text-right text-[10px] leading-4 text-red-700 shadow-sm">
+        <p
+          role="alert"
+          className="absolute right-3 top-14 z-30 max-w-48 rounded-md bg-red-50 px-2 py-1 text-right text-[10px] leading-4 text-red-700 shadow-sm"
+        >
           {wishlistError}
         </p>
       ) : null}
@@ -419,7 +429,7 @@ export function HomeProductCard({
               type="button"
               onClick={() => {
                 setCartMessage(null);
-                setQuantity((current) => Math.min(99, current + 1))
+                setQuantity((current) => Math.min(99, current + 1));
               }}
               disabled={quantity === 99 || cartPending}
               aria-label="Increase quantity"
@@ -494,7 +504,7 @@ export function HomeProductSection({
 
   return (
     <section
-      className="relative isolate overflow-hidden bg-[#f2f7f3] px-5 py-14 sm:px-8 sm:py-[68px]"
+      className="relative isolate overflow-hidden px-5 py-14 sm:px-8 sm:py-[68px] mt-4"
       aria-labelledby={headingId}
     >
       <div

@@ -90,6 +90,44 @@ export interface StoreProductVariant {
     offerPercentage?: number | null;
     sellingPrice?: number | null;
   } | null;
+  bundle?: StoreBundleDefinition | null;
+}
+
+export interface StoreBundleDefinition {
+  id: string;
+  enabled: boolean;
+  allowGiftWrap: boolean;
+  giftWrapPrice: number;
+  allowGiftNote: boolean;
+  giftNoteMaxLength: number;
+  allowHidePrices: boolean;
+  items: StoreBundleItem[];
+}
+
+export interface StoreBundleItem {
+  id: string;
+  quantity: number;
+  position: number;
+  displayName?: string | null;
+  displaySubtitle?: string | null;
+  displayPrice?: number | null;
+  productVariant: {
+    id: string;
+    name: string;
+    currencyCode: string;
+    priceWithTax: number;
+    featuredAsset?: StoreAsset | null;
+    options?: Array<{
+      id: string;
+      name: string;
+      code?: string | null;
+    }>;
+    product: {
+      id: string;
+      name: string;
+      featuredAsset?: StoreAsset | null;
+    };
+  };
 }
 
 export interface StoreProduct {

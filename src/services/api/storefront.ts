@@ -466,6 +466,36 @@ const STOREFRONT_PRODUCT_QUERY = /* GraphQL */ `
         featuredAsset { id name preview source mimeType }
         assets { id name preview source mimeType }
         options { id name code }
+        bundle {
+          id
+          enabled
+          allowGiftWrap
+          giftWrapPrice
+          allowGiftNote
+          giftNoteMaxLength
+          allowHidePrices
+          items {
+            id
+            quantity
+            position
+            displayName
+            displaySubtitle
+            displayPrice
+            productVariant {
+              id
+              name
+              currencyCode
+              priceWithTax
+              featuredAsset { id name preview source mimeType }
+              options { id name code }
+              product {
+                id
+                name
+                featuredAsset { id name preview source mimeType }
+              }
+            }
+          }
+        }
       }
     }
   }
@@ -965,6 +995,28 @@ export async function getStorefrontProduct(
       assets: (variant.assets ?? [])
         .map(normalizeAsset)
         .filter((asset): asset is StoreAsset => Boolean(asset)),
+      bundle: variant.bundle
+        ? {
+            ...variant.bundle,
+            items: [...(variant.bundle.items ?? [])]
+              .sort((a, b) => a.position - b.position)
+              .map((item) => ({
+                ...item,
+                productVariant: {
+                  ...item.productVariant,
+                  featuredAsset: normalizeAsset(
+                    item.productVariant.featuredAsset,
+                  ),
+                  product: {
+                    ...item.productVariant.product,
+                    featuredAsset: normalizeAsset(
+                      item.productVariant.product.featuredAsset,
+                    ),
+                  },
+                },
+              })),
+          }
+        : null,
     })),
   };
 }

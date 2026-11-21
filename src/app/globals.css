@@ -319,3 +319,43 @@
 .journal-detail-prose li + li {
   margin-top: 0.375rem;
 }
+
+.brand-family-card-logo img {
+  max-height: 11rem;
+}
+
+@media (min-width: 48rem) {
+  .brand-family-card-logo {
+    height: 13.625rem;
+  }
+
+  .brand-family-card-logo img {
+    max-height: 13.625rem;
+  }
+
+  .brand-family-card-separator {
+    height: 10.25rem;
+    background: #c9d2cc;
+  }
+
+  .brand-family-card-title {
+    font-size: 1.6875rem;
+    line-height: 2rem;
+  }
+
+  .brand-family-card-description {
+    font-size: 1.125rem;
+    line-height: 1.5625rem;
+  }
+}
+
+@media (min-width: 64rem) {
+  .brand-family-eyebrow,
+  .brand-family-intro {
+    font-size: 1.125rem;
+  }
+
+  .brand-family-intro {
+    line-height: 1.875rem;
+  }
+}

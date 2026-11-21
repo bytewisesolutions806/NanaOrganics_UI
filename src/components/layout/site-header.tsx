@@ -248,7 +248,10 @@ export function SiteHeader({
   const cart = useCart();
   const pathname = usePathname();
   const overlay =
-    variant === "overlay" || pathname === "/contact" || pathname === "/our-story";
+    variant === "overlay" ||
+    pathname === "/brands" ||
+    pathname === "/contact" ||
+    pathname === "/our-story";
   const closeSearch = useCallback(() => setSearchOpen(false), []);
   const toggleSearch = useCallback(
     () => setSearchOpen((isOpen) => !isOpen),
