@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { useId } from "react";
 
 const WAVE_VIEWBOX_WIDTH = 920;
@@ -15,30 +14,49 @@ function createWavePath(baseline: number, crest: number) {
 
 export function WaveDivider({
   className = "relative isolate h-10 w-full sm:h-14 md:h-36 lg:h-44",
+  variant = "outline",
 }: {
   className?: string;
+  variant?: "outline" | "scallop";
 }) {
   const patternId = useId().replaceAll(":", "");
 
+  if (variant === "scallop") {
+    const scallopWidth = 18;
+    const scallopCurve = `M0 10 C4.5 10 4.5 2 9 2 S13.5 10 18 10`;
+
+    return (
+      <div className={className}>
+        <svg
+          aria-hidden="true"
+          className="absolute inset-0 block size-full"
+          preserveAspectRatio="none"
+          viewBox="0 0 972 18"
+        >
+          <defs>
+            <pattern
+              id={`${patternId}-scallop`}
+              width={scallopWidth}
+              height="18"
+              patternUnits="userSpaceOnUse"
+            >
+              <path d={`${scallopCurve} L18 18 L0 18 Z`} fill="white" />
+              <path
+                d={scallopCurve}
+                fill="none"
+                stroke="#dfe4e1"
+                strokeWidth="1"
+              />
+            </pattern>
+          </defs>
+          <rect width="972" height="18" fill={`url(#${patternId}-scallop)`} />
+        </svg>
+      </div>
+    );
+  }
+
   return (
     <div className={className}>
-      {/* <Image
-        src="/images/homepage-leaf-right-top.png"
-        alt=""
-        aria-hidden="true"
-        width={361}
-        height={279}
-        className="pointer-events-none absolute right-0 bottom-1/2 z-10 hidden h-auto w-36 object-contain md:block lg:w-44"
-      />
-      <Image
-        src="/images/homepage-leaf-left-bottom.png"
-        alt=""
-        aria-hidden="true"
-        width={374}
-        height={279}
-        className="pointer-events-none absolute left-0 top-1/2 z-10 hidden h-auto w-36 object-contain md:block lg:w-44"
-      /> */}
-
       <svg
         aria-hidden="true"
         className="absolute left-0 top-1/2 block h-9 w-full -translate-y-1/2"

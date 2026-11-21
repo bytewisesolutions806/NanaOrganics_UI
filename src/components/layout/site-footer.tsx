@@ -13,7 +13,7 @@ import { NewsletterSignup } from "@/components/layout/newsletter-signup";
 
 const quickLinks = [
   { label: "Our Brand", href: "/brands" },
-  { label: "Bundles & Gifts", href: "/categories/bundles" },
+  { label: "Bundles & Gifts", href: "/shop/bundles" },
   { label: "Ingredients & Provenance", href: "/ingredients" },
   { label: "Natural Living", href: "/natural-living" },
   { label: "Our Story", href: "/our-story" },

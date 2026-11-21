@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { UserRoundPlus } from "lucide-react";
+import { Fragment } from "react";
 
 import { WaveDivider } from "@/components/ui/wave-divider";
 
@@ -133,45 +134,92 @@ export default function OurStoryPage() {
       </section>
 
       {storyChapters.map((chapter, index) => (
-        <section
-          key={chapter.eyebrow}
-          aria-labelledby={`story-chapter-${index + 1}`}
-          className={`relative ${chapter.background} px-5 py-14 sm:px-8 sm:py-20 lg:py-24`}
-        >
-          <div className="mx-auto grid max-w-[1080px] items-center gap-8 sm:gap-10 md:grid-cols-2 md:gap-14 lg:gap-20">
-            <div
-              className={`relative mx-auto w-full max-w-[520px] ${
-                chapter.imageFirst ? "md:order-first" : "md:order-last"
-              }`}
+        <Fragment key={chapter.eyebrow}>
+          {chapter.eyebrow === "Community" ? (
+            <section
+              aria-labelledby="how-food-is-grown-title"
+              className="relative isolate overflow-hidden bg-[#18251c] text-white"
             >
-              <Image
-                src={chapter.image}
-                alt={chapter.imageAlt}
-                width={chapter.width}
-                height={chapter.height}
-                sizes="(max-width: 767px) 100vw, 50vw"
-                className="h-auto w-full object-contain"
+              <div className="absolute inset-x-0 top-0 -z-20 h-[340px] md:inset-0 md:h-full">
+                <Image
+                  src="/images/our-story/how-food-grown-optimized.webp"
+                  alt="A farmer carrying a hoe through a field"
+                  fill
+                  sizes="100vw"
+                  className="object-cover object-[30%_center] md:object-center"
+                />
+              </div>
+              <div
+                aria-hidden="true"
+                className="absolute inset-x-0 top-0 -z-10 h-[340px] bg-gradient-to-t from-[#18251c] via-transparent to-transparent md:inset-0 md:h-full md:bg-gradient-to-r md:from-black/10 md:via-black/30 md:to-black/50"
               />
-            </div>
-            <div className="mx-auto w-full max-w-[440px]">
-              <p className="text-[10px] font-medium uppercase tracking-[0.38em] text-[#315b43] sm:text-xs">
-                {chapter.eyebrow}
-              </p>
-              <h2
-                id={`story-chapter-${index + 1}`}
-                className="mt-3 font-serif text-3xl font-semibold leading-tight tracking-[-0.02em] text-[#252a30] sm:text-4xl"
-              >
-                {chapter.title}
-              </h2>
-              <p className="mt-3 text-sm leading-6 text-[#30383d] sm:text-[15px] sm:leading-[1.8]">
-                {chapter.description}
-              </p>
-            </div>
-          </div>
-          {chapter.showDivider ? (
-            <WaveDivider className="absolute inset-x-0 bottom-0 h-9 w-full" />
+              <div className="mx-auto grid min-h-[600px] max-w-[1080px] items-center px-5 pb-14 pt-[360px] sm:px-8 md:min-h-[640px] md:grid-cols-2 md:gap-14 md:py-20 lg:min-h-[700px] lg:gap-20">
+                <div className="w-full max-w-[440px] md:col-start-2">
+                  <p className="text-[10px] font-medium uppercase tracking-[0.38em] text-white/85 sm:text-xs">
+                    Resilience
+                  </p>
+                  <h2
+                    id="how-food-is-grown-title"
+                    className="mt-3 font-serif text-3xl font-semibold leading-tight tracking-[-0.02em] sm:text-4xl"
+                  >
+                    How the food is grown today
+                  </h2>
+                  <p className="mt-3 text-sm leading-6 text-white/95 sm:text-[15px] sm:leading-[1.8]">
+                    Today, the family continues to nurture the land with care,
+                    following farming practices shaped by generations of
+                    experience and a deep respect for nature. Seasonal crops,
+                    fresh herbs, and traditional ingredients are grown in harmony
+                    with the changing rhythms of the land. Each harvest reflects
+                    the knowledge, patience, and dedication of the people who work
+                    the fields, preserving the connection between soil, food, and
+                    family. From the golden warmth of turmeric to the natural
+                    sweetness of honey and the freshness of aromatic herbs, every
+                    ingredient carries a story of its origin, the hands that
+                    nurtured it, and the traditions that continue to shape it.
+                  </p>
+                </div>
+              </div>
+            </section>
           ) : null}
-        </section>
+          <section
+            aria-labelledby={`story-chapter-${index + 1}`}
+            className={`relative ${chapter.background} px-5 py-14 sm:px-8 sm:py-20 lg:py-24`}
+          >
+            <div className="mx-auto grid max-w-[1080px] items-center gap-8 sm:gap-10 md:grid-cols-2 md:gap-14 lg:gap-20">
+              <div
+                className={`relative mx-auto w-full max-w-[520px] ${
+                  chapter.imageFirst ? "md:order-first" : "md:order-last"
+                }`}
+              >
+                <Image
+                  src={chapter.image}
+                  alt={chapter.imageAlt}
+                  width={chapter.width}
+                  height={chapter.height}
+                  sizes="(max-width: 767px) 100vw, 50vw"
+                  className="h-auto w-full object-contain"
+                />
+              </div>
+              <div className="mx-auto w-full max-w-[440px]">
+                <p className="text-[10px] font-medium uppercase tracking-[0.38em] text-[#315b43] sm:text-xs">
+                  {chapter.eyebrow}
+                </p>
+                <h2
+                  id={`story-chapter-${index + 1}`}
+                  className="mt-3 font-serif text-3xl font-semibold leading-tight tracking-[-0.02em] text-[#252a30] sm:text-4xl"
+                >
+                  {chapter.title}
+                </h2>
+                <p className="mt-3 text-sm leading-6 text-[#30383d] sm:text-[15px] sm:leading-[1.8]">
+                  {chapter.description}
+                </p>
+              </div>
+            </div>
+            {chapter.showDivider ? (
+              <WaveDivider className="absolute inset-x-0 bottom-0 h-9 w-full" />
+            ) : null}
+          </section>
+        </Fragment>
       ))}
 
       {/* <section

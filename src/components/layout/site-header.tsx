@@ -43,7 +43,7 @@ const navigation = [
   },
   {
     label: "Bundles & Gifts",
-    href: "/categories/bundles",
+    href: "/shop/bundles",
     icon: "/images/navigation/bundles-and-gifts.png",
   },
   {
