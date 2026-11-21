@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { CheckCircle2, Star } from "lucide-react";
+import { CheckCircle2, ChevronLeft, ChevronRight, Star, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import {
@@ -16,15 +16,50 @@ const emptyReviews: PublicProductReviews = {
   items: [],
 };
 
-function Stars({ rating, label }: { rating: number; label?: string }) {
+function Stars({
+  rating,
+  label,
+  boxed = false,
+}: {
+  rating: number;
+  label?: string;
+  boxed?: boolean;
+}) {
   return (
-    <span className="inline-flex items-center gap-1" aria-label={label ?? `${rating} out of 5 stars`}>
+    <span
+      className={`inline-flex items-center ${boxed ? "gap-[3px]" : "gap-1"}`}
+      aria-label={label ?? `${rating} out of 5 stars`}
+    >
       {Array.from({ length: 5 }, (_, index) => (
-        <Star
+        <span
           key={index}
-          aria-hidden="true"
-          className={`size-4 ${index < Math.round(rating) ? "fill-[#f2b84b] text-[#f2b84b]" : "fill-[#e6ebe7] text-[#e6ebe7]"}`}
-        />
+          className={
+            boxed
+              ? `grid size-[25px] place-items-center rounded-[2px] ${
+                  index < Math.round(rating)
+                    ? "bg-[#2e7758]"
+                    : "bg-[#dce4dd]"
+                }`
+              : undefined
+          }
+        >
+          <Star
+            aria-hidden="true"
+            className={
+              boxed
+                ? `size-[18px] ${
+                    index < Math.round(rating)
+                      ? "fill-white text-white"
+                      : "fill-[#9aaba0] text-[#9aaba0]"
+                  }`
+                : `size-4 ${
+                    index < Math.round(rating)
+                      ? "fill-[#2e7758] text-[#2e7758]"
+                      : "fill-[#e6ebe7] text-[#e6ebe7]"
+                  }`
+            }
+          />
+        </span>
       ))}
     </span>
   );
@@ -49,6 +84,38 @@ export function ProductReviews({
   const [visible, setVisible] = useState(5);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [lightbox, setLightbox] = useState<{ images: string[]; index: number } | null>(null);
+
+  useEffect(() => {
+    if (!lightbox) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setLightbox(null);
+      } else if (event.key === "ArrowLeft") {
+        setLightbox((current) =>
+          current
+            ? { ...current, index: (current.index - 1 + current.images.length) % current.images.length }
+            : null
+        );
+      } else if (event.key === "ArrowRight") {
+        setLightbox((current) =>
+          current
+            ? { ...current, index: (current.index + 1) % current.images.length }
+            : null
+        );
+      }
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [lightbox]);
 
   useEffect(() => {
     let active = true;
@@ -88,92 +155,240 @@ export function ProductReviews({
   }, [productId, rating, sort, visible, onSummaryChange]);
 
   return (
-    <section id="customer-reviews" className="mx-auto max-w-[1240px] px-5 py-14 sm:px-8 lg:py-20" aria-labelledby="reviews-title">
-      <div className="flex flex-col justify-between gap-6 border-b border-[#dbe6dd] pb-8 sm:flex-row sm:items-end">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#67b84d]">Real experiences</p>
-          <h2 id="reviews-title" className="mt-2 font-serif text-3xl font-semibold text-[#26342d] sm:text-4xl">Customer Reviews</h2>
-          <div className="mt-4 flex flex-wrap items-center gap-3 text-sm text-[#53635a]">
-            <strong className="text-2xl text-[#26342d]">{reviews.averageRating.toFixed(1)}</strong>
-            <Stars rating={reviews.averageRating} />
-            <span>{reviews.totalReviewCount} verified reviews</span>
+    <>
+      <section
+        id="customer-reviews"
+        className="mx-auto max-w-[1400px] px-5 py-14 sm:px-8 lg:px-12 lg:py-20"
+        aria-labelledby="reviews-title"
+      >
+        <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
+          <div>
+            <h2
+              id="reviews-title"
+              className="font-serif text-3xl font-semibold tracking-[-0.025em] text-[#26342d] sm:text-[38px]"
+            >
+              Our Customer Reviews
+            </h2>
+            <div className="mt-5 flex flex-wrap items-center gap-2 text-sm text-[#53635a]">
+              <span className="grid size-7 place-items-center rounded-[3px] bg-[#2e7758] text-white">
+                <Star aria-hidden="true" className="size-5 fill-white" />
+              </span>
+              <strong className="text-xl font-semibold text-[#26342d]">
+                {reviews.averageRating.toFixed(1)}
+              </strong>
+              <span className="mx-1 h-4 w-px bg-[#ccd7cf]" aria-hidden="true" />
+              <span>
+                {reviews.totalReviewCount.toLocaleString("en-IN")} happy customers
+              </span>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <select
+              aria-label="Filter reviews by rating"
+              value={rating}
+              onChange={(event) => {
+                setRating(Number(event.target.value));
+                setVisible(5);
+              }}
+              className="h-10 rounded-md border border-[#d3ddd5] bg-white px-3 text-xs text-[#34483c] outline-none transition focus:border-[#2e7758] focus:ring-2 focus:ring-[#2e7758]/15"
+            >
+              <option value={0}>All ratings</option>
+              {[5, 4, 3, 2, 1].map((value) => (
+                <option key={value} value={value}>{value} stars</option>
+              ))}
+            </select>
+            <select
+              aria-label="Sort reviews"
+              value={sort}
+              onChange={(event) => {
+                setSort(event.target.value as typeof sort);
+                setVisible(5);
+              }}
+              className="h-10 rounded-md border border-[#d3ddd5] bg-white px-3 text-xs text-[#34483c] outline-none transition focus:border-[#2e7758] focus:ring-2 focus:ring-[#2e7758]/15"
+            >
+              <option value="NEWEST">Newest first</option>
+              <option value="OLDEST">Oldest first</option>
+              <option value="HIGHEST_RATED">Highest rated</option>
+              <option value="LOWEST_RATED">Lowest rated</option>
+            </select>
           </div>
         </div>
-        <div className="flex flex-wrap gap-3">
-          <select
-            aria-label="Filter reviews by rating"
-            value={rating}
-            onChange={(event) => { setRating(Number(event.target.value)); setVisible(5); }}
-            className="h-11 rounded-lg border border-[#cbd9cf] bg-white px-3 text-sm text-[#34483c] outline-none focus:ring-2 focus:ring-[#68bd45]"
-          >
-            <option value={0}>All ratings</option>
-            {[5, 4, 3, 2, 1].map((value) => <option key={value} value={value}>{value} stars</option>)}
-          </select>
-          <select
-            aria-label="Sort reviews"
-            value={sort}
-            onChange={(event) => { setSort(event.target.value as typeof sort); setVisible(5); }}
-            className="h-11 rounded-lg border border-[#cbd9cf] bg-white px-3 text-sm text-[#34483c] outline-none focus:ring-2 focus:ring-[#68bd45]"
-          >
-            <option value="NEWEST">Newest first</option>
-            <option value="OLDEST">Oldest first</option>
-            <option value="HIGHEST_RATED">Highest rated</option>
-            <option value="LOWEST_RATED">Lowest rated</option>
-          </select>
-        </div>
-      </div>
 
-      {loading && reviews.items.length === 0 ? (
-        <div className="grid gap-4 py-8 sm:grid-cols-2">
-          {[0, 1].map((item) => <div key={item} className="h-44 animate-pulse rounded-2xl bg-[#f1f6f2]" />)}
-        </div>
-      ) : error ? (
-        <p role="alert" className="py-10 text-sm text-red-700">{error}</p>
-      ) : reviews.items.length ? (
-        <>
-          <div className="grid gap-5 py-8 lg:grid-cols-2">
-            {reviews.items.map((review) => (
-              <article key={review.id} className="rounded-2xl border border-[#dbe6dd] bg-white p-6 shadow-[0_8px_30px_rgba(37,76,50,0.05)]">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <Stars rating={review.rating} />
-                    <h3 className="mt-3 text-lg font-semibold text-[#26342d]">{review.title || "A thoughtful review"}</h3>
-                  </div>
-                  <time className="shrink-0 text-xs text-[#718078]" dateTime={review.createdAt}>
-                    {new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric" }).format(new Date(review.createdAt))}
-                  </time>
-                </div>
-                <p className="mt-3 text-sm leading-7 text-[#53635a]">{review.content}</p>
-                {(review.images.length || review.legacyImages.length) ? (
-                  <div className="mt-4 flex gap-2 overflow-x-auto">
-                    {[...review.images.map((image) => image.url), ...review.legacyImages].map((url) => (
-                      <div key={url} className="relative size-16 shrink-0 overflow-hidden rounded-lg bg-[#f4f7f4]">
-                        <Image src={url} alt="Customer review" fill unoptimized className="object-cover" sizes="64px" />
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-                <footer className="mt-5 flex flex-wrap items-center gap-3 text-xs text-[#718078]">
-                  <strong className="text-[#34483c]">{review.customerName}</strong>
-                  {review.verifiedPurchase ? <span className="inline-flex items-center gap-1 text-[#4b8c3b]"><CheckCircle2 className="size-3.5" aria-hidden="true" />Verified purchase</span> : null}
-                </footer>
-              </article>
+        {loading && reviews.items.length === 0 ? (
+          <div className="divide-y divide-[#e0e8e1] py-8">
+            {[0, 1, 2].map((item) => (
+              <div key={item} className="space-y-4 py-8 first:pt-0">
+                <div className="h-6 w-32 animate-pulse rounded bg-[#eef3ef]" />
+                <div className="h-4 w-full animate-pulse rounded bg-[#eef3ef]" />
+                <div className="h-4 w-3/4 animate-pulse rounded bg-[#eef3ef]" />
+              </div>
             ))}
           </div>
-          {reviews.items.length < reviews.totalItems ? (
-            <div className="text-center">
-              <button type="button" onClick={() => setVisible((current) => current + 5)} disabled={loading} className="rounded-lg border border-[#315f48] px-6 py-3 text-sm font-semibold text-[#315f48] transition hover:bg-[#315f48] hover:text-white disabled:opacity-60">
-                {loading ? "Loading…" : "Load more reviews"}
-              </button>
+        ) : error ? (
+          <p role="alert" className="py-10 text-sm text-red-700">{error}</p>
+        ) : reviews.items.length ? (
+          <>
+            <div className="mt-10 divide-y divide-[#e0e8e1]">
+              {reviews.items.map((review) => {
+                const images = [
+                  ...review.images.map((image) => image.url),
+                  ...review.legacyImages,
+                ];
+
+                return (
+                  <article key={review.id} className="py-9 first:pt-0">
+                    <Stars rating={review.rating} boxed />
+                    <p className="mt-4 max-w-[1320px] text-[15px] leading-7 text-[#344039]">
+                      {review.content}
+                    </p>
+                    {images.length ? (
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {images.map((url, index) => (
+                          <button
+                            key={`${url}-${index}`}
+                            type="button"
+                            onClick={() => setLightbox({ images, index })}
+                            aria-label={`Open review image ${index + 1} of ${images.length}`}
+                            className="relative size-[66px] overflow-hidden rounded-lg bg-[#f4f7f4] outline-none ring-[#2e7758] transition hover:scale-[1.03] focus-visible:ring-2 focus-visible:ring-offset-2 sm:size-[72px]"
+                          >
+                            <Image
+                              src={url}
+                              alt={`Customer review photo ${index + 1}`}
+                              fill
+                              unoptimized
+                              className="object-cover"
+                              sizes="72px"
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
+                    <footer className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#68746d]">
+                      <strong className="font-semibold text-[#344039]">
+                        {review.customerName}
+                      </strong>
+                      <span aria-hidden="true">|</span>
+                      <time dateTime={review.createdAt}>
+                        {new Intl.DateTimeFormat("en-IN", {
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                        }).format(new Date(review.createdAt))}
+                      </time>
+                      {review.verifiedPurchase ? (
+                        <span className="ml-1 inline-flex items-center gap-1 text-[#477c5b]">
+                          <CheckCircle2 className="size-3.5" aria-hidden="true" />
+                          Verified purchase
+                        </span>
+                      ) : null}
+                    </footer>
+                  </article>
+                );
+              })}
             </div>
-          ) : null}
-        </>
-      ) : (
-        <div className="py-12 text-center">
-          <p className="font-serif text-2xl text-[#34483c]">No reviews yet</p>
-          <p className="mt-2 text-sm text-[#718078]">Be the first to share your experience with this product.</p>
+            {reviews.items.length < reviews.totalItems ? (
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => setVisible((current) => current + 5)}
+                  disabled={loading}
+                  className="rounded-md border border-[#315f48] px-6 py-3 text-sm font-semibold text-[#315f48] transition hover:bg-[#315f48] hover:text-white disabled:opacity-60"
+                >
+                  {loading ? "Loading…" : "Load more reviews"}
+                </button>
+              </div>
+            ) : null}
+          </>
+        ) : (
+          <div className="py-12 text-center">
+            <p className="font-serif text-2xl text-[#34483c]">No reviews yet</p>
+            <p className="mt-2 text-sm text-[#718078]">
+              Be the first to share your experience with this product.
+            </p>
+          </div>
+        )}
+      </section>
+
+      {lightbox ? (
+        <div
+          role="presentation"
+          className="fixed inset-0 z-[100] grid place-items-center bg-black/85 p-4 sm:p-8"
+          onMouseDown={(event) => {
+            if (event.currentTarget === event.target) setLightbox(null);
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Review image ${lightbox.index + 1} of ${lightbox.images.length}`}
+            className="relative flex h-full max-h-[88vh] w-full max-w-5xl items-center justify-center"
+          >
+            <button
+              type="button"
+              autoFocus
+              onClick={() => setLightbox(null)}
+              aria-label="Close image viewer"
+              className="absolute right-0 top-0 z-10 grid size-11 place-items-center rounded-full bg-white/15 text-white transition hover:bg-white/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            >
+              <X aria-hidden="true" className="size-6" />
+            </button>
+
+            {lightbox.images.length > 1 ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setLightbox((current) =>
+                      current
+                        ? {
+                            ...current,
+                            index: (current.index - 1 + current.images.length) % current.images.length,
+                          }
+                        : null
+                    )
+                  }
+                  aria-label="Previous review image"
+                  className="absolute left-0 z-10 grid size-11 place-items-center rounded-full bg-white/15 text-white transition hover:bg-white/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                >
+                  <ChevronLeft aria-hidden="true" className="size-7" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setLightbox((current) =>
+                      current
+                        ? {
+                            ...current,
+                            index: (current.index + 1) % current.images.length,
+                          }
+                        : null
+                    )
+                  }
+                  aria-label="Next review image"
+                  className="absolute right-0 z-10 grid size-11 place-items-center rounded-full bg-white/15 text-white transition hover:bg-white/25 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                >
+                  <ChevronRight aria-hidden="true" className="size-7" />
+                </button>
+              </>
+            ) : null}
+
+            <div className="relative h-full w-[calc(100%_-_5rem)]">
+              <Image
+                src={lightbox.images[lightbox.index]}
+                alt={`Customer review photo ${lightbox.index + 1}`}
+                fill
+                unoptimized
+                priority
+                sizes="(max-width: 1024px) 90vw, 900px"
+                className="object-contain"
+              />
+            </div>
+            <span className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-black/45 px-3 py-1 text-xs font-medium text-white">
+              {lightbox.index + 1} / {lightbox.images.length}
+            </span>
+          </div>
         </div>
-      )}
-    </section>
+      ) : null}
+    </>
   );
 }
