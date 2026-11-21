@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { connection } from "next/server";
+import { Suspense } from "react";
 
 import { HomeProductSection } from "@/components/home/home-product-section";
 import { WaveDivider } from "@/components/ui/wave-divider";
@@ -129,11 +129,26 @@ function CategoryCircles({
   );
 }
 
-export default async function BrandsPage() {
-  await connection();
+async function BrandsFeaturedProducts() {
   const homepage = await getDefaultHomepage();
   const featuredProducts = homepage.productSections[0];
 
+  if (!featuredProducts) return null;
+
+  return (
+    <HomeProductSection
+      eyebrow="How the brands fit together"
+      section={{
+        ...featuredProducts,
+        title: "Every product carries our name",
+        description:
+          "Every product carries our signature, 'A NANA Organics Brand,' representing our shared values of quality, mindful sourcing and natural care.",
+      }}
+    />
+  );
+}
+
+export default function BrandsPage() {
   return (
     <main className="overflow-hidden bg-white">
       <section
@@ -330,17 +345,16 @@ export default async function BrandsPage() {
         <WaveDivider className="absolute inset-x-0 bottom-0 h-9 w-full translate-y-1/2 sm:h-12" />
       </section>
 
-      {featuredProducts ? (
-        <HomeProductSection
-          eyebrow="How the brands fit together"
-          section={{
-            ...featuredProducts,
-            title: "Every product carries our name",
-            description:
-              "Every product carries our signature, 'A NANA Organics Brand,' representing our shared values of quality, mindful sourcing and natural care.",
-          }}
-        />
-      ) : null}
+      <Suspense
+        fallback={
+          <div
+            className="min-h-[520px] animate-pulse bg-[#f5f7f4]"
+            aria-hidden="true"
+          />
+        }
+      >
+        <BrandsFeaturedProducts />
+      </Suspense>
     </main>
   );
 }
